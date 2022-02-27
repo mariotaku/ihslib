@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+message CStreamPlayerConfig {
+    optional CAudioConfig audio_config = 1;
+    message CAudioConfig {
+        optional float volume = 1 [default = 1];
+        optional bool mute = 2;
+        optional bool boost = 3;
+    }
+    
+    optional CAudioConfig microphone_config = 2;
+    optional bool controller_overlay_opened = 4;
+    optional bool menubar_overlay_opened = 5;
+    optional uint32 menubar_overlay_hotkey = 6;
+}

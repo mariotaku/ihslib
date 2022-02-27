@@ -1,0 +1,158 @@
+syntax = "proto2";
+
+option cc_generic_services = false;
+option optimize_for = SPEED;
+
+message CHIDDeviceInfo {
+    optional EHIDDeviceLocation location = 1;
+    optional string path = 2;
+    optional uint32 vendor_id = 3;
+    optional uint32 product_id = 4;
+    optional string serial_number = 5;
+    optional uint32 release_number = 6;
+    optional string manufacturer_string = 7;
+    optional string product_string = 8;
+    optional uint32 usage_page = 9;
+    optional uint32 usage = 10;
+    optional int32 interface_number = 11 [default = -1];
+    optional int32 ostype = 12 [default = -1];
+    optional bool is_generic_gamepad = 13;
+    optional bool is_generic_joystick = 14;
+    optional uint32 caps_bits = 15;
+    optional uint32 session_id = 16;
+    optional uint32 eControllerType = 17 [default = 0];
+    optional bool is_xinput_device = 18 [default = false];
+    optional uint32 session_remote_play_together_appid = 19;
+}
+
+message CHIDDeviceInputReport {
+    optional bytes full_report = 1;
+    optional bytes delta_report = 2;
+    optional uint32 delta_report_size = 3;
+    optional uint32 delta_report_crc = 4;
+}
+
+message CHIDMessageToRemote {
+    optional uint32 request_id = 1;
+    
+    oneof command {
+        DeviceOpen device_open = 2;
+        DeviceClose device_close = 3;
+        DeviceWrite device_write = 4;
+        DeviceRead device_read = 5;
+        DeviceSendFeatureReport device_send_feature_report = 6;
+        DeviceGetFeatureReport device_get_feature_report = 7;
+        DeviceGetVendorString device_get_vendor_string = 8;
+        DeviceGetProductString device_get_product_string = 9;
+        DeviceGetSerialNumberString device_get_serial_number_string = 10;
+        DeviceStartInputReports device_start_input_reports = 11;
+        DeviceRequestFullReport device_request_full_report = 12;
+        DeviceDisconnect device_disconnect = 13;
+    }
+    
+    message DeviceOpen {
+        optional CHIDDeviceInfo info = 1;
+    }
+    
+    message DeviceClose {
+        optional uint32 device = 1;
+    }
+    
+    message DeviceWrite {
+        optional uint32 device = 1;
+        optional bytes data = 2;
+    }
+    
+    message DeviceRead {
+        optional uint32 device = 1;
+        optional uint32 length = 2;
+        optional int32 timeout_ms = 3;
+    }
+    
+    message DeviceSendFeatureReport {
+        optional uint32 device = 1;
+        optional bytes data = 2;
+    }
+    
+    message DeviceGetFeatureReport {
+        optional uint32 device = 1;
+        optional bytes report_number = 2;
+        optional uint32 length = 3;
+    }
+    
+    message DeviceGetVendorString {
+        optional uint32 device = 1;
+    }
+    
+    message DeviceGetProductString {
+        optional uint32 device = 1;
+    }
+    
+    message DeviceGetSerialNumberString {
+        optional uint32 device = 1;
+    }
+    
+    message DeviceStartInputReports {
+        optional uint32 device = 1;
+        optional uint32 length = 2;
+    }
+    
+    message DeviceRequestFullReport {
+        optional uint32 device = 1;
+    }
+    
+    message DeviceDisconnect {
+        optional uint32 device = 1;
+        optional EHIDDeviceDisconnectMethod disconnectMethod = 2;
+        optional bytes data = 3;
+    }
+}
+
+message CHIDMessageFromRemote {
+    oneof command {
+        UpdateDeviceList update_device_list = 1;
+        RequestResponse response = 2;
+        DeviceInputReports reports = 3;
+        CloseDevice close_device = 4;
+        CloseAllDevices close_all_devices = 5;
+    }
+    
+    message UpdateDeviceList {
+        repeated CHIDDeviceInfo devices = 1;
+    }
+    
+    message RequestResponse {
+        optional uint32 request_id = 1;
+        optional int32 result = 2;
+        optional bytes data = 3;
+    }
+    
+    message DeviceInputReports {
+        repeated DeviceInputReport device_reports = 1;
+        message DeviceInputReport {
+            optional uint32 device = 1;
+            repeated CHIDDeviceInputReport reports = 2;
+        }
+    }
+    
+    message CloseDevice {
+        optional uint32 device = 1;
+    }
+    
+    message CloseAllDevices {
+        
+    }
+}
+
+enum EHIDDeviceLocation {
+    k_EDeviceLocationLocal = 0;
+    k_EDeviceLocationRemote = 2;
+    k_EDeviceLocationAny = 3;
+}
+
+enum EHIDDeviceDisconnectMethod {
+    k_EDeviceDisconnectMethodUnknown = 0;
+    k_EDeviceDisconnectMethodBluetooth = 1;
+    k_EDeviceDisconnectMethodFeatureReport = 2;
+    k_EDeviceDisconnectMethodOutputReport = 3;
+}
