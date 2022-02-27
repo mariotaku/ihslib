@@ -60,6 +60,10 @@ IHS_Client *IHS_ClientCreate(uint64_t deviceId, const uint8_t *secretKey, const 
     return client;
 }
 
+void IHS_ClientStop(IHS_Client *client) {
+    uv_stop(client->loop);
+}
+
 void IHS_ClientDestroy(IHS_Client *client) {
     uv_thread_join(&client->workerThread);
     uv_mutex_destroy(&client->mutex);

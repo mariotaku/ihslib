@@ -56,6 +56,8 @@ typedef struct IHS_ClientCallbacks {
 
 IHS_Client *IHS_ClientCreate(uint64_t deviceId, const uint8_t *secretKey, const char*deviceName);
 
+void IHS_ClientStop(IHS_Client *client);
+
 void IHS_ClientDestroy(IHS_Client *client);
 
 void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callbacks);

@@ -111,11 +111,11 @@ static void IHS_AuthorizationTimer(uv_timer_t *handle, int status) {
     IHS_CryptoRSAEncrypt(serTicket, serTicketLen, pubKey, pubKeyLen, encryptedRequest.data,
                          &encryptedRequest.len);
 
-    CMsgRemoteDeviceAuthorizationRequest request = {
-            .device_name = state->deviceName,
-            .device_token = deviceToken,
-            .encrypted_request = encryptedRequest,
-    };
+    CMsgRemoteDeviceAuthorizationRequest request = CMSG_REMOTE_DEVICE_AUTHORIZATION_REQUEST__INIT;
+    request.device_name = state->deviceName;
+    request.device_token = deviceToken;
+    request.encrypted_request = encryptedRequest;
+
     char ip[40];
     IHS_HostAddress address = state->host.address;
     uv_inet_ntop(address.ip.type, &address.ip.value, ip, sizeof(ip) - 1);

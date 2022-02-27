@@ -18,7 +18,9 @@ int main(int argc, char *argv[]) {
     IHS_Client *client = IHS_ClientCreate(deviceId, secretKey, deviceName);
     IHS_ClientCallbacks callbacks = {
             .hostDiscovered = OnHostStatus,
-            .authorizationInProgress = OnAuthorizationInProgress
+            .authorizationInProgress = OnAuthorizationInProgress,
+            .authorizationFailed = OnAuthorizationFailed,
+            .authorizationSuccess = OnAuthorizationSuccess,
     };
     IHS_ClientSetCallbacks(client, &callbacks);
     IHS_ClientDiscoveryBroadcast(client);
@@ -33,7 +35,6 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
 
 
 void OnAuthorizationInProgress(IHS_Client *client) {
-    printf("OnAuthorizationInProgress()\n");
 }
 
 void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId) {
@@ -42,4 +43,5 @@ void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId) {
 
 void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result) {
     printf("OnAuthorizationFailed(result=%d)\n", result);
+    IHS_ClientStop(client);
 }
