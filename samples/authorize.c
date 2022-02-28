@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
     if (AuthorizationStart) return;
     AuthorizationStart = true;
+    printf("IHS_ClientStartAuthorization");
     IHS_ClientStartAuthorization(client, &info, "1919");
 }
 
@@ -38,6 +39,8 @@ void OnAuthorizationInProgress(IHS_Client *client) {
 }
 
 void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId) {
+    printf("OnAuthorizationSuccess(steamId=%llu)\n", steamId);
+    IHS_ClientStop(client);
 
 }
 

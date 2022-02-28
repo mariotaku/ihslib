@@ -7,7 +7,10 @@
 #include <mbedtls/cipher.h>
 #include <mbedtls/entropy.h>
 
-static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define AES_BLOCK_SIZE 16
+
+static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16],
                                       const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen, bool enc);
 
 static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc);
@@ -31,7 +34,7 @@ int IHS_CryptoSymmetricEncrypt(const uint8_t *in, size_t inLen, const uint8_t *k
 int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, bool withIV, uint8_t *out, size_t *outLen) {
 
-    int ret = IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, ivLen, key, keyLen, &out[16], outLen, true);
+    int ret = IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, &out[16], outLen, true);
     if (ret != 0) return ret;
     if (withIV) {
         uint8_t *ivEnc = malloc(ivLen);
@@ -52,7 +55,7 @@ int IHS_CryptoSymmetricDecrypt(const uint8_t *in, size_t inLen, const uint8_t *k
 
 int IHS_CryptoSymmetricDecryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen) {
-    return IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, ivLen, key, keyLen, out, outLen, false);
+    return IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, out, outLen, false);
 }
 
 
@@ -75,7 +78,7 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
     if ((ret = mbedtls_rsa_check_pubkey(rsa)) != 0) {
         goto exit;
     }
-    if (*outLen < mbedtls_pk_get_len(&pk)) {
+    if (*outLen < mbedtls_rsa_get_len(rsa)) {
         ret = MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE;
         goto exit;
     }
@@ -84,6 +87,9 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
 
     ret = mbedtls_rsa_rsaes_oaep_encrypt(rsa, mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PUBLIC, NULL, 0, inLen,
                                          in, out);
+    if (ret == 0) {
+        *outLen = mbedtls_rsa_get_len(rsa);
+    }
     exit:
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
@@ -91,24 +97,64 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
     return ret;
 }
 
-static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
-                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen, bool enc) {
-    mbedtls_cipher_context_t cipher;
+static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16], const uint8_t *key,
+                                      size_t keyLen, uint8_t *out, size_t *outLen, bool enc) {
     int ret = 0;
-    mbedtls_cipher_init(&cipher);
-    mbedtls_cipher_set_padding_mode(&cipher, MBEDTLS_PADDING_PKCS7);
-    mbedtls_cipher_setup(&cipher, mbedtls_cipher_info_from_values(MBEDTLS_CIPHER_ID_AES,
-                                                                  (int) keyLen * 8, MBEDTLS_MODE_CBC));
-    mbedtls_cipher_setkey(&cipher, key, (int) keyLen * 8, enc ? MBEDTLS_ENCRYPT : MBEDTLS_DECRYPT);
-    mbedtls_cipher_set_iv(&cipher, iv, ivLen);
-    mbedtls_cipher_reset(&cipher);
-
-    if ((ret = mbedtls_cipher_update(&cipher, in, inLen, out, outLen)) != 0) {
-        goto cleanup;
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    uint8_t block[AES_BLOCK_SIZE], blockIv[AES_BLOCK_SIZE];
+    memcpy(blockIv, iv, AES_BLOCK_SIZE);
+    if (enc) {
+        size_t blockCount = (inLen / AES_BLOCK_SIZE + 1), writeLen = blockCount * AES_BLOCK_SIZE;
+        if (*outLen < writeLen) {
+            ret = -1;
+            goto cleanup;
+        }
+        mbedtls_aes_setkey_enc(&aes, key, keyLen * 8);
+        for (size_t i = 0; i < writeLen; i += AES_BLOCK_SIZE) {
+            size_t inCopyLen = MIN(inLen - i, AES_BLOCK_SIZE);
+            if (inCopyLen > 0) {
+                memcpy(block, &in[i], inCopyLen);
+            }
+            if (inCopyLen < AES_BLOCK_SIZE) {
+                /* Perform PKCS7 padding */
+                memset(&block[inCopyLen], (uint8_t) (AES_BLOCK_SIZE - inCopyLen), AES_BLOCK_SIZE - inCopyLen);
+            }
+            ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, AES_BLOCK_SIZE, blockIv, block, &out[i]);
+            if (ret != 0) break;
+        }
+        if (ret == 0) {
+            *outLen = writeLen;
+        }
+    } else {
+        if (*outLen < inLen || (inLen % AES_BLOCK_SIZE) != 0) {
+            ret = -1;
+            goto cleanup;
+        }
+        mbedtls_aes_setkey_dec(&aes, key, keyLen * 8);
+        for (size_t i = 0; i < inLen; i += AES_BLOCK_SIZE) {
+            memcpy(block, &in[i], AES_BLOCK_SIZE);
+            ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, AES_BLOCK_SIZE, blockIv, block, &out[i]);
+            if (ret != 0) {
+                goto cleanup;
+            }
+        }
+        /* Remove PKCS7 padding */
+        uint8_t padLen = out[inLen - 1];
+        if (padLen > AES_BLOCK_SIZE) {
+            ret = -1;
+            goto cleanup;
+        }
+        for (size_t i = inLen - padLen; i < inLen; i++) {
+            if (out[i] != padLen) {
+                ret = -1;
+                goto cleanup;
+            }
+        }
+        *outLen = inLen - padLen;
     }
-    ret = mbedtls_cipher_finish(&cipher, out, outLen);
     cleanup:
-    mbedtls_cipher_free(&cipher);
+    mbedtls_aes_free(&aes);
     return ret;
 }
 
@@ -116,7 +162,11 @@ static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLe
     int ret = 0;
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_dec(&aes, key, keyLen * 8);
+    if (enc) {
+        mbedtls_aes_setkey_enc(&aes, key, keyLen * 8);
+    } else {
+        mbedtls_aes_setkey_dec(&aes, key, keyLen * 8);
+    }
     ret = mbedtls_aes_crypt_ecb(&aes, enc ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT, in, out);
     mbedtls_aes_free(&aes);
     return ret;
