@@ -5,7 +5,7 @@
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info);
 
-void OnAuthorizationInProgress(IHS_Client *client);
+void OnStreamingInProgress(IHS_Client *client);
 
 void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId);
 
@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     IHS_Client *client = IHS_ClientCreate(deviceId, secretKey, deviceName);
     IHS_ClientCallbacks callbacks = {
             .hostDiscovered = OnHostStatus,
-            .authorizationInProgress = OnAuthorizationInProgress,
+            .authorizationInProgress = OnStreamingInProgress,
             .authorizationFailed = OnAuthorizationFailed,
             .authorizationSuccess = OnAuthorizationSuccess,
     };
@@ -30,21 +30,21 @@ int main(int argc, char *argv[]) {
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
     if (AuthorizationStart) return;
     AuthorizationStart = true;
-    printf("IHS_ClientStartAuthorization");
-    IHS_ClientStartAuthorization(client, &info, "1919");
+    printf("IHS_ClientAuthorizationRequest");
+    IHS_ClientAuthorizationRequest(client, &info, "1919");
 }
 
 
-void OnAuthorizationInProgress(IHS_Client *client) {
+void OnStreamingInProgress(IHS_Client *client) {
 }
 
 void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId) {
-    printf("OnAuthorizationSuccess(steamId=%llu)\n", steamId);
+    printf("OnStreamingSuccess(steamId=%llu)\n", steamId);
     IHS_ClientStop(client);
 
 }
 
 void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result) {
-    printf("OnAuthorizationFailed(result=%d)\n", result);
+    printf("OnStreamingFailed(result=%d)\n", result);
     IHS_ClientStop(client);
 }

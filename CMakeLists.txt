@@ -25,7 +25,7 @@ add_library(ihslib
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
-        )
+        src/client/streaming.c)
 
 target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})
 target_link_libraries(ihslib PUBLIC ${LIBUV_LIBRARIES} ihs-protobuf)

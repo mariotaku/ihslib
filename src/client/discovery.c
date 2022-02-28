@@ -4,25 +4,25 @@
 
 
 void IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
-    CMsgRemoteClientBroadcastDiscovery discovery;
-    cmsg_remote_client_broadcast_discovery__init(&discovery);
+    CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
     discovery.has_seq_num = 1;
     discovery.seq_num = 0;
 
-    IHS_ClientPriSend(client, "255.255.255.255", k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+    IHS_PRIV_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }
 
 
-void IHS_ClientPriDiscoveryCallback(IHS_Client *client, IHS_HostIP address, CMsgRemoteClientBroadcastHeader *header,
-                                    ProtobufCMessage *message) {
+void IHS_PRIV_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+                                      ProtobufCMessage *message) {
     if (header->msg_type == k_ERemoteClientBroadcastMsgStatus) {
         CMsgRemoteClientBroadcastStatus *status = (CMsgRemoteClientBroadcastStatus *) message;
         char buf[64];
-        inet_ntop(address.type, &address.value, buf, 64);
+        inet_ntop(ip.type, &ip.value, buf, 64);
 
         IHS_HostInfo info;
+        info.clientId = header->client_id;
         info.instanceId = header->instance_id;
-        info.address.ip = address;
+        info.address.ip = ip;
         info.address.port = status->connect_port;
         info.euniverse = status->euniverse;
         info.gamesRunning = status->games_running;

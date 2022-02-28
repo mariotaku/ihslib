@@ -47,8 +47,17 @@ IHS_Client *IHS_ClientCreate(uint64_t deviceId, const uint8_t *secretKey, const 
     client->deviceId = deviceId;
     memcpy(client->secretKey, secretKey, 32);
     strncpy(client->deviceName, deviceName ? deviceName : "IHSLib", sizeof(client->deviceName));
-    client->privCallbacks.discovery = IHS_ClientPriDiscoveryCallback;
-    client->privCallbacks.authorization = IHS_ClientPriAuthorizationCallback;
+
+    uint8_t in[8];
+    size_t deviceTokenLen = sizeof(client->deviceToken);
+    IHS_WriteUInt64LE(in, client->deviceId);
+    IHS_CryptoSymmetricEncrypt(in, 8, client->secretKey, sizeof(client->secretKey),
+                               client->deviceToken, &deviceTokenLen);
+
+
+    client->privCallbacks.discovery = IHS_PRIV_ClientDiscoveryCallback;
+    client->privCallbacks.authorization = IHS_PRIV_ClientAuthorizationCallback;
+    client->privCallbacks.streaming = IHS_PRIV_ClientStreamingCallback;
     client->loop = uv_loop_new();
     uv_mutex_init(&client->mutex);
     client->loop->data = client;
@@ -75,11 +84,11 @@ void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callb
     client->callbacks = *callbacks;
 }
 
-void IHS_ClientLock(IHS_Client *client) {
+void IHS_PRIV_ClientLock(IHS_Client *client) {
     uv_mutex_lock(&client->mutex);
 }
 
-void IHS_ClientUnlock(IHS_Client *client) {
+void IHS_PRIV_ClientUnlock(IHS_Client *client) {
     uv_mutex_unlock(&client->mutex);
 }
 
@@ -93,13 +102,8 @@ static uv_buf_t IHS_BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
     return uv_buf_init(malloc(suggested_size), suggested_size);
 }
 
-void IHS_ClientPriDeviceToken(IHS_Client *client, uint8_t *token, size_t *tokenLen) {
-    uint8_t in[8];
-    IHS_WriteUInt64LE(in, client->deviceId);
-    IHS_CryptoSymmetricEncrypt(in, 8, client->secretKey, sizeof(client->secretKey), token, tokenLen);
-}
-
-void IHS_ClientPriSend(IHS_Client *client, const char *ip, ERemoteClientBroadcastMsg type, ProtobufCMessage *message) {
+void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+                         ProtobufCMessage *message) {
     CMsgRemoteClientBroadcastHeader header;
     cmsg_remote_client_broadcast_header__init(&header);
     header.has_client_id = 1;
@@ -121,9 +125,14 @@ void IHS_ClientPriSend(IHS_Client *client, const char *ip, ERemoteClientBroadcas
 
     uv_buf_t uvbuf = uv_buf_init(malloc(buf.len), buf.len);
     memcpy(uvbuf.base, buf.data, buf.len);
-    struct sockaddr_in send_addr = uv_ip4_addr(ip, 27036);
     uv_udp_send_t *req = malloc(sizeof(uv_udp_send_t));
-    uv_udp_send(req, &client->udp, &uvbuf, 1, send_addr, IHS_SendCallback);
+    if (address.ip.type == IHS_HostIPv4) {
+        struct sockaddr_in send_addr = {AF_INET, htons(address.port), .sin_addr= address.ip.value.v4};
+        uv_udp_send(req, &client->udp, &uvbuf, 1, send_addr, IHS_SendCallback);
+    } else if (address.ip.type == IHS_HostIPv6) {
+        struct sockaddr_in6 send_addr = {AF_INET6, htons(address.port), .sin6_addr = address.ip.value.v6};
+        uv_udp_send6(req, &client->udp, &uvbuf, 1, send_addr, IHS_SendCallback);
+    }
 }
 
 static void IHS_SendCallback(uv_udp_send_t *req, int status) {
@@ -184,7 +193,7 @@ static void IHS_RecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
         case k_ERemoteDeviceStreamingCancelRequest:
         case k_ERemoteDeviceProofRequest:
         case k_ERemoteDeviceProofResponse:
-            client->privCallbacks.session(client, address, header, message);
+            client->privCallbacks.streaming(client, address, header, message);
             break;
         default:
             break;
