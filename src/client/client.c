@@ -10,22 +10,14 @@
 #include "endianness.h"
 #include "client_pri.h"
 #include "ihslib/crypto.h"
+#include "base.h"
 
 
 static const unsigned char PACKET_MAGIC[8] = {0xff, 0xff, 0xff, 0xff, 0x21, 0x4c, 0x5f, 0xa0};
 
-static void IHS_ClientThread(IHS_Client *client);
+static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
 
-static uv_buf_t IHS_BufferAlloc(uv_handle_t *handle, size_t suggested_size);
-
-static void IHS_Send(IHS_Client *client, const char *ip, ERemoteClientBroadcastMsg type, ProtobufCMessage *message);
-
-static void IHS_SendCallback(uv_udp_send_t *req, int status);
-
-static void IHS_RecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
-                             struct sockaddr *addr, unsigned flags);
-
-static const ProtobufCMessageDescriptor *IHS_MessageDescriptors[k_ERemoteDeviceStreamingProgress + 1] = {
+static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStreamingProgress + 1] = {
         &cmsg_remote_client_broadcast_discovery__descriptor,
         &cmsg_remote_client_broadcast_status__descriptor,
         NULL,
@@ -42,41 +34,22 @@ static const ProtobufCMessageDescriptor *IHS_MessageDescriptors[k_ERemoteDeviceS
         &cmsg_remote_device_streaming_progress__descriptor,
 };
 
-IHS_Client *IHS_ClientCreate(uint64_t deviceId, const uint8_t *secretKey, const char *deviceName) {
+IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     IHS_Client *client = malloc(sizeof(IHS_Client));
-    client->deviceId = deviceId;
-    memcpy(client->secretKey, secretKey, 32);
-    strncpy(client->deviceName, deviceName ? deviceName : "IHSLib", sizeof(client->deviceName));
-
-    uint8_t in[8];
-    size_t deviceTokenLen = sizeof(client->deviceToken);
-    IHS_WriteUInt64LE(in, client->deviceId);
-    IHS_CryptoSymmetricEncrypt(in, 8, client->secretKey, sizeof(client->secretKey),
-                               client->deviceToken, &deviceTokenLen);
-
+    IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
 
     client->privCallbacks.discovery = IHS_PRIV_ClientDiscoveryCallback;
     client->privCallbacks.authorization = IHS_PRIV_ClientAuthorizationCallback;
     client->privCallbacks.streaming = IHS_PRIV_ClientStreamingCallback;
-    client->loop = uv_loop_new();
-    uv_mutex_init(&client->mutex);
-    client->loop->data = client;
-    uv_udp_init(client->loop, &client->udp);
-    uv_udp_bind(&client->udp, uv_ip4_addr("0.0.0.0", 0), 0);
-    uv_udp_set_broadcast(&client->udp, 1);
-    uv_udp_recv_start(&client->udp, IHS_BufferAlloc, IHS_RecvCallback);
-    uv_thread_create(&client->workerThread, (void (*)(void *)) IHS_ClientThread, client);
     return client;
 }
 
 void IHS_ClientStop(IHS_Client *client) {
-    uv_stop(client->loop);
+    IHS_BaseStop(&client->base);
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
-    uv_thread_join(&client->workerThread);
-    uv_mutex_destroy(&client->mutex);
-    uv_loop_delete(client->loop);
+    IHS_BaseFree(&client->base);
     free(client);
 }
 
@@ -84,30 +57,13 @@ void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callb
     client->callbacks = *callbacks;
 }
 
-void IHS_PRIV_ClientLock(IHS_Client *client) {
-    uv_mutex_lock(&client->mutex);
-}
-
-void IHS_PRIV_ClientUnlock(IHS_Client *client) {
-    uv_mutex_unlock(&client->mutex);
-}
-
-static void IHS_ClientThread(IHS_Client *client) {
-    int result = uv_run(client->loop, UV_RUN_DEFAULT);
-    printf("Loop ended with result %d\n", result);
-}
-
-static uv_buf_t IHS_BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
-    (void) handle;
-    return uv_buf_init(malloc(suggested_size), suggested_size);
-}
 
 void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
                          ProtobufCMessage *message) {
     CMsgRemoteClientBroadcastHeader header;
     cmsg_remote_client_broadcast_header__init(&header);
     header.has_client_id = 1;
-    header.client_id = client->deviceId;
+    header.client_id = client->base.deviceId;
     header.has_msg_type = 1;
     header.msg_type = type;
     size_t header_size = cmsg_remote_client_broadcast_header__get_packed_size(&header);
@@ -123,28 +79,11 @@ void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteCli
         protobuf_c_message_pack_to_buffer(message, (ProtobufCBuffer *) &buf);
     }
 
-    uv_buf_t uvbuf = uv_buf_init(malloc(buf.len), buf.len);
-    memcpy(uvbuf.base, buf.data, buf.len);
-    uv_udp_send_t *req = malloc(sizeof(uv_udp_send_t));
-    if (address.ip.type == IHS_HostIPv4) {
-        struct sockaddr_in send_addr = {AF_INET, htons(address.port), .sin_addr= address.ip.value.v4};
-        uv_udp_send(req, &client->udp, &uvbuf, 1, send_addr, IHS_SendCallback);
-    } else if (address.ip.type == IHS_HostIPv6) {
-        struct sockaddr_in6 send_addr = {AF_INET6, htons(address.port), .sin6_addr = address.ip.value.v6};
-        uv_udp_send6(req, &client->udp, &uvbuf, 1, send_addr, IHS_SendCallback);
-    }
+    IHS_BaseSend(&client->base, address, buf.data, buf.len);
 }
 
-static void IHS_SendCallback(uv_udp_send_t *req, int status) {
-    if (status != 0) {
-        printf("Error: %s\n", strerror(status));
-    }
-    free(req->bufsml[0].base);
-    free(req);
-}
-
-static void IHS_RecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
-                             struct sockaddr *addr, unsigned flags) {
+static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
+                               struct sockaddr *addr, unsigned flags) {
     if (!nread) return;
     size_t offset = 0;
     if (memcmp(&buf.base[offset], PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
@@ -171,7 +110,7 @@ static void IHS_RecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
     offset += header_size;
     offset += IHS_ReadUInt32LE((uint8_t *) &buf.base[offset], &payload_size);
     ERemoteClientBroadcastMsg type = header->msg_type;
-    const ProtobufCMessageDescriptor *descriptor = IHS_MessageDescriptors[type];
+    const ProtobufCMessageDescriptor *descriptor = MessageDescriptors[type];
     ProtobufCMessage *message = descriptor ? protobuf_c_message_unpack(descriptor, NULL, payload_size,
                                                                        (uint8_t *) &buf.base[offset]) : NULL;
     IHS_Client *client = handle->loop->data;

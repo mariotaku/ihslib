@@ -4,32 +4,9 @@
 #include <netinet/in.h>
 #include <stdbool.h>
 
+#include "common.h"
+
 typedef struct IHS_Client IHS_Client;
-
-typedef struct IHS_HostIP {
-    enum {
-        IHS_HostIPv4 = AF_INET,
-        IHS_HostIPv6 = AF_INET6,
-    } type;
-    union {
-        struct in_addr v4;
-        struct in6_addr v6;
-    } value;
-} IHS_HostIP;
-
-typedef struct IHS_HostAddress {
-    IHS_HostIP ip;
-    uint16_t port;
-} IHS_HostAddress;
-
-typedef struct IHS_HostInfo {
-    uint64_t clientId;
-    uint64_t instanceId;
-    IHS_HostAddress address;
-    char hostname[64];
-    uint8_t euniverse;
-    bool gamesRunning;
-} IHS_HostInfo;
 
 typedef struct IHS_StreamingRequest {
     char pin[16];
@@ -90,13 +67,14 @@ typedef struct IHS_ClientCallbacks {
 
     void (*streamingInProgress)(IHS_Client *client);
 
-    void (*streamingSuccess)(IHS_Client *client, const uint8_t *sessionKey, size_t sessionKeyLen);
+    void (*streamingSuccess)(IHS_Client *client, IHS_HostInfo host, uint16_t sessionPort,
+                             const uint8_t *sessionKey, size_t sessionKeyLen);
 
     void (*streamingFailed)(IHS_Client *client, IHS_StreamingResult result);
 } IHS_ClientCallbacks;
 
 
-IHS_Client *IHS_ClientCreate(uint64_t deviceId, const uint8_t *secretKey, const char *deviceName);
+IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config);
 
 void IHS_ClientStop(IHS_Client *client);
 

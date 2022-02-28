@@ -19,22 +19,23 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
         return false;
     }
     uv_timer_t *timer = malloc(sizeof(uv_timer_t));
-    uv_timer_init(client->loop, timer);
+    uv_timer_init(client->base.loop, timer);
     timer->close_cb = StreamingRequestCleanup;
     IHS_StreamingState *state = malloc(sizeof(IHS_StreamingState));
     state->host = *host;
     state->request = *request;
     state->requestId = rand(); // NOLINT(cert-msc50-cpp)
     timer->data = state;
-    IHS_PRIV_ClientLock(client);
+    IHS_BaseLock(&client->base);
     client->taskHandles.streaming = timer;
-    IHS_PRIV_ClientUnlock(client);
+    IHS_BaseUnlock(&client->base);
     uv_timer_start(timer, StreamingRequestTimer, 0, 10000);
     return true;
 }
 
 void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
                                       ProtobufCMessage *message) {
+    IHS_UNUSED(ip);
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
             IHS_StreamingState *state = client->taskHandles.streaming->data;
@@ -49,7 +50,7 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
             response.response.len = sizeof(encrypted);
             // TODO: check return code
             IHS_CryptoSymmetricEncrypt(request->challenge.data, request->challenge.len,
-                                       client->secretKey, sizeof(client->secretKey),
+                                       client->base.secretKey, sizeof(client->base.secretKey),
                                        response.response.data, &response.response.len);
 
             IHS_PRIV_ClientSend(client, state->host.address, k_ERemoteDeviceProofResponse,
@@ -66,9 +67,9 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
                         ProtobufCBinaryData enc = response->encrypted_session_key;
                         uint8_t key[128];
                         size_t keyLen = sizeof(key);
-                        IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->secretKey, sizeof(client->secretKey),
-                                                   key, &keyLen);
-                        client->callbacks.streamingSuccess(client, key, keyLen);
+                        IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
+                                                   sizeof(client->base.secretKey), key, &keyLen);
+                        client->callbacks.streamingSuccess(client, state->host, response->port, key, keyLen);
                     }
                     break;
                 case k_ERemoteDeviceStreamingInProgress:
@@ -90,6 +91,7 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
 }
 
 static void StreamingRequestTimer(uv_timer_t *handle, int status) {
+    IHS_UNUSED(status);
     IHS_Client *client = handle->loop->data;
     IHS_StreamingState *state = handle->data;
     IHS_HostInfo host = state->host;
@@ -138,8 +140,8 @@ static void StreamingRequestTimer(uv_timer_t *handle, int status) {
     message.form_factor = k_EStreamDeviceFormFactorTV;
 
     message.has_device_token = true;
-    message.device_token.data = client->deviceToken;
-    message.device_token.len = sizeof(client->deviceToken);
+    message.device_token.data = client->base.deviceToken;
+    message.device_token.len = sizeof(client->base.deviceToken);
 
     message.n_supported_transport = 1;
     EStreamTransport transports[] = {k_EStreamTransportUDP};
@@ -151,9 +153,9 @@ static void StreamingRequestTimer(uv_timer_t *handle, int status) {
 
 static void StreamingRequestCleanup(uv_handle_t *handle) {
     IHS_Client *client = handle->loop->data;
-    IHS_PRIV_ClientLock(client);
+    IHS_BaseLock(&client->base);
     client->taskHandles.streaming = NULL;
-    IHS_PRIV_ClientUnlock(client);
+    IHS_BaseUnlock(&client->base);
     free(handle->data);
     free(handle);
 }

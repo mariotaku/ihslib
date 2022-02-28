@@ -15,7 +15,8 @@ static bool AuthorizationStart = false;
 
 
 int main(int argc, char *argv[]) {
-    IHS_Client *client = IHS_ClientCreate(deviceId, secretKey, deviceName);
+    IHS_ClientConfig config = {deviceId, secretKey, deviceName};
+    IHS_Client *client = IHS_ClientCreate(&config);
     IHS_ClientCallbacks callbacks = {
             .hostDiscovered = OnHostStatus,
             .authorizationInProgress = OnStreamingInProgress,

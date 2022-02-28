@@ -23,16 +23,16 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
         return false;
     }
     uv_timer_t *timer = malloc(sizeof(uv_timer_t));
-    uv_timer_init(client->loop, timer);
+    uv_timer_init(client->base.loop, timer);
     timer->close_cb = AuthorizationRequestCleanup;
     IHS_AuthorizationState *state = malloc(sizeof(IHS_AuthorizationState));
     state->host = *host;
-    strncpy(state->deviceName, client->deviceName, sizeof(state->deviceName) - 1);
+    strncpy(state->deviceName, client->base.deviceName, sizeof(state->deviceName) - 1);
     strncpy(state->pin, pin, sizeof(state->pin) - 1);
     timer->data = state;
-    IHS_PRIV_ClientLock(client);
+    IHS_BaseLock(&client->base);
     client->taskHandles.authorization = timer;
-    IHS_PRIV_ClientUnlock(client);
+    IHS_BaseUnlock(&client->base);
     uv_timer_start(timer, AuthorizationRequestTimer, 0, 1000);
     return true;
 }
@@ -98,7 +98,7 @@ static void AuthorizationRequestTimer(uv_timer_t *handle, int status) {
     uint8_t pubKey[384];
     size_t pubKeyLen = sizeof(pubKey);
     IHS_PRIV_ClientAuthorizationPubKey(client, state->host.euniverse, pubKey, &pubKeyLen);
-    ProtobufCBinaryData deviceToken = {.data=client->deviceToken, .len = sizeof(client->deviceToken)};
+    ProtobufCBinaryData deviceToken = {.data=client->base.deviceToken, .len = sizeof(client->base.deviceToken)};
 
     /* Initialize and serialize ticket */
     CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket ticket =
@@ -129,23 +129,23 @@ static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationSt
     ticket->password.data = (uint8_t *) state->pin;
 
     ticket->has_identifier = true;
-    ticket->identifier = client->deviceId;
+    ticket->identifier = client->base.deviceId;
 
     ticket->has_payload = true;
-    ticket->payload.len = sizeof(client->secretKey);
-    ticket->payload.data = client->secretKey;
+    ticket->payload.len = sizeof(client->base.secretKey);
+    ticket->payload.data = client->base.secretKey;
 
     ticket->has_usage = true;
     ticket->usage = k_EKeyEscrowUsageStreamingDevice;
 
-    ticket->device_name = client->deviceName;
+    ticket->device_name = client->base.deviceName;
 }
 
 static void AuthorizationRequestCleanup(uv_handle_t *handle) {
     IHS_Client *client = handle->loop->data;
-    IHS_PRIV_ClientLock(client);
+    IHS_BaseLock(&client->base);
     client->taskHandles.authorization = NULL;
-    IHS_PRIV_ClientUnlock(client);
+    IHS_BaseUnlock(&client->base);
     free(handle->data);
     free(handle);
 }

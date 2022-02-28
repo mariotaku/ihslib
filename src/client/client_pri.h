@@ -7,16 +7,14 @@
 #include <uv.h>
 
 #include "protobuf/discovery.pb-c.h"
+#include "base.h"
 
 
 typedef void (IHS_PRIV_MessageCallback)(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
                                         ProtobufCMessage *message);
 
 struct IHS_Client {
-    uint64_t deviceId;
-    uint8_t secretKey[32];
-    char deviceName[64];
-    uint8_t deviceToken[32];
+    IHS_Base base;
     IHS_ClientCallbacks callbacks;
 
     struct {
@@ -24,10 +22,6 @@ struct IHS_Client {
         IHS_PRIV_MessageCallback *authorization;
         IHS_PRIV_MessageCallback *streaming;
     } privCallbacks;
-    uv_loop_t *loop;
-    uv_thread_t workerThread;
-    uv_udp_t udp;
-    uv_mutex_t mutex;
     struct {
         uv_timer_t *authorization;
         uv_timer_t *streaming;
@@ -56,7 +50,3 @@ void IHS_PRIV_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip, CMs
 
 void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
                                       ProtobufCMessage *message);
-
-void IHS_PRIV_ClientLock(IHS_Client *client);
-
-void IHS_PRIV_ClientUnlock(IHS_Client *client);
