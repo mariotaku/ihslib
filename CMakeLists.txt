@@ -16,16 +16,19 @@ find_package(OpenSSL)
 set(PROTOBUF_FILES protobuf/discovery.proto protobuf/remoteplay.proto)
 
 file(GLOB PROTOBUF_SOURCES src/protobuf/*.c)
-add_library(ihs-protobuf STATIC ${PROTOBUF_SOURCES} include/ihslib/crypto.h include/ihslib/common.h)
+add_library(ihs-protobuf STATIC ${PROTOBUF_SOURCES})
 target_include_directories(ihs-protobuf PRIVATE src PRIVATE SYSTEM ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 
 add_library(ihslib
+        src/base.c
         src/endianness.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
-        src/client/streaming.c src/session/session.c src/base.c src/base.h)
+        src/client/streaming.c
+        src/session/session.c
+        src/session/channel.c)
 
 target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})
 target_link_libraries(ihslib PUBLIC ${LIBUV_LIBRARIES} ihs-protobuf)
