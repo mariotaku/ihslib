@@ -8,6 +8,10 @@ struct IHS_Session {
     IHS_Base base;
 };
 
+typedef struct IHS_SessionState {
+    IHS_SessionConfig config;
+} IHS_SessionState;
+
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config) {
@@ -16,7 +20,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config) {
     return session;
 }
 
-void IHS_SessionStart(IHS_SessionConfig config) {
+void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config) {
 
 }
 

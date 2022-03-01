@@ -73,8 +73,7 @@ static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
 }
 
 static void BaseThread(IHS_Base *base) {
-    int result = uv_run(base->loop, UV_RUN_DEFAULT);
-    printf("Loop ended with result %d\n", result);
+    uv_run(base->loop, UV_RUN_DEFAULT);
 }
 
 static void SendCallback(uv_udp_send_t *req, int status) {
