@@ -22,17 +22,55 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+/**
+ * @file endianness.h
+ * @brief Read/write numbers in correct endianness
+ * @todo Big endian support
+ */
 #pragma once
 
 #include <stddef.h>
 #include <stdint.h>
 #include <protobuf-c/protobuf-c.h>
 
-size_t IHS_WriteUInt32LE(uint8_t *out, uint32_t value);
+inline static size_t IHS_WriteUInt16LE(uint8_t *out, uint16_t value) {
+    *(uint16_t *) out = value;
+    return sizeof(uint16_t);
+}
 
-size_t IHS_WriteUInt64LE(uint8_t *out, uint64_t value);
+inline static size_t IHS_WriteSInt16LE(uint8_t *out, int16_t value) {
+    *(int16_t *) out = value;
+    return sizeof(int16_t);
+}
 
-size_t IHS_ReadUInt32LE(const uint8_t *in, uint32_t *out);
+inline static size_t IHS_WriteUInt32LE(uint8_t *out, uint32_t value) {
+    *(uint32_t *) out = value;
+    return sizeof(uint32_t);
+}
 
-size_t IHS_AppendUInt32LEToBuffer(uint32_t value, ProtobufCBufferSimple *buf);
+inline static size_t IHS_WriteUInt64LE(uint8_t *out, uint64_t value) {
+    *(uint64_t *) out = value;
+    return sizeof(uint64_t);
+}
+
+inline static size_t IHS_ReadUInt16LE(const uint8_t *in, uint16_t *out) {
+    *out = *(uint16_t *) in;
+    return sizeof(uint16_t);
+}
+
+inline static size_t IHS_ReadSInt16LE(const uint8_t *in, int16_t *out) {
+    *out = *(int16_t *) in;
+    return sizeof(uint16_t);
+}
+
+inline static size_t IHS_ReadUInt32LE(const uint8_t *in, uint32_t *out) {
+    *out = *(uint32_t *) in;
+    return sizeof(uint32_t);
+}
+
+inline static size_t IHS_AppendUInt32LEToBuffer(ProtobufCBufferSimple *buf, uint32_t value) {
+    unsigned char bytes[4];
+    *((uint32_t *) bytes) = value;
+    protobuf_c_buffer_simple_append((ProtobufCBuffer *) buf, sizeof(uint32_t), bytes);
+    return sizeof(uint32_t);
+}

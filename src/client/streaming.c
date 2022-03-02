@@ -47,6 +47,7 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     uv_timer_init(client->base.loop, timer);
     timer->close_cb = StreamingRequestCleanup;
     IHS_StreamingState *state = malloc(sizeof(IHS_StreamingState));
+    srand(time(NULL)); // NOLINT(cert-msc51-cpp)
     state->host = *host;
     state->request = *request;
     state->requestId = rand(); // NOLINT(cert-msc50-cpp)
@@ -94,7 +95,8 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
                         size_t keyLen = sizeof(key);
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
-                        client->callbacks.streamingSuccess(client, state->host, response->port, key, keyLen);
+                        IHS_HostAddress address = {state->host.address.ip, response->port};
+                        client->callbacks.streamingSuccess(client, address, key, keyLen);
                     }
                     break;
                 case k_ERemoteDeviceStreamingInProgress:

@@ -23,4 +23,13 @@
  *
  */
 
-#include "channel.h"
+#include "ch_control.h"
+
+static const IHS_SessionChannelClass Functions = {
+        .onReceived = IHS_SessionChannelReceivedPacketBase,
+        .instanceSize = sizeof(IHS_SessionChannel)
+};
+
+IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
+    return IHS_SessionChannelCreate(&Functions, session, IHS_SessionChannelIdControl);
+}

@@ -23,4 +23,9 @@
  *
  */
 
+
 #pragma once
+
+#include "channel.h"
+
+IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session);

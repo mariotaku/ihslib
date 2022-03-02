@@ -92,7 +92,7 @@ typedef struct IHS_ClientCallbacks {
 
     void (*streamingInProgress)(IHS_Client *client);
 
-    void (*streamingSuccess)(IHS_Client *client, IHS_HostInfo host, uint16_t sessionPort,
+    void (*streamingSuccess)(IHS_Client *client, IHS_HostAddress address,
                              const uint8_t *sessionKey, size_t sessionKeyLen);
 
     void (*streamingFailed)(IHS_Client *client, IHS_StreamingResult result);

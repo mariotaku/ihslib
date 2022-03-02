@@ -74,6 +74,7 @@ void IHS_ClientStop(IHS_Client *client) {
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
+    IHS_BaseWaitFinish(&client->base);
     IHS_BaseFree(&client->base);
     free(client);
 }
@@ -97,9 +98,9 @@ void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteCli
     uint8_t pkt_data[1024];
     ProtobufCBufferSimple buf = PROTOBUF_C_BUFFER_SIMPLE_INIT(pkt_data);
     protobuf_c_buffer_simple_append((ProtobufCBuffer *) &buf, sizeof(PACKET_MAGIC), PACKET_MAGIC);
-    IHS_AppendUInt32LEToBuffer(header_size, &buf);
+    IHS_AppendUInt32LEToBuffer(&buf, header_size);
     cmsg_remote_client_broadcast_header__pack_to_buffer(&header, (ProtobufCBuffer *) &buf);
-    IHS_AppendUInt32LEToBuffer(payload_size, &buf);
+    IHS_AppendUInt32LEToBuffer(&buf, payload_size);
     if (message) {
         protobuf_c_message_pack_to_buffer(message, (ProtobufCBuffer *) &buf);
     }

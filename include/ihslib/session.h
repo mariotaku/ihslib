@@ -30,7 +30,8 @@
 typedef struct IHS_Session IHS_Session;
 
 typedef struct IHS_SessionConfig {
-
+    IHS_HostAddress address;
+    uint8_t sessionKey[32];
 } IHS_SessionConfig;
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config);

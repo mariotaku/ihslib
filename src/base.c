@@ -54,7 +54,8 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb
     uv_mutex_init(&base->mutex);
     base->loop->data = base;
     uv_udp_init(base->loop, &base->udp);
-    uv_udp_bind(&base->udp, uv_ip4_addr("0.0.0.0", 0), 0);
+    struct sockaddr_in listenAddr = {AF_INET, 0, INADDR_ANY};
+    uv_udp_bind(&base->udp, listenAddr, 0);
 
     uv_udp_set_broadcast(&base->udp, broadcast);
     uv_udp_recv_start(&base->udp, BufferAlloc, recvCb);
@@ -65,8 +66,11 @@ void IHS_BaseStop(IHS_Base *base) {
     uv_stop(base->loop);
 }
 
-void IHS_BaseFree(IHS_Base *base) {
+void IHS_BaseWaitFinish(IHS_Base *base) {
     uv_thread_join(&base->workerThread);
+}
+
+void IHS_BaseFree(IHS_Base *base) {
     uv_mutex_destroy(&base->mutex);
     uv_loop_delete(base->loop);
 }

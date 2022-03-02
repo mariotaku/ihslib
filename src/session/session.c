@@ -24,36 +24,89 @@
  */
 
 #include <stdlib.h>
+#include <memory.h>
 
 #include "ihslib/session.h"
 #include "ihslib/common.h"
 #include "base.h"
-
-struct IHS_Session {
-    IHS_Base base;
-};
-
-typedef struct IHS_SessionState {
-    IHS_SessionConfig config;
-} IHS_SessionState;
+#include "packet.h"
+#include "session_pri.h"
+#include "session/channels/channel.h"
+#include "session/channels/ch_discovery.h"
+#include "session/channels/ch_control.h"
+#include "session/channels/ch_stats.h"
 
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config) {
     IHS_Session *session = malloc(sizeof(IHS_Session));
+    memset(session, 0, sizeof(IHS_Session));
     IHS_BaseInit(&session->base, config, SessionRecvCallback, 0);
+    session->numChannels = 3;
+    session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
+    session->channels[IHS_SessionChannelIdControl] = IHS_SessionChannelControlCreate(session);
+    session->channels[IHS_SessionChannelIdStats] = IHS_SessionChannelStatsCreate(session);
     return session;
 }
 
 void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config) {
+    IHS_BaseLock(&session->base);
+    session->state.config = *config;
+    srand(time(NULL)); // NOLINT(cert-msc51-cpp)
+    /* A bad RNG is enough */
+    session->state.connectionId = rand() % 0xFF; // NOLINT(cert-msc50-cpp)
+    IHS_BaseUnlock(&session->base);
 
+    /* crc32c(b'Connect') */
+    uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
+
+    IHS_SessionChannel *channel = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
+    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeConnect, false, body, sizeof(body));
+}
+
+void IHS_SessionStop(IHS_Session *session) {
+    IHS_BaseStop(&session->base);
 }
 
 void IHS_SessionDestroy(IHS_Session *session) {
+    IHS_BaseWaitFinish(&session->base);
+    for (int i = 0; i < session->numChannels; ++i) {
+        IHS_SessionChannelDestroy(session->channels[i]);
+    }
     IHS_BaseFree(&session->base);
     free(session);
 }
 
-static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {
+void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet) {
+    memset(packet, 0, sizeof(IHS_SessionPacket));
+    packet->header.srcConnectionId = session->state.connectionId;
+    packet->header.dstConnectionId = session->state.hostConnectionId;
+    packet->header.sendTimestamp = IHS_SessionPacketTimestamp(session);
+}
 
+uint32_t IHS_SessionPacketTimestamp(IHS_Session *session) {
+    uint64_t now = uv_now(session->base.loop);
+    return now * 65536 / 1000;
+}
+
+void IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {
+    const IHS_SessionConfig *config = &session->state.config;
+    uint8_t *data = alloca(IHS_SessionPacketSize(packet));
+    size_t dataSize = IHS_SessionPacketSerialize(packet, data);
+    IHS_BaseSend(&session->base, config->address, data, dataSize);
+}
+
+static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {
+    if (!nread) return;
+    IHS_Session *session = handle->loop->data;
+    IHS_SessionPacket packet;
+    IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, (const uint8_t *) buf.base, nread);
+    if (ret != IHS_SessionPacketResultOK) {
+        return;
+    }
+    IHS_SessionChannel *channel = IHS_SessionChannelFor(session, packet.header.channelId);
+    if (!channel) {
+        return;
+    }
+    IHS_SessionChannelReceivedPacket(channel, &packet);
 }

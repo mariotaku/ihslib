@@ -22,13 +22,18 @@ target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 
 add_library(ihslib
         src/base.c
-        src/endianness.c
+        src/crc32c.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
         src/client/streaming.c
         src/session/session.c
-        src/session/channel.c)
+        src/session/packet.c
+        src/session/channels/channel.c
+        src/session/channels/ch_discovery.c
+        src/session/channels/ch_control.c
+        src/session/channels/ch_stats.c
+        )
 
 target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})
 target_link_libraries(ihslib PUBLIC ${LIBUV_LIBRARIES} ihs-protobuf)

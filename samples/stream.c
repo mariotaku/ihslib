@@ -24,6 +24,8 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include "common.h"
 #include "ihslib/client.h"
 #include "ihslib/session.h"
@@ -33,8 +35,7 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info);
 
 void OnStreamingInProgress(IHS_Client *client);
 
-void OnStreamingSuccess(IHS_Client *client, IHS_HostInfo host, uint16_t port, const uint8_t *sessionKey,
-                        size_t sessionKeyLen);
+void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey, size_t sessionKeyLen);
 
 void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result);
 
@@ -76,8 +77,7 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
 void OnStreamingInProgress(IHS_Client *client) {
 }
 
-void OnStreamingSuccess(IHS_Client *client, IHS_HostInfo host, uint16_t port, const uint8_t *sessionKey,
-                        size_t sessionKeyLen) {
+void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey, size_t sessionKeyLen) {
     if (ActiveSession) return;
     printf("OnStreamingSuccess(sessionKey=\"");
     for (int i = 0; i < sessionKeyLen; i++) {
@@ -85,9 +85,12 @@ void OnStreamingSuccess(IHS_Client *client, IHS_HostInfo host, uint16_t port, co
     }
     printf("\")\n");
     IHS_ClientStop(client);
-    IHS_ClientConfig config = {deviceId, secretKey, deviceName};
-    ActiveSession = IHS_SessionCreate(&config);
-    IHS_SessionStart(ActiveSession,);
+    IHS_ClientConfig clientConfig = {deviceId, secretKey, deviceName};
+    ActiveSession = IHS_SessionCreate(&clientConfig);
+    IHS_SessionConfig sessionConfig;
+    sessionConfig.address = address;
+    memcpy(sessionConfig.sessionKey, sessionKey, sizeof(sessionConfig.sessionKey));
+    IHS_SessionStart(ActiveSession, &sessionConfig);
 }
 
 void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result) {
