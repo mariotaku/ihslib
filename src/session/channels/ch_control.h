@@ -36,6 +36,15 @@ void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
 
 void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networkTest);
 
+
+void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel);
+
+
+void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStreamControlMessage type,
+                                               const uint8_t *payload, size_t payloadLen,
+                                               const IHS_SessionPacketHeader *header);
+
+
 void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
                                             const uint8_t *payload, size_t payloadLen,
                                             const IHS_SessionPacketHeader *header);

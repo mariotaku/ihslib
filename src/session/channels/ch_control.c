@@ -53,10 +53,6 @@ static size_t EncryptedMessageCapacity(size_t plainSize);
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message);
 
-static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message);
-
-static void RequestAuthentication(IHS_SessionChannel *channel);
-
 static const IHS_SessionChannelClass Functions = {
         .init = OnControlInit,
         .onReceived = OnControlReceived,
@@ -178,12 +174,9 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cserver_handshake_msg__free_unpacked(message, NULL);
             break;
         }
-        case k_EStreamControlAuthenticationResponse: {
-            CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payloadLen, payload);
-            OnAuthenticationResponse(channel, message);
-            cauthentication_response_msg__free_unpacked(message, NULL);
+        case k_EStreamControlAuthenticationResponse:
+            IHS_SessionChannelControlOnAuthentication(channel, type, payload, payloadLen, header);
             break;
-        }
         case k_EStreamControlNegotiationInit:
         case k_EStreamControlNegotiationSetConfig: {
             IHS_SessionChannelControlOnNegotiation(channel, type, payload, payloadLen, header);
@@ -203,37 +196,9 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
     } else {
         channel->session->state.mtu = 1500;
     }
-    RequestAuthentication(channel);
+    IHS_SessionChannelControlRequestAuthentication(channel);
 }
 
-static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message) {
-    if (!message->has_result || message->result != CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED) {
-        fprintf(stderr, "Failed to authenticate\n");
-        IHS_SessionDisconnect(channel->session);
-        return;
-    }
-    printf("Authenticated\n");
-}
-
-
-static void RequestAuthentication(IHS_SessionChannel *channel) {
-    CAuthenticationRequestMsg request = CAUTHENTICATION_REQUEST_MSG__INIT;
-    request.has_version = true;
-    request.version = k_EStreamVersionCurrent;
-    request.has_token = true;
-    static const unsigned char plain[] = {'S', 't', 'e', 'a', 'm', ' ', 'I', 'n',
-                                          '-', 'H', 'o', 'm', 'e', ' ', 'S', 't',
-                                          'r', 'e', 'a', 'm', 'i', 'n', 'g'};
-    uint8_t token[32];
-    request.token.data = token;
-    request.token.len = sizeof(token);
-    if (IHS_SessionFrameHMACSHA256(channel->session, plain, sizeof(plain), token, &request.token.len) != 0) {
-        IHS_SessionDisconnect(channel->session);
-        return;
-    }
-    IHS_SessionChannelControlSend(channel, k_EStreamControlAuthenticationRequest, (const ProtobufCMessage *) &request,
-                                  IHS_PACKET_ID_NEXT);
-}
 
 static bool IsMessageEncrypted(EStreamControlMessage type) {
     switch (type) {

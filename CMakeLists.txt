@@ -33,6 +33,7 @@ add_library(ihslib
         src/session/channels/channel.c
         src/session/channels/ch_discovery.c
         src/session/channels/ch_control.c
+        src/session/channels/ch_control_authentication.c
         src/session/channels/ch_control_negotiation.c
         src/session/channels/ch_stats.c
         )
