@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "client_pri.h"
-#include "ihslib/crypto.h"
+#include "crypto.h"
 
 typedef struct IHS_StreamingState {
     IHS_HostInfo host;

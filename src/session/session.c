@@ -35,6 +35,7 @@
 #include "session/channels/ch_discovery.h"
 #include "session/channels/ch_control.h"
 #include "session/channels/ch_stats.h"
+#include "frame.h"
 
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
 
@@ -60,8 +61,13 @@ void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config) {
     /* crc32c(b'Connect') */
     uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
 
-    IHS_SessionChannel *channel = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
-    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeConnect, false, body, sizeof(body));
+    IHS_SessionChannel *discovery = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
+    IHS_SessionChannelSendBytes(discovery, IHS_SessionPacketTypeConnect, false, 0, body, sizeof(body), 0);
+}
+
+void IHS_SessionDisconnect(IHS_Session *session) {
+    IHS_SessionChannel *discovery = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
+    IHS_SessionChannelDiscoveryDisconnect(discovery);
 }
 
 void IHS_SessionStop(IHS_Session *session) {

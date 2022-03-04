@@ -23,4 +23,4 @@
  *
  */
 
-#include "ihslib/crypto.h"
+#include "crypto.h"

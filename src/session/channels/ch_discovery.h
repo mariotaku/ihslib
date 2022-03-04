@@ -28,3 +28,5 @@
 #include "channel.h"
 
 IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session);
+
+void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel);

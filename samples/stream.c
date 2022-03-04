@@ -79,7 +79,7 @@ void OnStreamingInProgress(IHS_Client *client) {
 
 void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey, size_t sessionKeyLen) {
     if (ActiveSession) return;
-    printf("OnStreamingSuccess(sessionKey=\"");
+    printf("OnStreamingSuccess(sessionKey[%u]=\"", sessionKeyLen);
     for (int i = 0; i < sessionKeyLen; i++) {
         printf("%02x", sessionKey[i]);
     }
@@ -89,7 +89,8 @@ void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8
     ActiveSession = IHS_SessionCreate(&clientConfig);
     IHS_SessionConfig sessionConfig;
     sessionConfig.address = address;
-    memcpy(sessionConfig.sessionKey, sessionKey, sizeof(sessionConfig.sessionKey));
+    memcpy(sessionConfig.sessionKey, sessionKey, sessionKeyLen);
+    sessionConfig.sessionKeyLen = sessionKeyLen;
     IHS_SessionStart(ActiveSession, &sessionConfig);
 }
 

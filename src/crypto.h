@@ -29,6 +29,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define IHS_CRYPTO_AES_BLOCK_SIZE 16
+
 int IHS_CryptoSymmetricEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
                                size_t *outLen);
 

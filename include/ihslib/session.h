@@ -32,10 +32,13 @@ typedef struct IHS_Session IHS_Session;
 typedef struct IHS_SessionConfig {
     IHS_HostAddress address;
     uint8_t sessionKey[32];
+    size_t sessionKeyLen;
 } IHS_SessionConfig;
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config);
 
 void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config);
+
+void IHS_SessionDisconnect(IHS_Session *session);
 
 void IHS_SessionDestroy(IHS_Session *session);

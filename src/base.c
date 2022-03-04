@@ -29,7 +29,7 @@
 #include <malloc.h>
 
 #include "endianness.h"
-#include "ihslib/crypto.h"
+#include "crypto.h"
 
 static void BaseThread(IHS_Base *base);
 

@@ -31,6 +31,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <memory.h>
 #include <protobuf-c/protobuf-c.h>
 
 inline static size_t IHS_WriteUInt16LE(uint8_t *out, uint16_t value) {
@@ -54,18 +55,23 @@ inline static size_t IHS_WriteUInt64LE(uint8_t *out, uint64_t value) {
 }
 
 inline static size_t IHS_ReadUInt16LE(const uint8_t *in, uint16_t *out) {
-    *out = *(uint16_t *) in;
+    memcpy(out, in, sizeof(uint16_t));
     return sizeof(uint16_t);
 }
 
 inline static size_t IHS_ReadSInt16LE(const uint8_t *in, int16_t *out) {
-    *out = *(int16_t *) in;
-    return sizeof(uint16_t);
+    memcpy(out, in, sizeof(int16_t));
+    return sizeof(int16_t);
 }
 
 inline static size_t IHS_ReadUInt32LE(const uint8_t *in, uint32_t *out) {
-    *out = *(uint32_t *) in;
+    memcpy(out, in, sizeof(uint32_t));
     return sizeof(uint32_t);
+}
+
+inline static size_t IHS_ReadUInt64LE(const uint8_t *in, uint64_t *out) {
+    memcpy(out, in, sizeof(uint64_t));
+    return sizeof(uint64_t);
 }
 
 inline static size_t IHS_AppendUInt32LEToBuffer(ProtobufCBufferSimple *buf, uint32_t value) {

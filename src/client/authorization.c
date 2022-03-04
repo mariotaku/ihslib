@@ -25,7 +25,7 @@
 
 #include "client_pri.h"
 #include "pubkeys.h"
-#include "ihslib/crypto.h"
+#include "crypto.h"
 
 #include <string.h>
 #include <malloc.h>

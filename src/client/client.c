@@ -34,7 +34,7 @@
 #include "protobuf/discovery.pb-c.h"
 #include "endianness.h"
 #include "client_pri.h"
-#include "ihslib/crypto.h"
+#include "crypto.h"
 #include "base.h"
 
 

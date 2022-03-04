@@ -25,18 +25,4 @@
 
 #pragma once
 
-#include "channel.h"
-
-#include "protobuf/remoteplay.pb-c.h"
-
-IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session);
-
-void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                   const ProtobufCMessage *message, int32_t packetId);
-
-void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networkTest);
-
-void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                            const uint8_t *payload, size_t payloadLen,
-                                            const IHS_SessionPacketHeader *header);
-
+#define PROTOBUF_SET_VALUE(message, key, value) message.has_##key = true; message.key = value

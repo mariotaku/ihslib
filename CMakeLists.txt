@@ -29,9 +29,11 @@ add_library(ihslib
         src/client/streaming.c
         src/session/session.c
         src/session/packet.c
+        src/session/frame.c
         src/session/channels/channel.c
         src/session/channels/ch_discovery.c
         src/session/channels/ch_control.c
+        src/session/channels/ch_control_negotiation.c
         src/session/channels/ch_stats.c
         )
 
@@ -42,9 +44,9 @@ if (MBEDTLS_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_mbedtls.c)
     target_include_directories(ihslib PRIVATE SYSTEM ${MBEDTLS_INCLUDE_DIRS})
     target_link_libraries(ihslib PUBLIC ${MBEDCRYPTO_LIBRARY})
-elseif(OPENSSL_FOUND)
+elseif (OPENSSL_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_openssl.c)
-endif()
+endif ()
 
 add_custom_target(protoc-gen
         COMMAND ${PROTOC_C} --c_out=src ${PROTOBUF_FILES}

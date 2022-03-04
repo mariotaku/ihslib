@@ -32,7 +32,11 @@
 typedef struct IHS_SessionChannel IHS_SessionChannel;
 
 typedef struct IHS_SessionChannelClass {
-    void (*Send)(struct IHS_SessionChannel *channel);
+    void (*init)(IHS_SessionChannel *channel);
+
+    void (*deinit)(IHS_SessionChannel *channel);
+
+    void (*send)(IHS_SessionChannel *channel);
 
     void (*onReceived)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
@@ -43,6 +47,7 @@ struct IHS_SessionChannel {
     IHS_SessionChannelClass cls;
     IHS_SessionChannelId id;
     IHS_Session *session;
+    uint16_t nextPacketId;
 };
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
@@ -56,5 +61,9 @@ void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_Ses
 
 void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
-void IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc,
-                                 const uint8_t *body, size_t bodyLen);
+uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
+
+void IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
+                                 const uint8_t *body, size_t bodyLen, size_t padTo);
+
+void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);

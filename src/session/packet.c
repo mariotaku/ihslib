@@ -77,7 +77,7 @@ IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, const 
 }
 
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo) {
-    size_t curSize = IHS_SESSION_PACKET_SIZE + packet->bodyLen;
+    size_t curSize = IHS_PACKET_HEADER_SIZE + packet->bodyLen;
     if (padTo <= curSize) return;
     packet->bodyPad = padTo - curSize;
 }
@@ -85,8 +85,10 @@ void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo) {
 size_t IHS_SessionPacketSerialize(const IHS_SessionPacket *packet, uint8_t *dest) {
     size_t offset = 0;
     offset += IHS_SessionPacketHeaderSerialize(&packet->header, &dest[offset]);
-    memcpy(&dest[offset], packet->body, packet->bodyLen);
-    offset += packet->bodyLen;
+    if (packet->bodyLen) {
+        memcpy(&dest[offset], packet->body, packet->bodyLen);
+        offset += packet->bodyLen;
+    }
     memset(&dest[offset], 0xFE, packet->bodyPad);
     offset += packet->bodyPad;
     if (packet->header.hasCrc) {
@@ -96,5 +98,5 @@ size_t IHS_SessionPacketSerialize(const IHS_SessionPacket *packet, uint8_t *dest
 }
 
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
-    return IHS_SESSION_PACKET_SIZE + packet->bodyLen + packet->bodyPad + (packet->header.hasCrc ? 4 : 0);
+    return IHS_PACKET_HEADER_SIZE + packet->bodyLen + packet->bodyPad + (packet->header.hasCrc ? 4 : 0);
 }
