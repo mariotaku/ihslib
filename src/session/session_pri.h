@@ -40,7 +40,7 @@ typedef struct IHS_SessionState {
 struct IHS_Session {
     IHS_Base base;
     IHS_SessionState state;
-    size_t numChannels;
+    uint8_t numChannels;
     IHS_SessionChannel *channels[16];
 };
 
@@ -50,5 +50,5 @@ void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet
 
 uint32_t IHS_SessionPacketTimestamp(IHS_Session *session);
 
-void IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
+bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
 

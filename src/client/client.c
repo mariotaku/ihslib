@@ -83,8 +83,12 @@ void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callb
     client->callbacks = *callbacks;
 }
 
+const char *IHS_ClientError(IHS_Client *client) {
+    uv_err_t err = uv_last_error(client->base.loop);
+    return uv_err_name(err);
+}
 
-void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+bool IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
                          ProtobufCMessage *message) {
     CMsgRemoteClientBroadcastHeader header;
     cmsg_remote_client_broadcast_header__init(&header);
@@ -105,7 +109,7 @@ void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteCli
         protobuf_c_message_pack_to_buffer(message, (ProtobufCBuffer *) &buf);
     }
 
-    IHS_BaseSend(&client->base, address, buf.data, buf.len);
+    return IHS_BaseSend(&client->base, address, buf.data, buf.len);
 }
 
 static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,

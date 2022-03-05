@@ -28,12 +28,12 @@
 #include <string.h>
 
 
-void IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
+bool IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
     CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
     discovery.has_seq_num = 1;
     discovery.seq_num = 0;
 
-    IHS_PRIV_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+    return IHS_PRIV_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }
 
 

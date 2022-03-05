@@ -38,7 +38,7 @@ static void SendCallback(uv_udp_send_t *req, int status);
 static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size);
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast) {
-
+    memset(base, 0, sizeof(IHS_Base));
     base->deviceId = config->deviceId;
     memcpy(base->secretKey, config->secretKey, 32);
     strncpy(base->deviceName, config->deviceName ? config->deviceName : "IHSLib", sizeof(base->deviceName));
@@ -75,17 +75,18 @@ void IHS_BaseFree(IHS_Base *base) {
     uv_loop_delete(base->loop);
 }
 
-void IHS_BaseSend(IHS_Base *base, IHS_HostAddress address, const uint8_t *data, size_t dataLen) {
+bool IHS_BaseSend(IHS_Base *base, IHS_HostAddress address, const uint8_t *data, size_t dataLen) {
     uv_buf_t uvbuf = uv_buf_init(malloc(dataLen), dataLen);
     memcpy(uvbuf.base, data, dataLen);
     uv_udp_send_t *req = malloc(sizeof(uv_udp_send_t));
     if (address.ip.type == IHS_HostIPv4) {
         struct sockaddr_in send_addr = {AF_INET, htons(address.port), .sin_addr= address.ip.value.v4};
-        uv_udp_send(req, &base->udp, &uvbuf, 1, send_addr, SendCallback);
+        return uv_udp_send(req, &base->udp, &uvbuf, 1, send_addr, SendCallback) == 0;
     } else if (address.ip.type == IHS_HostIPv6) {
         struct sockaddr_in6 send_addr = {AF_INET6, htons(address.port), .sin6_addr = address.ip.value.v6};
-        uv_udp_send6(req, &base->udp, &uvbuf, 1, send_addr, SendCallback);
+        return uv_udp_send6(req, &base->udp, &uvbuf, 1, send_addr, SendCallback) == 0;
     }
+    return false;
 }
 
 void IHS_BaseLock(IHS_Base *base) {

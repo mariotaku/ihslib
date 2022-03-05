@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include "common.h"
 #include "ihslib/client.h"
 #include "ihslib/session.h"
@@ -33,17 +34,23 @@
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info);
 
-void OnStreamingInProgress(IHS_Client *client);
+static void OnStreamingInProgress(IHS_Client *client);
 
-void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey, size_t sessionKeyLen);
+static void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey,
+                               size_t sessionKeyLen);
 
-void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result);
+static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result);
+
+static void InterruptHandler(int sig);
 
 static bool AuthorizationStart = false;
+static bool Running = true;
 
 static IHS_Session *ActiveSession = NULL;
 
 int main(int argc, char *argv[]) {
+//    signal(SIGINT, InterruptHandler);
+
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
     IHS_ClientCallbacks callbacks = {
@@ -53,7 +60,11 @@ int main(int argc, char *argv[]) {
             .streamingSuccess = OnStreamingSuccess,
     };
     IHS_ClientSetCallbacks(client, &callbacks);
-    IHS_ClientDiscoveryBroadcast(client);
+    printf("IHS_ClientDiscoveryBroadcast\n");
+    if (!IHS_ClientDiscoveryBroadcast(client)) {
+        fprintf(stderr, "Broadcast error: %s\n", IHS_ClientError(client));
+    }
+
     IHS_ClientDestroy(client);
     if (ActiveSession) {
         IHS_SessionDestroy(ActiveSession);
@@ -97,4 +108,12 @@ void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8
 void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result) {
     printf("OnStreamingFailed(result=%d)\n", result);
     IHS_ClientStop(client);
+}
+
+static void InterruptHandler(int sig) {
+    if (!ActiveSession) {
+        Running = false;
+        return;
+    }
+    IHS_SessionDisconnect(ActiveSession);
 }

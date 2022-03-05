@@ -44,13 +44,14 @@ static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *p
 static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *packet,
                           const CDiscoveryPingRequest *request);
 
-static const IHS_SessionChannelClass Functions = {
-        .onReceived = OnDiscoveryReceived,
+static const IHS_SessionChannelClass ChannelClass = {
+        .received = OnDiscoveryReceived,
         .instanceSize = sizeof(IHS_SessionChannel)
 };
 
 IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
-    return IHS_SessionChannelCreate(&Functions, session, IHS_SessionChannelIdDiscovery);
+    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeDiscovery,
+                                    IHS_SessionChannelIdDiscovery);
 }
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {

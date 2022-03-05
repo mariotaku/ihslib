@@ -29,12 +29,16 @@ add_library(ihslib
         src/client/streaming.c
         src/session/session.c
         src/session/packet.c
-        src/session/frame.c
+        src/session/frame_window.c
+        src/session/frame_crypto.c
         src/session/channels/channel.c
         src/session/channels/ch_discovery.c
         src/session/channels/ch_control.c
         src/session/channels/ch_control_authentication.c
         src/session/channels/ch_control_negotiation.c
+        src/session/channels/ch_data.c
+        src/session/channels/ch_data_audio.c
+        src/session/channels/ch_data_video.c
         src/session/channels/ch_stats.c
         )
 

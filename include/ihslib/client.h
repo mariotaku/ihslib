@@ -26,7 +26,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <netinet/in.h>
 #include <stdbool.h>
 
 #include "common.h"
@@ -107,11 +106,13 @@ void IHS_ClientDestroy(IHS_Client *client);
 
 void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callbacks);
 
+const char *IHS_ClientError(IHS_Client *client);
+
 /* ----------------------------------------------------
  * - Discovery functions
  * ---------------------------------------------------- */
 
-void IHS_ClientDiscoveryBroadcast(IHS_Client *client);
+bool IHS_ClientDiscoveryBroadcast(IHS_Client *client);
 
 /* ----------------------------------------------------
  * - Authorization functions

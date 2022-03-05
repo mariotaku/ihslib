@@ -33,13 +33,14 @@
 
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
-                                             IHS_SessionChannelId id) {
+                                             IHS_SessionChannelType type, IHS_SessionChannelId id) {
     assert(cls->instanceSize >= sizeof(IHS_SessionChannel));
     IHS_SessionChannel *channel = malloc(cls->instanceSize);
     memset(channel, 0, sizeof(IHS_SessionChannel));
     channel->cls = *cls;
-    channel->session = session;
+    channel->type = type;
     channel->id = id;
+    channel->session = session;
     if (cls->init) {
         cls->init(channel);
     }
@@ -61,12 +62,50 @@ IHS_SessionChannel *IHS_SessionChannelFor(IHS_Session *session, IHS_SessionChann
     return NULL;
 }
 
+IHS_SessionChannel *IHS_SessionChannelForType(IHS_Session *session, IHS_SessionChannelType channelType) {
+    for (int i = 0; i < session->numChannels; ++i) {
+        IHS_SessionChannel *channel = session->channels[i];
+        if (channel->type == channelType) return channel;
+    }
+    return NULL;
+}
+
+void IHS_SessionChannelAdd(IHS_Session *session, IHS_SessionChannel *channel) {
+    if (IHS_SessionChannelFor(session, channel->id)) {
+        return;
+    }
+    session->channels[session->numChannels] = channel;
+    session->numChannels++;
+}
+
+void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channelId) {
+    if (channelId < IHS_SessionChannelIdDataStart) return;
+    int channelIndex = -1;
+    for (int i = 0; i < session->numChannels; ++i) {
+        IHS_SessionChannel *channel = session->channels[i];
+        if (channel->id == channelId) {
+            channelIndex = i;
+            break;
+        }
+    }
+    if (channelIndex < 0) return;
+    IHS_SessionChannel *channelToRemove = session->channels[channelIndex];
+    IHS_SessionChannelDestroy(channelToRemove);
+    int remaining = session->numChannels - 1 - channelIndex;
+    if (remaining > 0) {
+        memmove(&session->channels[channelIndex], &session->channels[channelIndex + 1],
+                remaining * sizeof(IHS_SessionChannel *));
+    } else {
+        session->numChannels--;
+    }
+}
+
 void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-    channel->cls.onReceived(channel, packet);
+    channel->cls.received(channel, packet);
 }
 
 void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-    printf("Received packet(type=%d, channel=%d)\n", packet->header.type, packet->header.channelId);
+//    printf("Received packet(type=%d, channel=%d)\n", packet->header.type, packet->header.channelId);
 }
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {

@@ -49,7 +49,7 @@ void IHS_BaseWaitFinish(IHS_Base *base);
 
 void IHS_BaseFree(IHS_Base *base);
 
-void IHS_BaseSend(IHS_Base *base, IHS_HostAddress address,const uint8_t *data, size_t dataLen);
+bool IHS_BaseSend(IHS_Base *base, IHS_HostAddress address, const uint8_t *data, size_t dataLen);
 
 void IHS_BaseLock(IHS_Base *base);
 

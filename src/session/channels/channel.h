@@ -36,26 +36,40 @@ typedef struct IHS_SessionChannelClass {
 
     void (*deinit)(IHS_SessionChannel *channel);
 
-    void (*send)(IHS_SessionChannel *channel);
-
-    void (*onReceived)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+    void (*received)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
     size_t instanceSize;
 } IHS_SessionChannelClass;
 
+typedef enum IHS_SessionChannelType {
+    IHS_SessionChannelTypeDiscovery = IHS_SessionChannelIdDiscovery,
+    IHS_SessionChannelTypeControl = IHS_SessionChannelIdControl,
+    IHS_SessionChannelTypeStats = IHS_SessionChannelIdStats,
+    IHS_SessionChannelTypeDataAudio,
+    IHS_SessionChannelTypeDataVideo,
+    IHS_SessionChannelTypeDataMicrophone,
+} IHS_SessionChannelType;
+
 struct IHS_SessionChannel {
     IHS_SessionChannelClass cls;
+    IHS_SessionChannelType type;
     IHS_SessionChannelId id;
     IHS_Session *session;
     uint16_t nextPacketId;
 };
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
-                                             IHS_SessionChannelId id);
+                                             IHS_SessionChannelType type, IHS_SessionChannelId id);
 
 void IHS_SessionChannelDestroy(IHS_SessionChannel *channel);
 
 IHS_SessionChannel *IHS_SessionChannelFor(IHS_Session *session, IHS_SessionChannelId channelId);
+
+IHS_SessionChannel *IHS_SessionChannelForType(IHS_Session *session, IHS_SessionChannelType channelType);
+
+void IHS_SessionChannelAdd(IHS_Session *session, IHS_SessionChannel *channel);
+
+void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channelId);
 
 void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 

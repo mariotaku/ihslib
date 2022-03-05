@@ -35,7 +35,6 @@
 #include "session/channels/ch_discovery.h"
 #include "session/channels/ch_control.h"
 #include "session/channels/ch_stats.h"
-#include "frame.h"
 
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
 
@@ -95,11 +94,11 @@ uint32_t IHS_SessionPacketTimestamp(IHS_Session *session) {
     return now * 65536 / 1000;
 }
 
-void IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {
+bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {
     const IHS_SessionConfig *config = &session->state.config;
     uint8_t *data = alloca(IHS_SessionPacketSize(packet));
     size_t dataSize = IHS_SessionPacketSerialize(packet, data);
-    IHS_BaseSend(&session->base, config->address, data, dataSize);
+    return IHS_BaseSend(&session->base, config->address, data, dataSize);
 }
 
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {

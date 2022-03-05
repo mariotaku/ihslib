@@ -27,8 +27,6 @@
 
 #include "ihslib/client.h"
 
-#include <sys/socket.h>
-
 #include <uv.h>
 
 #include "protobuf/discovery.pb-c.h"
@@ -56,13 +54,13 @@ struct IHS_Client {
 #define IHS_UNUSED(x) (void) (x)
 
 
-void IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+bool IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
                          ProtobufCMessage *message);
 
-static inline void IHS_PRIV_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
+static inline bool IHS_PRIV_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
                                             ProtobufCMessage *message) {
     IHS_HostAddress address = {{IHS_HostIPv4, {.v4 = INADDR_BROADCAST}}, 27036};
-    IHS_PRIV_ClientSend(client, address, type, message);
+    return IHS_PRIV_ClientSend(client, address, type, message);
 }
 
 bool IHS_PRIV_ClientAuthorizationPubKey(IHS_Client *client, int euniverse, uint8_t *key, size_t *keyLen);

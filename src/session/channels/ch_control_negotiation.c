@@ -120,5 +120,7 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
 
 static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiationSetConfigMsg *message,
                                    uint16_t packetId) {
-    IHS_SessionDisconnect(channel->session);
+    CNegotiationCompleteMsg response = CNEGOTIATION_COMPLETE_MSG__INIT;
+    IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationComplete,
+                                  (const ProtobufCMessage *) &response, packetId);
 }

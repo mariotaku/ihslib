@@ -31,16 +31,20 @@
 #include "crypto.h"
 #include "session/frame.h"
 #include "ch_discovery.h"
+#include "ch_data.h"
+
 #include "protobuf/discovery.pb-c.h"
 
 typedef struct ControlChannel {
     IHS_SessionChannel base;
     uint64_t sendEncryptSequence;
     uint64_t recvEncryptSequence;
-    IHS_SessionPacketsWindow framePacketWindow;
+    IHS_SessionPacketsWindow *framePacketWindow;
 } ControlChannel;
 
 static void OnControlInit(IHS_SessionChannel *channel);
+
+static void OnControlDeinit(IHS_SessionChannel *channel);
 
 static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
@@ -53,14 +57,15 @@ static size_t EncryptedMessageCapacity(size_t plainSize);
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message);
 
-static const IHS_SessionChannelClass Functions = {
+static const IHS_SessionChannelClass ChannelClass = {
         .init = OnControlInit,
-        .onReceived = OnControlReceived,
+        .deinit = OnControlDeinit,
+        .received = OnControlReceived,
         .instanceSize = sizeof(ControlChannel)
 };
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
-    return IHS_SessionChannelCreate(&Functions, session, IHS_SessionChannelIdControl);
+    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeControl, IHS_SessionChannelIdControl);
 }
 
 void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
@@ -110,12 +115,17 @@ void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networ
 
 static void OnControlInit(IHS_SessionChannel *channel) {
     ControlChannel *control = (ControlChannel *) channel;
-    IHS_SessionPacketsWindowInit(&control->framePacketWindow, 128);
+    control->framePacketWindow = IHS_SessionPacketsWindowCreate(128);
+}
+
+static void OnControlDeinit(IHS_SessionChannel *channel) {
+    ControlChannel *control = (ControlChannel *) channel;
+    IHS_SessionPacketsWindowDestroy(control->framePacketWindow);
 }
 
 static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     ControlChannel *control = (ControlChannel *) channel;
-    IHS_SessionPacketsWindow *window = &control->framePacketWindow;
+    IHS_SessionPacketsWindow *window = control->framePacketWindow;
     switch (packet->header.type) {
         case IHS_SessionPacketTypeReliable:
         case IHS_SessionPacketTypeReliableFrag:
@@ -145,14 +155,15 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         size_t messageLen = frame.bodyLen - 1;
         if (IsMessageEncrypted(type)) {
             uint8_t *plain = malloc(messageLen);
-            uint64_t expectedSequence = control->recvEncryptSequence++;
             if (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen,
-                                        plain, &messageLen, expectedSequence) != 0) {
+                                        plain, &messageLen, control->recvEncryptSequence) != 0) {
                 free(plain);
-                fprintf(stderr, "Failed to decrypt message\n");
+                fprintf(stderr, "Failed to decrypt message id=%d, retransmit=%d, type=%d\n",
+                        frame.header.packetId, frame.header.retransmitCount, type);
                 IHS_SessionDisconnect(channel->session);
                 continue;
             }
+            control->recvEncryptSequence++;
             OnControlMessageReceived(channel, type, plain, messageLen, &frame.header);
             // There is no way that this is a dangling pointer
 #pragma clang diagnostic push
@@ -182,9 +193,23 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             IHS_SessionChannelControlOnNegotiation(channel, type, payload, payloadLen, header);
             break;
         }
+        case k_EStreamControlStartAudioData:
+        case k_EStreamControlStopAudioData:
+        case k_EStreamControlStartVideoData:
+        case k_EStreamControlStopVideoData: {
+            IHS_SessionChannelControlOnDataControl(channel, type, payload, payloadLen, header);
+            break;
+        }
+        case k_EStreamControlSetQoS:
+        case k_EStreamControlSetTargetBitrate:
+        case k_EStreamControlShowCursor:
+        case k_EStreamControlSetCursor: {
+            break;
+        }
         default: {
-            fprintf(stderr, "Unhandled control message %u\n", type);
-            IHS_SessionDisconnect(channel->session);
+            const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
+                                                                                   type);
+//            fprintf(stderr, "Unhandled control message: %s\n", value ? value->name : "unknown");
             break;
         }
     }

@@ -58,15 +58,24 @@ int IHS_CryptoSymmetricEncrypt(const uint8_t *in, size_t inLen, const uint8_t *k
 int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, bool withIV, uint8_t *out, size_t *outLen) {
 
-    int ret = IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, withIV ? &out[16] : out, outLen, true);
-    if (ret != 0) return ret;
+    size_t offset = 0;
+    int ret;
     if (withIV) {
         uint8_t *ivEnc = malloc(ivLen);
-        IHS_CryptoAES_ECB(iv, key, keyLen, ivEnc, true);
-        memcpy(out, ivEnc, ivLen);
+        if ((ret = IHS_CryptoAES_ECB(iv, key, keyLen, ivEnc, true)) != 0) {
+            free(ivEnc);
+            return ret;
+        }
+        memcpy(&out[offset], ivEnc, ivLen);
         free(ivEnc);
-        *outLen += ivLen;
+        offset += ivLen;
     }
+    size_t cipherLen = *outLen - offset;
+    if ((ret = IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, &out[offset], &cipherLen, true)) != 0) {
+        return ret;
+    }
+    offset += cipherLen;
+    *outLen = offset;
     return ret;
 }
 

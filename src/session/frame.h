@@ -37,20 +37,7 @@ typedef struct IHS_SessionFramePacket {
     uint16_t fragments;
 } IHS_SessionFramePacket;
 
-typedef struct IHS_SessionPacketsWindow {
-    IHS_SessionFramePacket *data;
-    uint16_t capacity;
-    /*
-     * [+][+][+][-]
-     *       ^ head = 2
-     */
-    int head;
-    /*
-     * [+][+][+][-]
-     *         ^ tail = 2
-     */
-    int tail;
-} IHS_SessionPacketsWindow;
+typedef struct IHS_SessionPacketsWindow IHS_SessionPacketsWindow;
 
 typedef struct IHS_SessionFrame {
     IHS_SessionPacketHeader header;
@@ -58,13 +45,11 @@ typedef struct IHS_SessionFrame {
     size_t bodyLen;
 } IHS_SessionFrame;
 
-void IHS_SessionPacketsWindowInit(IHS_SessionPacketsWindow *window, uint16_t capacity);
+IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity);
+
+void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window);
 
 bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_SessionPacket *packet);
-
-size_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
-
-size_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame);
 
@@ -78,6 +63,10 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
 int IHS_SessionPacketsWindowReadFrame(const IHS_SessionPacketsWindow *window, size_t position, IHS_SessionFrame *frame);
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
+
+size_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
+
+size_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence);

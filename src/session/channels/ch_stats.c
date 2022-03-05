@@ -26,11 +26,11 @@
 #include "ch_stats.h"
 
 
-static const IHS_SessionChannelClass Functions = {
-        .onReceived = IHS_SessionChannelReceivedPacketBase,
+static const IHS_SessionChannelClass ChannelClass = {
+        .received = IHS_SessionChannelReceivedPacketBase,
         .instanceSize = sizeof(IHS_SessionChannel)
 };
 
 IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session) {
-    return IHS_SessionChannelCreate(&Functions, session, IHS_SessionChannelIdStats);
+    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeStats, IHS_SessionChannelIdStats);
 }
