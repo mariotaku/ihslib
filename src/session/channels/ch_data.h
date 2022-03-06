@@ -27,6 +27,37 @@
 
 #include "channel.h"
 #include "protobuf/remoteplay.pb-c.h"
+#include "session/frame.h"
+
+typedef struct IHS_SessionChannelData {
+    IHS_SessionChannel base;
+    IHS_SessionPacketsWindow *window;
+    uv_thread_t workerThread;
+    bool threadInterrupted;
+    uv_mutex_t mutex;
+    uv_cond_t cond;
+} IHS_SessionChannelData;
+
+typedef struct IHS_SessionChannelDataClass {
+    IHS_SessionChannelClass base;
+
+    void (*start)(struct IHS_SessionChannel *channel);
+
+    void (*received)(struct IHS_SessionChannel *channel, const IHS_SessionFrame *frame);
+
+    void (*stop)(struct IHS_SessionChannel *channel);
+} IHS_SessionChannelDataClass;
+
+IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataClass *cls, IHS_Session *session,
+                                                 IHS_SessionChannelType type, IHS_SessionChannelId id,
+                                                 const void *config);
+
+
+void IHS_SessionChannelDataInit(IHS_SessionChannel *channel);
+
+void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel);
+
+void IHS_SessionChannelDataReceived(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
 void IHS_SessionChannelControlOnDataControl(IHS_SessionChannel *channel, EStreamControlMessage type,
                                             const uint8_t *payload, size_t payloadLen,

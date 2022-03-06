@@ -42,10 +42,34 @@ static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result);
 
 static void InterruptHandler(int sig);
 
+static void OnAudioStart(void *context, const IHS_StreamAudioConfig *config);
+
+static void OnAudioReceived(void *context, const uint8_t *data, size_t dataLen);
+
+static void OnAudioStop(void *context);
+
+static void OnVideoStart(void *context, const IHS_StreamVideoConfig *config);
+
+static void OnVideoReceived(void *context, const uint8_t *data, size_t dataLen);
+
+static void OnVideoStop(void *context);
+
 static bool AuthorizationStart = false;
 static bool Running = true;
 
 static IHS_Session *ActiveSession = NULL;
+
+static IHS_StreamAudioCallbacks AudioCallbacks = {
+        .start = OnAudioStart,
+        .received = OnAudioReceived,
+        .stop = OnAudioStop,
+};
+
+static IHS_StreamVideoCallbacks VideoCallbacks = {
+        .start = OnVideoStart,
+        .received = OnVideoReceived,
+        .stop = OnVideoStop,
+};
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
@@ -97,6 +121,8 @@ void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8
     IHS_ClientStop(client);
     IHS_ClientConfig clientConfig = {deviceId, secretKey, deviceName};
     ActiveSession = IHS_SessionCreate(&clientConfig);
+    IHS_SessionSetAudioCallbacks(ActiveSession, &AudioCallbacks, NULL);
+    IHS_SessionSetVideoCallbacks(ActiveSession, &VideoCallbacks, NULL);
     IHS_SessionConfig sessionConfig;
     sessionConfig.address = address;
     memcpy(sessionConfig.sessionKey, sessionKey, sessionKeyLen);
@@ -116,4 +142,28 @@ static void InterruptHandler(int sig) {
         return;
     }
     IHS_SessionDisconnect(ActiveSession);
+}
+
+static void OnAudioStart(void *context, const IHS_StreamAudioConfig *config) {
+    printf("OnAudioStart\n");
+}
+
+static void OnAudioReceived(void *context, const uint8_t *data, size_t dataLen) {
+    printf("OnAudioReceived\n");
+}
+
+static void OnAudioStop(void *context) {
+    printf("OnAudioStop\n");
+}
+
+static void OnVideoStart(void *context, const IHS_StreamVideoConfig *config) {
+    printf("OnVideoStart\n");
+}
+
+static void OnVideoReceived(void *context, const uint8_t *data, size_t dataLen) {
+    printf("OnVideoReceived\n");
+}
+
+static void OnVideoStop(void *context) {
+    printf("OnVideoStop\n");
 }

@@ -31,16 +31,6 @@
 
 typedef struct IHS_SessionChannel IHS_SessionChannel;
 
-typedef struct IHS_SessionChannelClass {
-    void (*init)(IHS_SessionChannel *channel);
-
-    void (*deinit)(IHS_SessionChannel *channel);
-
-    void (*received)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
-
-    size_t instanceSize;
-} IHS_SessionChannelClass;
-
 typedef enum IHS_SessionChannelType {
     IHS_SessionChannelTypeDiscovery = IHS_SessionChannelIdDiscovery,
     IHS_SessionChannelTypeControl = IHS_SessionChannelIdControl,
@@ -50,8 +40,18 @@ typedef enum IHS_SessionChannelType {
     IHS_SessionChannelTypeDataMicrophone,
 } IHS_SessionChannelType;
 
+typedef struct IHS_SessionChannelClass {
+    void (*init)(IHS_SessionChannel *channel, const void *config);
+
+    void (*deinit)(IHS_SessionChannel *channel);
+
+    void (*received)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+
+    size_t instanceSize;
+} IHS_SessionChannelClass;
+
 struct IHS_SessionChannel {
-    IHS_SessionChannelClass cls;
+    const IHS_SessionChannelClass *cls;
     IHS_SessionChannelType type;
     IHS_SessionChannelId id;
     IHS_Session *session;
@@ -59,7 +59,7 @@ struct IHS_SessionChannel {
 };
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
-                                             IHS_SessionChannelType type, IHS_SessionChannelId id);
+                                             IHS_SessionChannelType type, IHS_SessionChannelId id, const void *config);
 
 void IHS_SessionChannelDestroy(IHS_SessionChannel *channel);
 

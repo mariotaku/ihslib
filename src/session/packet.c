@@ -71,7 +71,9 @@ IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, const 
     offset += packet->bodyLen;
     if (packet->header.hasCrc) {
         IHS_ReadUInt32LE(&src[offset], &packet->crc);
-        packet->crcOK = IHS_CRC32C(src, srcLen - sizeof(uint32_t)) == packet->crc;
+        if (IHS_CRC32C(src, srcLen - sizeof(uint32_t)) != packet->crc) {
+            return IHS_SessionPacketResultBadChecksum;
+        }
     }
     return IHS_SessionPacketResultOK;
 }

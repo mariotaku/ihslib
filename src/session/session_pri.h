@@ -42,6 +42,10 @@ struct IHS_Session {
     IHS_SessionState state;
     uint8_t numChannels;
     IHS_SessionChannel *channels[16];
+    const IHS_StreamAudioCallbacks *audioCallbacks;
+    void *audioContext;
+    const IHS_StreamVideoCallbacks *videoCallbacks;
+    void *videoContext;
 };
 
 void IHS_SessionStop(IHS_Session *session);

@@ -114,11 +114,13 @@ bool IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteCli
 
 static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
                                struct sockaddr *addr, unsigned flags) {
-    if (!nread) return;
+    if (!nread) {
+        goto cleanup;
+    }
     size_t offset = 0;
     if (memcmp(&buf.base[offset], PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
         fprintf(stderr, "Unrecognized packet!\n");
-        return;
+        goto cleanup;
     }
     IHS_HostIP address;
     switch (addr->sa_family) {
@@ -169,4 +171,6 @@ static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
     }
     cmsg_remote_client_broadcast_header__free_unpacked(header, NULL);
     protobuf_c_message_free_unpacked(message, NULL);
+    cleanup:
+    free(buf.base);
 }

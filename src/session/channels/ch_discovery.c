@@ -51,7 +51,7 @@ static const IHS_SessionChannelClass ChannelClass = {
 
 IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
     return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeDiscovery,
-                                    IHS_SessionChannelIdDiscovery);
+                                    IHS_SessionChannelIdDiscovery, NULL);
 }
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {

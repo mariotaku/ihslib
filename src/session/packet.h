@@ -32,6 +32,7 @@
 typedef enum IHS_SessionPacketResult {
     IHS_SessionPacketResultOK = 0,
     IHS_SessionPacketResultBadHeader = -1,
+    IHS_SessionPacketResultBadChecksum = -2,
 } IHS_SessionPacketReturn;
 
 typedef enum IHS_SessionPacketType {
@@ -76,7 +77,6 @@ typedef struct IHS_SessionPacket {
      */
     size_t bodyPad;
     uint32_t crc;
-    bool crcOK;
 } IHS_SessionPacket;
 
 #define IHS_PACKET_HEADER_SIZE 13

@@ -26,5 +26,6 @@
 #pragma once
 
 #include "channel.h"
+#include "protobuf/remoteplay.pb-c.h"
 
-IHS_SessionChannel *IHS_SessionChannelDataAudioCreate(IHS_Session *session, IHS_SessionChannelId channelId);
+IHS_SessionChannel *IHS_SessionChannelDataAudioCreate(IHS_Session *session, const CStartAudioDataMsg *message);

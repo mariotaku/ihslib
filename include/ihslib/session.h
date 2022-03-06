@@ -26,6 +26,7 @@
 #pragma once
 
 #include "common.h"
+#include "datachannels.h"
 
 typedef struct IHS_Session IHS_Session;
 
@@ -36,6 +37,10 @@ typedef struct IHS_SessionConfig {
 } IHS_SessionConfig;
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config);
+
+void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context);
+
+void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context);
 
 void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config);
 

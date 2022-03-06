@@ -34,8 +34,9 @@
 #include "ch_data.h"
 
 #include "protobuf/discovery.pb-c.h"
+#include "client/client_pri.h"
 
-static void OnControlInit(IHS_SessionChannel *channel);
+static void OnControlInit(IHS_SessionChannel *channel, const void *data);
 
 static void OnControlDeinit(IHS_SessionChannel *channel);
 
@@ -58,7 +59,8 @@ static const IHS_SessionChannelClass ChannelClass = {
 };
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
-    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeControl, IHS_SessionChannelIdControl);
+    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeControl, IHS_SessionChannelIdControl,
+                                    NULL);
 }
 
 void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
@@ -106,7 +108,8 @@ void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networ
                                   IHS_PACKET_ID_NEXT);
 }
 
-static void OnControlInit(IHS_SessionChannel *channel) {
+static void OnControlInit(IHS_SessionChannel *channel, const void *data) {
+    IHS_UNUSED(data);
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     control->framePacketWindow = IHS_SessionPacketsWindowCreate(128);
 }
@@ -122,10 +125,6 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
     switch (packet->header.type) {
         case IHS_SessionPacketTypeReliable:
         case IHS_SessionPacketTypeReliableFrag:
-            if (packet->header.hasCrc && !packet->crcOK) {
-                IHS_SessionChannelPacketAck(channel, packet->header.packetId, false);
-                break;
-            }
             if (!IHS_SessionPacketsWindowAdd(window, packet)) {
                 fprintf(stderr, "Packets window overflow\n");
                 IHS_SessionDisconnect(channel->session);

@@ -49,6 +49,16 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config) {
     return session;
 }
 
+void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context) {
+    session->audioCallbacks = callbacks;
+    session->audioContext = context;
+}
+
+void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context) {
+    session->videoCallbacks = callbacks;
+    session->videoContext = context;
+}
+
 void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config) {
     IHS_BaseLock(&session->base);
     session->state.config = *config;
@@ -102,16 +112,20 @@ bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet
 }
 
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {
-    if (!nread) return;
+    if (!nread) {
+        goto cleanup;
+    }
     IHS_Session *session = handle->loop->data;
     IHS_SessionPacket packet;
     IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, (const uint8_t *) buf.base, nread);
     if (ret != IHS_SessionPacketResultOK) {
-        return;
+        goto cleanup;
     }
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, packet.header.channelId);
     if (!channel) {
-        return;
+        goto cleanup;
     }
     IHS_SessionChannelReceivedPacket(channel, &packet);
+    cleanup:
+    free(buf.base);
 }

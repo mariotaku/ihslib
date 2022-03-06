@@ -33,23 +33,23 @@
 
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
-                                             IHS_SessionChannelType type, IHS_SessionChannelId id) {
+                                             IHS_SessionChannelType type, IHS_SessionChannelId id, const void *config) {
     assert(cls->instanceSize >= sizeof(IHS_SessionChannel));
     IHS_SessionChannel *channel = malloc(cls->instanceSize);
     memset(channel, 0, sizeof(IHS_SessionChannel));
-    channel->cls = *cls;
+    channel->cls = cls;
     channel->type = type;
     channel->id = id;
     channel->session = session;
     if (cls->init) {
-        cls->init(channel);
+        cls->init(channel, config);
     }
     return channel;
 }
 
 void IHS_SessionChannelDestroy(IHS_SessionChannel *channel) {
-    if (channel->cls.deinit) {
-        channel->cls.deinit(channel);
+    if (channel->cls->deinit) {
+        channel->cls->deinit(channel);
     }
     free(channel);
 }
@@ -101,7 +101,7 @@ void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channel
 }
 
 void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-    channel->cls.received(channel, packet);
+    channel->cls->received(channel, packet);
 }
 
 void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {

@@ -32,5 +32,6 @@ static const IHS_SessionChannelClass ChannelClass = {
 };
 
 IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session) {
-    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeStats, IHS_SessionChannelIdStats);
+    return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeStats, IHS_SessionChannelIdStats,
+                                    NULL);
 }

@@ -52,15 +52,6 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame);
 
-/**
- *
- * @param window PacketsWindow object
- * @param position Position of packet head
- * @param frame Frame object to write to
- * @return Number of packets should advance, negative if error
- */
-int IHS_SessionPacketsWindowReadFrame(const IHS_SessionPacketsWindow *window, size_t position, IHS_SessionFrame *frame);
-
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
 
 uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
