@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include <malloc.h>
+#include <stdlib.h>
 
 #include "endianness.h"
 #include "crypto.h"
@@ -36,6 +37,16 @@ static void BaseThread(IHS_Base *base);
 static void SendCallback(uv_udp_send_t *req, int status);
 
 static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size);
+
+static void BaseTimer(uv_timer_t *handle, int status);
+
+static void BaseTimerCleanup(uv_handle_t *handle);
+
+struct IHS_BaseTimer {
+    IHS_BaseTimerFunction fn;
+    uv_timer_t *uv;
+    void *data;
+};
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast) {
     memset(base, 0, sizeof(IHS_Base));
@@ -97,9 +108,31 @@ void IHS_BaseUnlock(IHS_Base *base) {
     uv_mutex_unlock(&base->mutex);
 }
 
+IHS_BaseTimer *IHS_BaseTimerStart(IHS_Base *base, IHS_BaseTimerFunction timerFn, uint64_t timeout, uint64_t repeat,
+                                  void *data) {
+    IHS_BaseTimer *timer = malloc(sizeof(IHS_BaseTimer));
+    timer->fn = timerFn;
+    timer->uv = malloc(sizeof(uv_timer_t));
+    timer->data = data;
+    uv_timer_init(base->loop, timer->uv);
+    timer->uv->data = timer;
+    timer->uv->close_cb = BaseTimerCleanup;
+    uv_timer_start(timer->uv, BaseTimer, timeout, repeat);
+    return timer;
+}
+
+void IHS_BaseTimerStop(IHS_BaseTimer *timer) {
+    uv_timer_stop(timer->uv);
+}
+
 static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
     (void) handle;
-    return uv_buf_init(malloc(suggested_size), suggested_size);
+    char *buf = malloc(suggested_size);
+    if (buf == NULL) {
+        fprintf(stderr, "Failed to allocate %u bytes of buffer!!!\n", suggested_size);
+        abort();
+    }
+    return uv_buf_init(buf, suggested_size);
 }
 
 static void BaseThread(IHS_Base *base) {
@@ -112,4 +145,14 @@ static void SendCallback(uv_udp_send_t *req, int status) {
     }
     free(req->bufsml[0].base);
     free(req);
+}
+
+static void BaseTimer(uv_timer_t *handle, int status) {
+    IHS_BaseTimer *timer = handle->data;
+    timer->fn(handle->loop->data, timer->data);
+}
+
+static void BaseTimerCleanup(uv_handle_t *handle) {
+    free(handle->data);
+    free(handle);
 }

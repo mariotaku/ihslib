@@ -34,7 +34,6 @@ typedef struct IHS_SessionFramePacket {
     IHS_SessionPacketHeader header;
     uint8_t *body;
     size_t bodyLen;
-    uint16_t fragments;
 } IHS_SessionFramePacket;
 
 typedef struct IHS_SessionPacketsWindow IHS_SessionPacketsWindow;
@@ -64,9 +63,9 @@ int IHS_SessionPacketsWindowReadFrame(const IHS_SessionPacketsWindow *window, si
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
 
-size_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
+uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
 
-size_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
+uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence);

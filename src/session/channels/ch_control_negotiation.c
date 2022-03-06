@@ -123,4 +123,5 @@ static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiati
     CNegotiationCompleteMsg response = CNEGOTIATION_COMPLETE_MSG__INIT;
     IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationComplete,
                                   (const ProtobufCMessage *) &response, packetId);
+    IHS_SessionChannelControlStartHeartbeat(channel);
 }

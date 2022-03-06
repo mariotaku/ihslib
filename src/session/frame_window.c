@@ -56,7 +56,7 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
     IHS_SessionPacketsWindow *window = malloc(sizeof(IHS_SessionPacketsWindow));
     memset(window, 0, sizeof(IHS_SessionPacketsWindow));
     window->capacity = capacity;
-    window->data = calloc(capacity, sizeof(IHS_SessionPacketsWindow));
+    window->data = calloc(capacity, sizeof(IHS_SessionFramePacket));
     window->head = 0;
     window->tail = -1;
     return window;
@@ -70,20 +70,20 @@ void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
 bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_SessionPacket *packet) {
     /* Calculate distance of 2 packets */
     int tailOffset = window->tail < 0 ? 1 : (packet->header.packetId - window->tailId);
-    /* This is not a missing packet before tail, treat it as a rollover */
-    if (-tailOffset >= (int) window->capacity) {
-        fprintf(stderr, "PacketsWindow rollover!!! head=%d, tail=%d, avail=%d, offset=%d\n", window->head, window->tail,
-                IHS_SessionPacketsWindowAvailable(window), tailOffset);
+    /* Packet with window->tailId is guaranteed to be processed, so ignore it */
+    if (tailOffset == 0) {
+        return true;
+    }
+    /* Offset is over -32768, treat it as a rollover */
+    if (tailOffset < INT16_MIN) {
         tailOffset = UINT16_MAX + tailOffset;
     }
     /* We already processed this packet, so ignore it */
-    if (tailOffset <= 0) {
+    if (tailOffset < 0 && -tailOffset > IHS_SessionPacketsWindowSize(window)) {
         return true;
     }
-    /* Large offset means too many lost packets */
-    if (tailOffset > IHS_SessionPacketsWindowAvailable(window)) {
-        fprintf(stderr, "PacketsWindow overflow!!! head=%d, tail=%d, avail=%d, offset=%d\n", window->head, window->tail,
-                IHS_SessionPacketsWindowAvailable(window), tailOffset);
+    /* Large offset means overflow, abort processing and hangup */
+    if (tailOffset > (int) IHS_SessionPacketsWindowAvailable(window)) {
         return false;
     }
     window->tail = (window->tail + tailOffset) % window->capacity;
@@ -97,7 +97,10 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
     fp->bodyLen = packet->bodyLen;
     fp->body = malloc(packet->bodyLen);
     memcpy(fp->body, packet->body, packet->bodyLen);
-    window->tailId = packet->header.packetId;
+    /* Only do incremental update */
+    if (tailOffset > 0) {
+        window->tailId = packet->header.packetId;
+    }
     return true;
 }
 
@@ -150,11 +153,11 @@ void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame) {
     free(frame->body);
 }
 
-size_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window) {
+uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window) {
     return window->capacity - IHS_SessionPacketsWindowSize(window);
 }
 
-size_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window) {
+uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window) {
     if (window->tail < 0) {
         return 0;
     } else if (window->tail + 1 >= window->head) {

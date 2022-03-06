@@ -25,11 +25,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <signal.h>
+
+#include "ihslib.h"
 #include "common.h"
-#include "ihslib/client.h"
-#include "ihslib/session.h"
 
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info);
@@ -49,7 +48,7 @@ static bool Running = true;
 static IHS_Session *ActiveSession = NULL;
 
 int main(int argc, char *argv[]) {
-//    signal(SIGINT, InterruptHandler);
+    signal(SIGINT, InterruptHandler);
 
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
@@ -112,7 +111,8 @@ void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result) {
 
 static void InterruptHandler(int sig) {
     if (!ActiveSession) {
-        Running = false;
+        signal(SIGINT, SIG_DFL);
+        raise(SIGINT);
         return;
     }
     IHS_SessionDisconnect(ActiveSession);

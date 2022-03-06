@@ -97,6 +97,8 @@ static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *
 
 static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     printf("Session disconnected\n");
+    IHS_SessionChannel *control = IHS_SessionChannelFor(channel->session, IHS_SessionChannelIdControl);
+    IHS_SessionChannelControlStopHeartbeat(control);
     IHS_SessionStop(channel->session);
 }
 

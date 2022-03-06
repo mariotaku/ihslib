@@ -41,6 +41,10 @@ typedef struct IHS_Base {
     uv_mutex_t mutex;
 } IHS_Base;
 
+typedef void (*IHS_BaseTimerFunction)();
+
+typedef struct IHS_BaseTimer IHS_BaseTimer;
+
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast);
 
 void IHS_BaseStop(IHS_Base *base);
@@ -55,3 +59,7 @@ void IHS_BaseLock(IHS_Base *base);
 
 void IHS_BaseUnlock(IHS_Base *base);
 
+IHS_BaseTimer *IHS_BaseTimerStart(IHS_Base *base, IHS_BaseTimerFunction timerFn, uint64_t timeout, uint64_t repeat,
+                                  void *data);
+
+void IHS_BaseTimerStop(IHS_BaseTimer *timer);

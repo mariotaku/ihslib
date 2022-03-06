@@ -28,6 +28,15 @@
 #include "channel.h"
 
 #include "protobuf/remoteplay.pb-c.h"
+#include "session/frame.h"
+
+typedef struct IHS_SessionChannelControl {
+    IHS_SessionChannel base;
+    uint64_t sendEncryptSequence;
+    uint64_t recvEncryptSequence;
+    IHS_SessionPacketsWindow *framePacketWindow;
+    IHS_BaseTimer *keepAliveTimer;
+} IHS_SessionChannelControl;
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session);
 
@@ -49,3 +58,6 @@ void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStream
                                             const uint8_t *payload, size_t payloadLen,
                                             const IHS_SessionPacketHeader *header);
 
+void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel);
+
+void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel);

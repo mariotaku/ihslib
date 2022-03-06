@@ -35,13 +35,6 @@
 
 #include "protobuf/discovery.pb-c.h"
 
-typedef struct ControlChannel {
-    IHS_SessionChannel base;
-    uint64_t sendEncryptSequence;
-    uint64_t recvEncryptSequence;
-    IHS_SessionPacketsWindow *framePacketWindow;
-} ControlChannel;
-
 static void OnControlInit(IHS_SessionChannel *channel);
 
 static void OnControlDeinit(IHS_SessionChannel *channel);
@@ -61,7 +54,7 @@ static const IHS_SessionChannelClass ChannelClass = {
         .init = OnControlInit,
         .deinit = OnControlDeinit,
         .received = OnControlReceived,
-        .instanceSize = sizeof(ControlChannel)
+        .instanceSize = sizeof(IHS_SessionChannelControl)
 };
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
@@ -71,7 +64,7 @@ IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
 void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
                                    const ProtobufCMessage *message, int32_t packetId) {
     assert(channel->id == IHS_SessionChannelIdControl);
-    ControlChannel *control = (ControlChannel *) channel;
+    IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     size_t messageCapacity = protobuf_c_message_get_packed_size(message);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
@@ -114,17 +107,17 @@ void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networ
 }
 
 static void OnControlInit(IHS_SessionChannel *channel) {
-    ControlChannel *control = (ControlChannel *) channel;
+    IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     control->framePacketWindow = IHS_SessionPacketsWindowCreate(128);
 }
 
 static void OnControlDeinit(IHS_SessionChannel *channel) {
-    ControlChannel *control = (ControlChannel *) channel;
+    IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     IHS_SessionPacketsWindowDestroy(control->framePacketWindow);
 }
 
 static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-    ControlChannel *control = (ControlChannel *) channel;
+    IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     IHS_SessionPacketsWindow *window = control->framePacketWindow;
     switch (packet->header.type) {
         case IHS_SessionPacketTypeReliable:
@@ -209,7 +202,7 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         default: {
             const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
                                                                                    type);
-//            fprintf(stderr, "Unhandled control message: %s\n", value ? value->name : "unknown");
+            fprintf(stderr, "Unhandled control message: %s\n", value ? value->name : "unknown");
             break;
         }
     }
