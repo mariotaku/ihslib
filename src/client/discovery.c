@@ -53,6 +53,6 @@ void IHS_PRIV_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
         info.gamesRunning = status->games_running;
         strncpy(info.hostname, status->hostname, sizeof(info.hostname) - 1);
         info.hostname[sizeof(info.hostname) - 1] = '\0';
-        client->callbacks.hostDiscovered(client, info);
+        client->callbacks.hostDiscovered(client, info, client->callbacksContext);
     }
 }

@@ -39,6 +39,7 @@ typedef void (IHS_PRIV_MessageCallback)(IHS_Client *client, IHS_HostIP ip, CMsgR
 struct IHS_Client {
     IHS_Base base;
     IHS_ClientCallbacks callbacks;
+    void *callbacksContext;
 
     struct {
         IHS_PRIV_MessageCallback *discovery;

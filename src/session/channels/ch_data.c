@@ -30,8 +30,13 @@
 #include "ch_data_audio.h"
 #include "ch_data_video.h"
 #include "client/client_pri.h"
+#include "endianness.h"
 
 static void DataThreadWorker(IHS_SessionChannelData *channel);
+
+static void DataThreadInterrupt(IHS_SessionChannelData *channel);
+
+static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame);
 
 IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataClass *cls, IHS_Session *session,
                                                  IHS_SessionChannelType type, IHS_SessionChannelId id,
@@ -51,7 +56,9 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
-    dataCh->threadInterrupted = true;
+
+    DataThreadInterrupt(dataCh);
+
     uv_thread_join(&dataCh->workerThread);
     IHS_SessionPacketsWindowDestroy(dataCh->window);
     uv_cond_destroy(&dataCh->cond);
@@ -67,6 +74,16 @@ void IHS_SessionChannelDataReceived(struct IHS_SessionChannel *channel, const IH
     }
     uv_cond_signal(&dataCh->cond);
     uv_mutex_unlock(&dataCh->mutex);
+}
+
+
+size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data) {
+    size_t offset = 0;
+    offset += IHS_ReadUInt16LE(&data[offset], &header->id);
+    offset += IHS_ReadUInt32LE(&data[offset], &header->timestamp);
+    offset += IHS_ReadUInt16LE(&data[offset], &header->inputMark);
+    offset += IHS_ReadUInt32LE(&data[offset], &header->inputRecvTimestamp);
+    return offset;
 }
 
 void IHS_SessionChannelControlOnDataControl(IHS_SessionChannel *channel, EStreamControlMessage type,
@@ -119,10 +136,37 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     uv_mutex_lock(&channel->mutex);
     while (!channel->threadInterrupted) {
         uv_cond_wait(&channel->cond, &channel->mutex);
-        for (; IHS_SessionPacketsWindowPoll(channel->window, &frame); IHS_SessionPacketsWindowReleaseFrame(&frame)) {
-            cls->received((IHS_SessionChannel *) channel, &frame);
+        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(50));
+             IHS_SessionPacketsWindowPoll(channel->window, &frame);
+             IHS_SessionPacketsWindowReleaseFrame(&frame)) {
+            ReceivedFrame(channel, &frame);
         }
     }
     uv_mutex_unlock(&channel->mutex);
     cls->stop((IHS_SessionChannel *) channel);
+}
+
+static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
+    uv_mutex_lock(&channel->mutex);
+    channel->threadInterrupted = true;
+    uv_cond_signal(&channel->cond);
+    uv_mutex_unlock(&channel->mutex);
+}
+
+static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame) {
+    assert (frame->header.type == IHS_SessionPacketTypeUnreliable);
+    size_t bodyOffset = 0;
+    EStreamDataMessage type = frame->body[bodyOffset++];
+    if (type != k_EStreamDataPacket) {
+        return;
+    }
+    IHS_SessionDataFrameHeader header;
+    bool hasHeader = false;
+    if (frame->bodyLen - bodyOffset > IHS_SESSION_DATA_FRAME_HEADER_SIZE) {
+        hasHeader = true;
+        bodyOffset += IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body[bodyOffset]);
+    }
+    const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
+    cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body[bodyOffset],
+                   frame->bodyLen - bodyOffset);
 }

@@ -32,8 +32,6 @@
 #include "endianness.h"
 #include "crypto.h"
 
-static void BaseThread(IHS_Base *base);
-
 static void SendCallback(uv_udp_send_t *req, int status);
 
 static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size);
@@ -60,7 +58,6 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb
     IHS_CryptoSymmetricEncrypt(in, 8, base->secretKey, sizeof(base->secretKey),
                                base->deviceToken, &deviceTokenLen);
 
-
     base->loop = uv_loop_new();
     uv_mutex_init(&base->mutex);
     base->loop->data = base;
@@ -70,14 +67,21 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb
 
     uv_udp_set_broadcast(&base->udp, broadcast);
     uv_udp_recv_start(&base->udp, BufferAlloc, recvCb);
-    uv_thread_create(&base->workerThread, (void (*)(void *)) BaseThread, base);
+}
+
+void IHS_BaseRun(IHS_Base *base) {
+    uv_run(base->loop, UV_RUN_DEFAULT);
 }
 
 void IHS_BaseStop(IHS_Base *base) {
     uv_stop(base->loop);
 }
 
-void IHS_BaseWaitFinish(IHS_Base *base) {
+void IHS_BaseThreadedRun(IHS_Base *base) {
+    uv_thread_create(&base->workerThread, (void (*)(void *)) IHS_BaseRun, base);
+}
+
+void IHS_BaseThreadedJoin(IHS_Base *base) {
     uv_thread_join(&base->workerThread);
 }
 
@@ -133,10 +137,6 @@ static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
         abort();
     }
     return uv_buf_init(buf, suggested_size);
-}
-
-static void BaseThread(IHS_Base *base) {
-    uv_run(base->loop, UV_RUN_DEFAULT);
 }
 
 static void SendCallback(uv_udp_send_t *req, int status) {

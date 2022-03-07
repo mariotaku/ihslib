@@ -48,6 +48,8 @@ struct IHS_SessionPacketsWindow {
     uint16_t tailId;
 };
 
+#define IS_FRAME_HEAD(type) ((type) == IHS_SessionPacketTypeReliable || (type) == IHS_SessionPacketTypeUnreliable)
+
 /**
  *
  * @param window
@@ -87,16 +89,16 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
         return false;
     }
     window->tail = (window->tail + tailOffset) % window->capacity;
-    IHS_SessionFramePacket *fp = &window->data[window->tail];
+    IHS_SessionFramePacket *tailPkt = &window->data[window->tail];
     /* Ignore if the slot is used */
-    if (fp->used) {
+    if (tailPkt->used) {
         return true;
     }
-    fp->used = true;
-    fp->header = packet->header;
-    fp->bodyLen = packet->bodyLen;
-    fp->body = malloc(packet->bodyLen);
-    memcpy(fp->body, packet->body, packet->bodyLen);
+    tailPkt->used = true;
+    tailPkt->header = packet->header;
+    tailPkt->bodyLen = packet->bodyLen;
+    tailPkt->body = malloc(packet->bodyLen);
+    memcpy(tailPkt->body, packet->body, packet->bodyLen);
     /* Only do incremental update */
     if (tailOffset > 0) {
         window->tailId = packet->header.packetId;
@@ -105,14 +107,14 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
 }
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame) {
-    size_t size = IHS_SessionPacketsWindowSize(window);
+    uint16_t size = IHS_SessionPacketsWindowSize(window);
     if (!size) return false;
     IHS_SessionFramePacket *data = window->data;
     assert(window->head >= 0);
     IHS_SessionFramePacket *packet = &data[window->head % window->capacity];
     IHS_SessionPacketType type = packet->header.type;
     /* Must start from packet head */
-    if (type != IHS_SessionPacketTypeReliable && type != IHS_SessionPacketTypeUnreliable) {
+    if (!IS_FRAME_HEAD(type)) {
         return false;
     }
     /* Must have size enough for all fragments */
@@ -147,6 +149,41 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         window->head = window->head % window->capacity;
     }
     return true;
+}
+
+void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff) {
+    uint16_t size = IHS_SessionPacketsWindowSize(window);
+    if (!size) return;
+    IHS_SessionFramePacket *data = window->data;
+    IHS_SessionFramePacket *tailPkt = &data[window->tail];
+    if (tailPkt->header.sendTimestamp < diff) return;
+    /* Should discard all frames older than discardBefore */
+    uint32_t discardBefore = tailPkt->header.sendTimestamp - diff;
+    /* Find first valid index after discardBefore */
+    int firstValid = -1;
+    for (int i = window->head, j = window->head + size; i < j; i++) {
+        IHS_SessionFramePacket *item = &data[i % window->capacity];
+        if (!item->used || !IS_FRAME_HEAD(item->header.type)) {
+            continue;
+        }
+        if (item->header.sendTimestamp >= discardBefore) {
+            firstValid = i;
+            break;
+        }
+    }
+    for (int i = window->head; i < firstValid; i++) {
+        IHS_SessionFramePacket *item = &data[i % window->capacity];
+        if (!item->used) {
+            continue;
+        }
+        /* This packet is used, recycle it */
+        free(item->body);
+        memset(item, 0, sizeof(IHS_SessionFramePacket));
+    }
+    window->head = firstValid;
+    if (window->head > window->capacity) {
+        window->head = window->head % window->capacity;
+    }
 }
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame) {

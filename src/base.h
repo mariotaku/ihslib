@@ -47,7 +47,13 @@ typedef struct IHS_BaseTimer IHS_BaseTimer;
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast);
 
+void IHS_BaseRun(IHS_Base *base);
+
 void IHS_BaseStop(IHS_Base *base);
+
+void IHS_BaseThreadedRun(IHS_Base *base);
+
+void IHS_BaseThreadedJoin(IHS_Base *base);
 
 void IHS_BaseWaitFinish(IHS_Base *base);
 

@@ -44,8 +44,8 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
     uint8_t *iv = out;
     unsigned char ivLen = mbedtls_md_get_size(md);
 
-    const uint8_t *key = session->state.config.sessionKey;
-    const size_t keyLen = session->state.config.sessionKeyLen;
+    const uint8_t *key = session->config.sessionKey;
+    const size_t keyLen = session->config.sessionKeyLen;
 
     if ((ret = mbedtls_md_hmac(md, key, keyLen, plain, plainLen, iv)) != 0) {
         goto exit;
@@ -66,8 +66,8 @@ int IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLe
                             uint64_t expectedSequence) {
     const uint8_t *iv = in;
 
-    const uint8_t *key = session->state.config.sessionKey;
-    const size_t keyLen = session->state.config.sessionKeyLen;
+    const uint8_t *key = session->config.sessionKey;
+    const size_t keyLen = session->config.sessionKeyLen;
     int ret;
     if ((ret = IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen)) != 0) {
         goto exit;
@@ -104,8 +104,8 @@ int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t i
     if (*outLen < mdSize) {
         return MBEDTLS_ERR_MD_BAD_INPUT_DATA;
     }
-    const uint8_t *key = session->state.config.sessionKey;
-    const size_t keyLen = session->state.config.sessionKeyLen;
+    const uint8_t *key = session->config.sessionKey;
+    const size_t keyLen = session->config.sessionKeyLen;
     int ret;
     if ((ret = mbedtls_md_hmac(md, key, keyLen, in, inLen, out)) != 0) {
         return ret;

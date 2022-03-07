@@ -96,17 +96,18 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
                         IHS_HostAddress address = {state->host.address.ip, response->port};
-                        client->callbacks.streamingSuccess(client, address, key, keyLen);
+                        client->callbacks.streamingSuccess(client, address, key, keyLen, client->callbacksContext);
                     }
                     break;
                 case k_ERemoteDeviceStreamingInProgress:
                     if (client->callbacks.streamingInProgress) {
-                        client->callbacks.streamingInProgress(client);
+                        client->callbacks.streamingInProgress(client, client->callbacksContext);
                     }
                     break;
                 default:
                     if (client->callbacks.streamingFailed) {
-                        client->callbacks.streamingFailed(client, (IHS_StreamingResult) response->result);
+                        client->callbacks.streamingFailed(client, (IHS_StreamingResult) response->result,
+                                                          client->callbacksContext);
                     }
                     break;
             }

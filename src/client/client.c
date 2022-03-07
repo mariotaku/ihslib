@@ -61,6 +61,7 @@ static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStrea
 
 IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     IHS_Client *client = malloc(sizeof(IHS_Client));
+    memset(client, 0, sizeof(IHS_Client));
     IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
 
     client->privCallbacks.discovery = IHS_PRIV_ClientDiscoveryCallback;
@@ -69,18 +70,30 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     return client;
 }
 
+void IHS_ClientRun(IHS_Client *client) {
+    IHS_BaseRun(&client->base);
+}
+
 void IHS_ClientStop(IHS_Client *client) {
     IHS_BaseStop(&client->base);
 }
 
+void IHS_ClientThreadedStart(IHS_Client *client) {
+    IHS_BaseThreadedRun(&client->base);
+}
+
+void IHS_ClientThreadedJoin(IHS_Client *client) {
+    IHS_BaseThreadedJoin(&client->base);
+}
+
 void IHS_ClientDestroy(IHS_Client *client) {
-    IHS_BaseWaitFinish(&client->base);
     IHS_BaseFree(&client->base);
     free(client);
 }
 
-void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callbacks) {
+void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callbacks, void *context) {
     client->callbacks = *callbacks;
+    client->callbacksContext = context;
 }
 
 const char *IHS_ClientError(IHS_Client *client) {

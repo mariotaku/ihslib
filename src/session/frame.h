@@ -52,6 +52,13 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame);
 
+/**
+ * Discard all frames with timestamp difference between tail larger than `diff`
+ * @param window
+ * @param diff
+ */
+void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff);
+
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
 
 uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);

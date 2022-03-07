@@ -74,7 +74,7 @@ typedef struct IHS_StreamAudioCallbacks {
 typedef struct IHS_StreamVideoCallbacks {
     void (*start)(void *context, const IHS_StreamVideoConfig *config);
 
-    void (*received)(void *context, const uint8_t *data, size_t dataLen);
+    void (*received)(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence);
 
     void (*stop)(void *context);
 } IHS_StreamVideoCallbacks;

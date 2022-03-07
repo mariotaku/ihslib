@@ -25,34 +25,12 @@
 
 #pragma once
 
-#include "ihslib/session.h"
-#include "base.h"
-#include "packet.h"
-#include "session/channels/channel.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-typedef struct IHS_SessionState {
-    int mtu;
-    uint8_t connectionId;
-    uint8_t hostConnectionId;
-} IHS_SessionState;
+#include "ihslib.h"
 
-struct IHS_Session {
-    IHS_Base base;
-    IHS_SessionConfig config;
-    IHS_SessionState state;
-    uint8_t numChannels;
-    IHS_SessionChannel *channels[16];
-    const IHS_StreamAudioCallbacks *audioCallbacks;
-    void *audioContext;
-    const IHS_StreamVideoCallbacks *videoCallbacks;
-    void *videoContext;
-};
+extern const IHS_StreamAudioCallbacks AudioCallbacks;
+extern const IHS_StreamVideoCallbacks VideoCallbacks;
 
-#define IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(millis) ((uint32_t) (((uint64_t) (millis)) * 65536 / 1000))
-
-void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet);
-
-uint32_t IHS_SessionPacketTimestamp(IHS_Session *session);
-
-bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
-
+bool RequestStream(IHS_SessionConfig *config);

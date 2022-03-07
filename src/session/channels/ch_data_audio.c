@@ -40,7 +40,8 @@ static void ChannelAudioDeinit(IHS_SessionChannel *channel);
 
 static void DataStart(struct IHS_SessionChannel *channel);
 
-static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionFrame *frame);
+static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
+                         const uint8_t *data, size_t len);
 
 static void DataStop(struct IHS_SessionChannel *channel);
 
@@ -52,7 +53,7 @@ static const IHS_SessionChannelDataClass ChannelClass = {
                 .instanceSize = sizeof(ChannelAudio)
         },
         .start = DataStart,
-        .received = DataReceived,
+        .dataFrame = DataReceived,
         .stop = DataStop,
 };
 
@@ -90,10 +91,11 @@ static void DataStart(struct IHS_SessionChannel *channel) {
     callbacks->start(channel->session->audioContext, &audioCh->config);
 }
 
-static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionFrame *frame) {
+static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
+                         const uint8_t *data, size_t len) {
     const IHS_StreamAudioCallbacks *callbacks = channel->session->audioCallbacks;
     if (!callbacks->received) return;
-    callbacks->received(channel->session->audioContext, frame->body, frame->bodyLen);
+    callbacks->received(channel->session->audioContext, data, len);
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {

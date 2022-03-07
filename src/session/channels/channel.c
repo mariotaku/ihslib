@@ -36,7 +36,7 @@ IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls,
                                              IHS_SessionChannelType type, IHS_SessionChannelId id, const void *config) {
     assert(cls->instanceSize >= sizeof(IHS_SessionChannel));
     IHS_SessionChannel *channel = malloc(cls->instanceSize);
-    memset(channel, 0, sizeof(IHS_SessionChannel));
+    memset(channel, 0, cls->instanceSize);
     channel->cls = cls;
     channel->type = type;
     channel->id = id;
@@ -112,7 +112,7 @@ uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {
     return channel->nextPacketId++;
 }
 
-void IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
+bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
                                  const uint8_t *body, size_t bodyLen, size_t padTo) {
     IHS_Session *session = channel->session;
     IHS_SessionPacket packet;
@@ -130,7 +130,7 @@ void IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
     if (padTo) {
         IHS_SessionPacketPadTo(&packet, padTo);
     }
-    IHS_SessionSendPacket(session, &packet);
+    return IHS_SessionSendPacket(session, &packet);
 }
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok) {

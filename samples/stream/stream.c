@@ -24,40 +24,64 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
+
+#include <gst/gst.h>
+#include <unistd.h>
+
 #include "ihslib.h"
+#include "stream.h"
 #include "common.h"
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
 
 static void InterruptHandler(int sig);
 
-static IHS_Client *ActiveClient = NULL;
+static bool Running = true;
+
+static IHS_Session *ActiveSession = NULL;
+
 
 int main(int argc, char *argv[]) {
+    gst_init(&argc, &argv);
+
     signal(SIGINT, InterruptHandler);
-    IHS_ClientConfig config = {deviceId, secretKey, deviceName};
-    IHS_Client *client = IHS_ClientCreate(&config);
-    IHS_ClientCallbacks callbacks = {
-            .hostDiscovered = OnHostStatus
-    };
-    IHS_ClientSetCallbacks(client, &callbacks, NULL);
-    IHS_ClientDiscoveryBroadcast(client);
-    ActiveClient = client;
-    IHS_ClientRun(client);
-    IHS_ClientDestroy(client);
+
+    IHS_SessionConfig sessionConfig;
+    if (!RequestStream(&sessionConfig)) {
+        return -1;
+    }
+
+    for (int i = 5; i > 0; i--) {
+        printf("Start streaming in %d seconds\n", i);
+        sleep(1);
+    }
+
+    printf("Start Streaming, sessionKey[%u]=\"", sessionConfig.sessionKeyLen);
+    for (int i = 0; i < sessionConfig.sessionKeyLen; i++) {
+        printf("%02x", sessionConfig.sessionKey[i]);
+    }
+    printf("\"\n");
+
+    IHS_Session *session = IHS_SessionCreate(&clientConfig, &sessionConfig);
+    IHS_SessionSetAudioCallbacks(session, &AudioCallbacks, NULL);
+    IHS_SessionSetVideoCallbacks(session, &VideoCallbacks, NULL);
+    if (!IHS_SessionConnect(session)) {
+        fprintf(stderr, "Failed to start session\n");
+        goto sessionExit;
+    }
+    ActiveSession = session;
+    IHS_SessionRun(session);
+    sessionExit:
+    IHS_SessionDestroy(session);
 }
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
-    printf("Found device: %s, port: %d, euniverse: %d\n",
-           info.hostname, info.address.port, info.euniverse);
-}
 
 static void InterruptHandler(int sig) {
-    if (!ActiveClient) {
+    if (!ActiveSession) {
         signal(SIGINT, SIG_DFL);
         raise(SIGINT);
         return;
     }
-    IHS_ClientStop(ActiveClient);
+    IHS_SessionDisconnect(ActiveSession);
 }

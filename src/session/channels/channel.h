@@ -77,7 +77,7 @@ void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
 
-void IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
+bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
                                  const uint8_t *body, size_t bodyLen, size_t padTo);
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);

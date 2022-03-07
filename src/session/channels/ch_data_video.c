@@ -29,20 +29,39 @@
 #include "ch_data_video.h"
 #include "ch_data.h"
 
+#include "crypto.h"
+
 typedef struct ChannelVideo {
     IHS_SessionChannelData base;
     IHS_StreamVideoConfig config;
 } ChannelVideo;
 
+typedef struct VideoFrameHeader {
+    uint16_t sequence;
+    uint8_t flags;
+    uint16_t reserved1;
+    uint16_t reserved2;
+} VideoFrameHeader;
+
+#define VIDEO_FRAME_HEADER_SIZE 7
+
+enum {
+    VideoFrameFlagProtected = 0x10,
+    VideoFrameFlagEncrypted = 0x20,
+};
+
 static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config);
 
 static void ChannelVideoDeinit(IHS_SessionChannel *channel);
 
-static void DataStart(struct IHS_SessionChannel *channel);
+static void DataStart(IHS_SessionChannel *channel);
 
-static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionFrame *frame);
+static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
+                         const uint8_t *data, size_t len);
 
-static void DataStop(struct IHS_SessionChannel *channel);
+static void DataStop(IHS_SessionChannel *channel);
+
+static size_t VideoFrameHeaderParse(VideoFrameHeader *header, const uint8_t *data);
 
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
@@ -52,8 +71,13 @@ static const IHS_SessionChannelDataClass ChannelClass = {
                 .instanceSize = sizeof(ChannelVideo)
         },
         .start = DataStart,
-        .received = DataReceived,
+        .dataFrame = DataReceived,
         .stop = DataStop,
+};
+
+static const uint8_t EmptyIV[16] = {
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
 };
 
 IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message) {
@@ -90,14 +114,32 @@ static void DataStart(struct IHS_SessionChannel *channel) {
     callbacks->start(channel->session->videoContext, &videoCh->config);
 }
 
-static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionFrame *frame) {
+static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
+                         const uint8_t *data, size_t len) {
     const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
     if (!callbacks->received) return;
-    callbacks->received(channel->session->videoContext, frame->body, frame->bodyLen);
+    size_t offset = 0;
+    VideoFrameHeader vhead;
+    offset += VideoFrameHeaderParse(&vhead, &data[offset]);
+    if (vhead.flags & VideoFrameFlagEncrypted) {
+        const IHS_SessionConfig *config = &channel->session->config;
+        uint8_t *decrypted = malloc(len - offset);
+        size_t decryptedLen = len - offset;
+        IHS_CryptoSymmetricDecryptWithIV(&data[offset], len - offset, EmptyIV, sizeof(EmptyIV),
+                                         config->sessionKey, config->sessionKeyLen, decrypted, &decryptedLen);
+        callbacks->received(channel->session->videoContext, decrypted, decryptedLen, vhead.sequence);
+        free(decrypted);
+    } else {
+        callbacks->received(channel->session->videoContext, data, len, vhead.sequence);
+    }
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {
     const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
     if (!callbacks->stop) return;
     callbacks->stop(channel->session->videoContext);
+}
+
+static size_t VideoFrameHeaderParse(VideoFrameHeader *header, const uint8_t *data) {
+    return VIDEO_FRAME_HEADER_SIZE;
 }

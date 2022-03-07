@@ -36,4 +36,7 @@ static const uint8_t secretKey[32] = {
         11, 45, 14, 19, 19, 8, 1, 0,
 };
 
-static const char *deviceName = "BABYLON STAGE34";
+static const char deviceName[] = "BABYLON STAGE34\0";
+
+
+static const IHS_ClientConfig clientConfig = {deviceId, secretKey, deviceName};

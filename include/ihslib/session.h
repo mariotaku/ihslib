@@ -36,14 +36,23 @@ typedef struct IHS_SessionConfig {
     size_t sessionKeyLen;
 } IHS_SessionConfig;
 
-IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *config);
+IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig);
+
+void IHS_SessionRun(IHS_Session *session);
+
+void IHS_SessionStop(IHS_Session *session);
+
+void IHS_SessionThreadedRun(IHS_Session *session);
+
+void IHS_SessionThreadedJoin(IHS_Session *session);
+
+void IHS_SessionDestroy(IHS_Session *session);
+
+
+bool IHS_SessionConnect(IHS_Session *session);
+
+void IHS_SessionDisconnect(IHS_Session *session);
 
 void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context);
 
 void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context);
-
-void IHS_SessionStart(IHS_Session *session, const IHS_SessionConfig *config);
-
-void IHS_SessionDisconnect(IHS_Session *session);
-
-void IHS_SessionDestroy(IHS_Session *session);
