@@ -26,7 +26,8 @@
 #pragma once
 
 #include "common.h"
-#include "datachannels.h"
+#include "audio.h"
+#include "video.h"
 
 typedef struct IHS_Session IHS_Session;
 

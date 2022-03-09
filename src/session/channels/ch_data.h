@@ -69,8 +69,6 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel);
 
 void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
-size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data);
+void IHS_SessionChannelDataLost(IHS_SessionChannel *channel);
 
-void IHS_SessionChannelControlOnDataControl(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                            const uint8_t *payload, size_t payloadLen,
-                                            const IHS_SessionPacketHeader *header);
+size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data);

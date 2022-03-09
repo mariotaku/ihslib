@@ -28,15 +28,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef enum IHS_StreamAudioCodec {
-    IHS_StreamAudioCodecNone = 0,
-    IHS_StreamAudioCodecRaw = 1,
-    IHS_StreamAudioCodecVorbis = 2,
-    IHS_StreamAudioCodecOpus = 3,
-    IHS_StreamAudioCodecMP3 = 4,
-    IHS_StreamAudioCodecAAC = 5,
-} IHS_StreamAudioCodec;
-
 typedef enum IHS_StreamVideoCodec {
     IHS_StreamVideoCodecNone = 0,
     IHS_StreamVideoCodecRaw = 1,
@@ -48,13 +39,10 @@ typedef enum IHS_StreamVideoCodec {
     IHS_StreamVideoCodecORBX2 = 7,
 } IHS_StreamVideoCodec;
 
-typedef struct IHS_StreamAudioConfig {
-    uint32_t channels;
-    uint32_t frequency;
-    IHS_StreamAudioCodec codec;
-    uint8_t *codecData;
-    size_t codecDataLen;
-} IHS_StreamAudioConfig;
+enum {
+    IHS_StreamVideoFrameNone = 0x00,
+    IHS_StreamVideoFrameKeyFrame = 0x01,
+};
 
 typedef struct IHS_StreamVideoConfig {
     uint32_t width, height;
@@ -63,18 +51,10 @@ typedef struct IHS_StreamVideoConfig {
     size_t codecDataLen;
 } IHS_StreamVideoConfig;
 
-typedef struct IHS_StreamAudioCallbacks {
-    void (*start)(void *context, const IHS_StreamAudioConfig *config);
-
-    void (*received)(void *context, const uint8_t *data, size_t dataLen);
-
-    void (*stop)(void *context);
-} IHS_StreamAudioCallbacks;
-
 typedef struct IHS_StreamVideoCallbacks {
     void (*start)(void *context, const IHS_StreamVideoConfig *config);
 
-    void (*received)(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence);
+    void (*received)(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence, uint8_t flags);
 
     void (*stop)(void *context);
 } IHS_StreamVideoCallbacks;

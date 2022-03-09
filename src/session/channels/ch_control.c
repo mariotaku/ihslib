@@ -186,10 +186,15 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             break;
         }
         case k_EStreamControlStartAudioData:
-        case k_EStreamControlStopAudioData:
+        case k_EStreamControlStopAudioData: {
+            IHS_SessionChannelControlOnAudio(channel, type, payload, payloadLen, header);
+            break;
+        }
         case k_EStreamControlStartVideoData:
-        case k_EStreamControlStopVideoData: {
-            IHS_SessionChannelControlOnDataControl(channel, type, payload, payloadLen, header);
+        case k_EStreamControlStopVideoData:
+        case k_EStreamControlVideoEncoderInfo:
+        case k_EStreamControlSetCaptureSize: {
+            IHS_SessionChannelControlOnVideo(channel, type, payload, payloadLen, header);
             break;
         }
         case k_EStreamControlSetQoS:

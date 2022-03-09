@@ -26,29 +26,22 @@
 #include <malloc.h>
 #include <memory.h>
 
-#include "ch_data_video.h"
 #include "ch_data.h"
+#include "ch_data_video.h"
+#include "video/partial_frame.h"
 
 #include "crypto.h"
+#include "endianness.h"
 
 typedef struct ChannelVideo {
     IHS_SessionChannelData base;
     IHS_StreamVideoConfig config;
+    uint16_t expectedSequence;
+    bool waitingKeyFrame;
+    IHS_SessionVideoPartialFrame *partialFrames;
 } ChannelVideo;
 
-typedef struct VideoFrameHeader {
-    uint16_t sequence;
-    uint8_t flags;
-    uint16_t reserved1;
-    uint16_t reserved2;
-} VideoFrameHeader;
-
 #define VIDEO_FRAME_HEADER_SIZE 7
-
-enum {
-    VideoFrameFlagProtected = 0x10,
-    VideoFrameFlagEncrypted = 0x20,
-};
 
 static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config);
 
@@ -61,7 +54,14 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
 
 static void DataStop(IHS_SessionChannel *channel);
 
-static size_t VideoFrameHeaderParse(VideoFrameHeader *header, const uint8_t *data);
+static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const uint8_t *data);
+
+static void NotifyReceived(IHS_SessionChannel *channel, const uint8_t *data, size_t len, uint8_t flags);
+
+static void ConsumePartialFrames(IHS_SessionChannel *channel);
+
+static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
+
 
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
@@ -102,6 +102,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
 static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelDataDeinit(channel);
     ChannelVideo *videoCh = (ChannelVideo *) channel;
+    IHS_VideoPartialFrameClear(videoCh->partialFrames);
     if (videoCh->config.codecData) {
         free(videoCh->config.codecData);
     }
@@ -116,22 +117,40 @@ static void DataStart(struct IHS_SessionChannel *channel) {
 
 static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                          const uint8_t *data, size_t len) {
-    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
-    if (!callbacks->received) return;
+    ChannelVideo *videoCh = (ChannelVideo *) channel;
     size_t offset = 0;
-    VideoFrameHeader vhead;
+    IHS_SessionVideoFrameHeader vhead;
     offset += VideoFrameHeaderParse(&vhead, &data[offset]);
+    if (vhead.flags & VideoFrameFlagKeyFrame) {
+        videoCh->waitingKeyFrame = false;
+        videoCh->expectedSequence = vhead.sequence;
+    }
+    if (vhead.sequence != videoCh->expectedSequence) {
+        fprintf(stderr, "Expected sequence %u, got %u\n", videoCh->expectedSequence,
+                vhead.sequence);
+        IHS_SessionChannelDataLost(channel);
+        videoCh->waitingKeyFrame = true;
+        videoCh->expectedSequence = vhead.sequence;
+    }
+    videoCh->expectedSequence++;
+    if (videoCh->waitingKeyFrame) return;
     if (vhead.flags & VideoFrameFlagEncrypted) {
         const IHS_SessionConfig *config = &channel->session->config;
-        uint8_t *decrypted = malloc(len - offset);
-        size_t decryptedLen = len - offset;
-        IHS_CryptoSymmetricDecryptWithIV(&data[offset], len - offset, EmptyIV, sizeof(EmptyIV),
+        uint8_t *decrypted = malloc(len);
+        size_t decryptedLen = len;
+        IHS_CryptoSymmetricDecryptWithIV(data, len, EmptyIV, sizeof(EmptyIV),
                                          config->sessionKey, config->sessionKeyLen, decrypted, &decryptedLen);
-        callbacks->received(channel->session->videoContext, decrypted, decryptedLen, vhead.sequence);
+//        videoCh->partialFrames = IHS_VideoPartialFrameInsert(videoCh->partialFrames, &vhead,
+//                                                             decrypted, decryptedLen);
+        NotifyReceived(channel, decrypted, decryptedLen, vhead.flags);
         free(decrypted);
     } else {
-        callbacks->received(channel->session->videoContext, data, len, vhead.sequence);
+//        videoCh->partialFrames = IHS_VideoPartialFrameInsert(videoCh->partialFrames, &vhead,
+//
+//                                                             &data[offset], len - offset);
+        NotifyReceived(channel, &data[offset], len - offset, vhead.flags);
     }
+//    ConsumePartialFrames(channel);
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {
@@ -140,6 +159,101 @@ static void DataStop(struct IHS_SessionChannel *channel) {
     callbacks->stop(channel->session->videoContext);
 }
 
-static size_t VideoFrameHeaderParse(VideoFrameHeader *header, const uint8_t *data) {
-    return VIDEO_FRAME_HEADER_SIZE;
+static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const uint8_t *data) {
+    size_t offset = 0;
+    offset += IHS_ReadUInt16LE(&data[offset], &header->sequence);
+    header->flags = data[offset++];
+    offset += IHS_ReadUInt16LE(&data[offset], &header->reserved1);
+    offset += IHS_ReadUInt16LE(&data[offset], &header->reserved2);
+    return offset;
+}
+
+
+static void ConsumePartialFrames(IHS_SessionChannel *channel) {
+    ChannelVideo *videoCh = (ChannelVideo *) channel;
+
+    IHS_SessionVideoPartialFrame *finishedNode = NULL;
+    uint16_t partialReserved1 = 0;
+    size_t frameLen = 0;
+    IHS_VideoPartialFrameForEach(videoCh->partialFrames, cur) {
+//        if (cur->reserved2) {
+//            printf("cur->reserved2=%u\n", cur->reserved2);
+//            if (cur->reserved1 != partialReserved1) {
+//                if (finishedNode) {
+//                    printf("Decode this frame\n");
+//                    break;
+//                }
+//            }
+//            if (cur->flags & VideoFrameFlagReserved1Increment) {
+//                if (cur->flags & VideoFrameFlagFrameFinish) {
+//                    partialReserved1 = 0;
+//                } else {
+//                    partialReserved1 = cur->reserved2 + 1;
+//                }
+//            }
+//        }
+        frameLen += cur->dataLen;
+        // TODO append buffer
+        if (cur->flags & VideoFrameFlagFrameFinish) {
+            finishedNode = cur;
+        }
+    }
+    if (!finishedNode || !frameLen) return;
+
+    IHS_SessionVideoPartialFrame *oldHead = videoCh->partialFrames;
+    IHS_SessionVideoPartialFrame *newHead = finishedNode->next;
+    if (newHead) {
+        newHead->prev = NULL;
+    }
+    finishedNode->next = NULL;
+    videoCh->partialFrames = newHead;
+
+    uint8_t *frameData = malloc(frameLen);
+    size_t frameSize = 0;
+    IHS_VideoPartialFrameForEach(oldHead, cur) {
+        memcpy(&frameData[frameSize], cur->data, cur->dataLen);
+        frameSize += cur->dataLen;
+    }
+    NotifyReceived(channel, frameData, frameSize, oldHead->flags);
+    free(frameData);
+    IHS_VideoPartialFrameClear(oldHead);
+}
+
+static void NotifyReceived(IHS_SessionChannel *channel, const uint8_t *data, size_t len, uint8_t hflags) {
+    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
+    if (!callbacks->received) return;
+    void *context = channel->session->videoContext;
+    uint8_t flags = IHS_StreamVideoFrameNone;
+    if (hflags & VideoFrameFlagKeyFrame) {
+        flags |= IHS_StreamVideoFrameKeyFrame;
+    }
+    if (hflags & VideoFrameFlagNeedEscape) {
+        size_t escapedCap = (len * 3) / 2 + 5;
+        uint8_t *escaped = malloc(escapedCap);
+        size_t escapedLen = 0;
+        if (hflags & VideoFrameFlagNeedStartSequence) {
+            assert(len >= 1);
+            const static uint8_t startSeq[] = {0x00, 0x00, 0x00, 0x01};
+            memcpy(&escaped[escapedLen], startSeq, sizeof(startSeq));
+            escapedLen += sizeof(startSeq);
+        }
+        escapedLen += EscapeNAL(&escaped[escapedLen], data, len);
+        callbacks->received(context, escaped, escapedLen, 0, flags);
+        free(escaped);
+    } else {
+        callbacks->received(context, data, len, 0, flags);
+    }
+}
+
+static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen) {
+    uint8_t *dst = out;
+    const uint8_t *end = src + inLen;
+    if (src < end) *dst++ = *src++;
+    if (src < end) *dst++ = *src++;
+    while (src < end) {
+        if (src[0] <= 0x03 && !dst[-2] && !dst[-1])
+            *dst++ = 0x03;
+        *dst++ = *src++;
+    }
+    return dst - out;
 }

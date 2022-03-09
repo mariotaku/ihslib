@@ -91,8 +91,8 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     config.selected_video_codec = videoCodec;
 
     CStreamVideoMode availableVideoMode = CSTREAM_VIDEO_MODE__INIT;
-    availableVideoMode.width = 1920;
-    availableVideoMode.height = 1080;
+    availableVideoMode.width = 1280;
+    availableVideoMode.height = 720;
 
     CStreamVideoMode *availableVideoModes[] = {&availableVideoMode};
     config.n_available_video_modes = 1;

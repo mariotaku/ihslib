@@ -28,7 +28,6 @@
 #include <signal.h>
 
 #include <gst/gst.h>
-#include <unistd.h>
 
 #include "ihslib.h"
 #include "stream.h"
@@ -39,7 +38,7 @@ static void InterruptHandler(int sig);
 
 static bool Running = true;
 
-static IHS_Session *ActiveSession = NULL;
+IHS_Session *ActiveSession = NULL;
 
 
 int main(int argc, char *argv[]) {
@@ -50,11 +49,6 @@ int main(int argc, char *argv[]) {
     IHS_SessionConfig sessionConfig;
     if (!RequestStream(&sessionConfig)) {
         return -1;
-    }
-
-    for (int i = 5; i > 0; i--) {
-        printf("Start streaming in %d seconds\n", i);
-        sleep(1);
     }
 
     printf("Start Streaming, sessionKey[%u]=\"", sessionConfig.sessionKeyLen);

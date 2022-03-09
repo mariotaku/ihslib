@@ -24,7 +24,6 @@
  */
 
 #include <memory.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -171,6 +170,7 @@ void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t 
             break;
         }
     }
+    if (firstValid < 0) return;
     for (int i = window->head; i < firstValid; i++) {
         IHS_SessionFramePacket *item = &data[i % window->capacity];
         if (!item->used) {

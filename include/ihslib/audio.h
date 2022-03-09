@@ -25,23 +25,30 @@
 
 #pragma once
 
-#include "channel.h"
-#include "protobuf/remoteplay.pb-c.h"
+#include <stdint.h>
+#include <stddef.h>
 
-typedef struct IHS_SessionVideoFrameHeader {
-    uint16_t sequence;
-    uint8_t flags;
-    uint16_t reserved1;
-    uint16_t reserved2;
-} IHS_SessionVideoFrameHeader;
+typedef enum IHS_StreamAudioCodec {
+    IHS_StreamAudioCodecNone = 0,
+    IHS_StreamAudioCodecRaw = 1,
+    IHS_StreamAudioCodecVorbis = 2,
+    IHS_StreamAudioCodecOpus = 3,
+    IHS_StreamAudioCodecMP3 = 4,
+    IHS_StreamAudioCodecAAC = 5,
+} IHS_StreamAudioCodec;
 
-enum {
-    VideoFrameFlagNeedStartSequence = 0x01,
-    VideoFrameFlagNeedEscape = 0x02,
-    VideoFrameFlagReserved1Increment = 0x04,
-    VideoFrameFlagFrameFinish = 0x08,
-    VideoFrameFlagKeyFrame = 0x10,
-    VideoFrameFlagEncrypted = 0x20,
-};
+typedef struct IHS_StreamAudioConfig {
+    uint32_t channels;
+    uint32_t frequency;
+    IHS_StreamAudioCodec codec;
+    uint8_t *codecData;
+    size_t codecDataLen;
+} IHS_StreamAudioConfig;
 
-IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message);
+typedef struct IHS_StreamAudioCallbacks {
+    void (*start)(void *context, const IHS_StreamAudioConfig *config);
+
+    void (*received)(void *context, const uint8_t *data, size_t dataLen);
+
+    void (*stop)(void *context);
+} IHS_StreamAudioCallbacks;

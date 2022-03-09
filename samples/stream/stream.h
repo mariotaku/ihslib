@@ -33,4 +33,6 @@
 extern const IHS_StreamAudioCallbacks AudioCallbacks;
 extern const IHS_StreamVideoCallbacks VideoCallbacks;
 
+extern IHS_Session *ActiveSession;
+
 bool RequestStream(IHS_SessionConfig *config);

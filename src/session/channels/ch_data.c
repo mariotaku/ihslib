@@ -23,12 +23,10 @@
  *
  */
 
-#include <stdlib.h>
 #include <memory.h>
+#include <malloc.h>
 
 #include "ch_data.h"
-#include "ch_data_audio.h"
-#include "ch_data_video.h"
 #include "client/client_pri.h"
 #include "endianness.h"
 
@@ -65,7 +63,7 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
     uv_mutex_destroy(&dataCh->mutex);
 }
 
-void IHS_SessionChannelDataReceived(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     uv_mutex_lock(&dataCh->mutex);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
@@ -76,6 +74,16 @@ void IHS_SessionChannelDataReceived(struct IHS_SessionChannel *channel, const IH
     uv_mutex_unlock(&dataCh->mutex);
 }
 
+void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
+    CStreamDataLostMsg message = CSTREAM_DATA_LOST_MSG__INIT;
+    uint8_t body[128];
+    assert(1 + cstream_data_lost_msg__get_packed_size(&message) <= sizeof(body));
+    size_t bodyLen = 0;
+    body[bodyLen++] = k_EStreamDataLost;
+    bodyLen += cstream_data_lost_msg__pack(&message, &body[bodyLen]);
+    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT,
+                                body, bodyLen, 0);
+}
 
 size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data) {
     size_t offset = 0;
@@ -86,49 +94,6 @@ size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header
     return offset;
 }
 
-void IHS_SessionChannelControlOnDataControl(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                            const uint8_t *payload, size_t payloadLen,
-                                            const IHS_SessionPacketHeader *header) {
-    IHS_UNUSED(header);
-    IHS_Session *session = channel->session;
-    switch (type) {
-        case k_EStreamControlStartAudioData: {
-            IHS_SessionChannel *audio = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataAudio);
-            if (audio) break;
-            CStartAudioDataMsg *message = cstart_audio_data_msg__unpack(NULL, payloadLen, payload);
-            audio = IHS_SessionChannelDataAudioCreate(session, message);
-            IHS_SessionChannelAdd(session, audio);
-            cstart_audio_data_msg__free_unpacked(message, NULL);
-            break;
-        }
-        case k_EStreamControlStopAudioData: {
-            IHS_SessionChannel *audio = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataAudio);
-            if (!audio) break;
-            IHS_SessionChannelRemove(session, audio->id);
-            break;
-        }
-        case k_EStreamControlStartVideoData: {
-            IHS_SessionChannel *video = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataVideo);
-            if (video) break;
-            CStartVideoDataMsg *message = cstart_video_data_msg__unpack(NULL, payloadLen, payload);
-            video = IHS_SessionChannelDataVideoCreate(session, message);
-            IHS_SessionChannelAdd(session, video);
-            cstart_video_data_msg__free_unpacked(message, NULL);
-            break;
-        }
-        case k_EStreamControlStopVideoData: {
-            IHS_SessionChannel *video = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataVideo);
-            if (!video) break;
-            IHS_SessionChannelRemove(session, video->id);
-            break;
-        }
-        default: {
-            abort();
-        }
-    }
-}
-
-
 static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
@@ -136,7 +101,7 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     uv_mutex_lock(&channel->mutex);
     while (!channel->threadInterrupted) {
         uv_cond_wait(&channel->cond, &channel->mutex);
-        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(50));
+        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
              IHS_SessionPacketsWindowReleaseFrame(&frame)) {
             ReceivedFrame(channel, &frame);
@@ -154,7 +119,7 @@ static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
 }
 
 static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame) {
-    assert (frame->header.type == IHS_SessionPacketTypeUnreliable);
+    assert(frame->header.type == IHS_SessionPacketTypeUnreliable);
     size_t bodyOffset = 0;
     EStreamDataMessage type = frame->body[bodyOffset++];
     if (type != k_EStreamDataPacket) {

@@ -37,10 +37,13 @@ add_library(ihslib
         src/session/channels/ch_control_authentication.c
         src/session/channels/ch_control_negotiation.c
         src/session/channels/ch_control_keepalive.c
+        src/session/channels/ch_control_audio.c
+        src/session/channels/ch_control_video.c
         src/session/channels/ch_data.c
         src/session/channels/ch_data_audio.c
         src/session/channels/ch_data_video.c
         src/session/channels/ch_stats.c
+        src/session/channels/video/partial_frame.c
         )
 
 target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})

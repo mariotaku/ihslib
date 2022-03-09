@@ -25,23 +25,25 @@
 
 #pragma once
 
-#include "channel.h"
-#include "protobuf/remoteplay.pb-c.h"
+#include <stdint.h>
 
-typedef struct IHS_SessionVideoFrameHeader {
+#include "session/channels/ch_data_video.h"
+
+typedef struct IHS_SessionVideoPartialFrame {
     uint16_t sequence;
     uint8_t flags;
     uint16_t reserved1;
     uint16_t reserved2;
-} IHS_SessionVideoFrameHeader;
+    uint8_t *data;
+    size_t dataLen;
+    struct IHS_SessionVideoPartialFrame *prev;
+    struct IHS_SessionVideoPartialFrame *next;
+} IHS_SessionVideoPartialFrame;
 
-enum {
-    VideoFrameFlagNeedStartSequence = 0x01,
-    VideoFrameFlagNeedEscape = 0x02,
-    VideoFrameFlagReserved1Increment = 0x04,
-    VideoFrameFlagFrameFinish = 0x08,
-    VideoFrameFlagKeyFrame = 0x10,
-    VideoFrameFlagEncrypted = 0x20,
-};
+#define IHS_VideoPartialFrameForEach(head, name) for (IHS_SessionVideoPartialFrame *name = (head); name; name = name->next)
 
-IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message);
+IHS_SessionVideoPartialFrame *IHS_VideoPartialFrameInsert(IHS_SessionVideoPartialFrame *head,
+                                                          const IHS_SessionVideoFrameHeader *header,
+                                                          const uint8_t *data, size_t dataLen);
+
+IHS_SessionVideoPartialFrame *IHS_VideoPartialFrameClear(IHS_SessionVideoPartialFrame *head);
