@@ -72,6 +72,8 @@ bool RequestStream(IHS_SessionConfig *config) {
     config->address = context.address;
     config->sessionKeyLen = context.sessionKeyLen;
     memcpy(config->sessionKey, context.sessionKey, context.sessionKeyLen);
+    config->steamId = 0;
+//    config->steamId = steamId;
     ret = true;
 
     exit:

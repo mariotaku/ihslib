@@ -81,7 +81,7 @@ static void OnAudioStart(void *context, const IHS_StreamAudioConfig *config) {
     fflush(stdout);
     GError *error = NULL;
     audioPipeline = gst_parse_launch(
-            "appsrc is-live=true name=audsrc ! opusparse ! opusdec ! audioconvert ! alsasink",
+            "appsrc is-live=true name=audsrc max-latency=960 min-latency=1 ! opusparse ! opusdec ! audioconvert ! alsasink",
             &error);
     if (error) {
         fprintf(stderr, "Pipeline error: %s\n", error->message);
@@ -163,21 +163,21 @@ static void OnVideoReceived(void *context, const uint8_t *data, size_t dataLen, 
 //    }
 //    printf("\")\n");
 
-    if (numOfFrames < 10000) {
-        if (!file) {
-            file = fopen("/tmp/ihscap.h264", "wb");
-        }
-        fwrite(data, dataLen, 1, file);
-        fwrite(zeroes, 1, sizeof(zeroes), file);
-        numOfFrames++;
-    } else if (file) {
-        fflush(file);
-        fclose(file);
-        file = NULL;
-        if (ActiveSession) {
-            IHS_SessionDisconnect(ActiveSession);
-        }
-    }
+//    if (numOfFrames < 10000) {
+//        if (!file) {
+//            file = fopen("/tmp/ihscap.h264", "wb");
+//        }
+//        fwrite(data, dataLen, 1, file);
+//        fwrite(zeroes, 1, sizeof(zeroes), file);
+//        numOfFrames++;
+//    } else if (file) {
+//        fflush(file);
+//        fclose(file);
+//        file = NULL;
+//        if (ActiveSession) {
+//            IHS_SessionDisconnect(ActiveSession);
+//        }
+//    }
 
     GstBuffer *buffer = gst_buffer_new_wrapped(bufData, dataLen);
     gst_buffer_set_flags(buffer, GST_BUFFER_FLAG_LIVE);

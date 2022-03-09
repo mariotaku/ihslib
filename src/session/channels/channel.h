@@ -73,7 +73,7 @@ void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channel
 
 void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
-void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
 

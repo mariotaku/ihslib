@@ -35,6 +35,8 @@
 
 #include "protobuf/discovery.pb-c.h"
 #include "client/client_pri.h"
+#include "protobuf/pb_utils.h"
+#include <protobuf-c/protobuf-c-text.h>
 
 static void OnControlInit(IHS_SessionChannel *channel, const void *data);
 
@@ -63,11 +65,15 @@ IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
                                     NULL);
 }
 
-void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
+bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
                                    const ProtobufCMessage *message, int32_t packetId) {
     assert(channel->id == IHS_SessionChannelIdControl);
+    char *msg = protobuf_c_text_to_string((ProtobufCMessage *) message, NULL);
+    printf("SendControlMessage: %u %s\n", type, msg);
+    free(msg);
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     size_t messageCapacity = protobuf_c_message_get_packed_size(message);
+    bool ret;
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
         uint8_t *payload = malloc(1 + cipherSize);
@@ -80,29 +86,31 @@ void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
             free(payload);
             fprintf(stderr, "Failed to encrypt payload\n");
             IHS_SessionDisconnect(channel->session);
-            return;
+            return false;
         }
         free(serialized);
 
         size_t payloadSize = 1 + cipherSize;
-        IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId, payload,
-                                    payloadSize, 0);
+        ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
+                                          payload, payloadSize, 0);
         free(payload);
     } else {
         uint8_t *payload = malloc(1 + messageCapacity);
         payload[0] = type;
         size_t payloadSize = 1 + protobuf_c_message_pack(message, &payload[1]);
-        IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId, payload,
-                                    payloadSize, 0);
+        ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
+                                          payload, payloadSize, 0);
         free(payload);
     }
+    return ret;
 }
 
 void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networkTest) {
     CClientHandshakeMsg message = CCLIENT_HANDSHAKE_MSG__INIT;
     CStreamingClientHandshakeInfo handshakeInfo = CSTREAMING_CLIENT_HANDSHAKE_INFO__INIT;
-    handshakeInfo.has_network_test = true;
-    handshakeInfo.network_test = networkTest;
+    if (networkTest) {
+        PROTOBUF_C_SET_VALUE(handshakeInfo, network_test, true);
+    }
     message.info = &handshakeInfo;
     IHS_SessionChannelControlSend(channel, k_EStreamControlClientHandshake, (const ProtobufCMessage *) &message,
                                   IHS_PACKET_ID_NEXT);
@@ -193,7 +201,8 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlStartVideoData:
         case k_EStreamControlStopVideoData:
         case k_EStreamControlVideoEncoderInfo:
-        case k_EStreamControlSetCaptureSize: {
+        case k_EStreamControlSetCaptureSize:
+        case k_EStreamControlSetTargetFramerate: {
             IHS_SessionChannelControlOnVideo(channel, type, payload, payloadLen, header);
             break;
         }

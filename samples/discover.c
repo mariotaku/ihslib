@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
 }
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
-    printf("Found device: %s, port: %d, euniverse: %d\n",
-           info.hostname, info.address.port, info.euniverse);
+    printf("Found device: %s, port: %d, universe: %d\n",
+           info.hostname, info.address.port, info.universe);
 }
 
 static void InterruptHandler(int sig) {

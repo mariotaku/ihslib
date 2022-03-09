@@ -63,8 +63,8 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
 }
 
 
-void IHS_PRIV_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip,
-                                          CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
+void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip,
+                                     CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
     uv_timer_t *timer = client->taskHandles.authorization;
     if (!timer) return;
     if (header->msg_type != k_ERemoteDeviceAuthorizationResponse) {
@@ -93,21 +93,21 @@ void IHS_PRIV_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip,
 }
 
 
-bool IHS_PRIV_ClientAuthorizationPubKey(IHS_Client *client, int euniverse, uint8_t *key, size_t *keyLen) {
+bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse universe, uint8_t *key, size_t *keyLen) {
     IHS_UNUSED(client);
-    switch (euniverse) {
-        case 1:
+    switch (universe) {
+        case IHS_SteamUniversePublic:
             if (*keyLen < sizeof(IHS_AuthorizationPubKey1)) return false;
             memcpy(key, IHS_AuthorizationPubKey1, sizeof(IHS_AuthorizationPubKey1));
             *keyLen = sizeof(IHS_AuthorizationPubKey1);
             break;
-        case 2:
+        case IHS_SteamUniverseBeta:
             if (*keyLen < sizeof(IHS_AuthorizationPubKey2)) return false;
             memcpy(key, IHS_AuthorizationPubKey2, sizeof(IHS_AuthorizationPubKey2));
             *keyLen = sizeof(IHS_AuthorizationPubKey2);
             break;
-        case 3:
-        case 4:
+        case IHS_SteamUniverseInternal:
+        case IHS_SteamUniverseDev:
             if (*keyLen < sizeof(IHS_AuthorizationPubKey3And4)) return false;
             memcpy(key, IHS_AuthorizationPubKey3And4, sizeof(IHS_AuthorizationPubKey3And4));
             *keyLen = sizeof(IHS_AuthorizationPubKey3And4);
@@ -123,7 +123,7 @@ static void AuthorizationRequestTimer(uv_timer_t *handle, int status) {
     IHS_AuthorizationState *state = handle->data;
     uint8_t pubKey[384];
     size_t pubKeyLen = sizeof(pubKey);
-    IHS_PRIV_ClientAuthorizationPubKey(client, state->host.euniverse, pubKey, &pubKeyLen);
+    IHS_ClientAuthorizationPubKey(client, state->host.universe, pubKey, &pubKeyLen);
     ProtobufCBinaryData deviceToken = {.data=client->base.deviceToken, .len = sizeof(client->base.deviceToken)};
 
     /* Initialize and serialize ticket */
@@ -145,7 +145,7 @@ static void AuthorizationRequestTimer(uv_timer_t *handle, int status) {
     request.encrypted_request = encryptedRequest;
 
     IHS_HostAddress address = state->host.address;
-    IHS_PRIV_ClientSend(client, address, k_ERemoteDeviceAuthorizationRequest, (ProtobufCMessage *) &request);
+    IHS_ClientSend(client, address, k_ERemoteDeviceAuthorizationRequest, (ProtobufCMessage *) &request);
 }
 
 static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationState *state,

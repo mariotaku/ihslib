@@ -31,8 +31,10 @@
 #include <in6addr.h>
 #include <winsock2.h>
 #else
+
 #include <sys/socket.h>
 #include <netinet/in.h>
+
 #endif
 
 typedef struct IHS_ClientConfig {
@@ -57,11 +59,18 @@ typedef struct IHS_HostAddress {
     uint16_t port;
 } IHS_HostAddress;
 
+typedef enum IHS_SteamUniverse {
+    IHS_SteamUniversePublic = 1,
+    IHS_SteamUniverseBeta = 2,
+    IHS_SteamUniverseInternal = 3,
+    IHS_SteamUniverseDev = 4,
+} IHS_SteamUniverse;
+
 typedef struct IHS_HostInfo {
     uint64_t clientId;
     uint64_t instanceId;
     IHS_HostAddress address;
     char hostname[64];
-    uint8_t euniverse;
+    IHS_SteamUniverse universe;
     bool gamesRunning;
 } IHS_HostInfo;

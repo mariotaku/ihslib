@@ -59,8 +59,8 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     return true;
 }
 
-void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
-                                      ProtobufCMessage *message) {
+void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+                                 ProtobufCMessage *message) {
     IHS_UNUSED(ip);
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
@@ -79,8 +79,8 @@ void IHS_PRIV_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
                                        client->base.secretKey, sizeof(client->base.secretKey),
                                        response.response.data, &response.response.len);
 
-            IHS_PRIV_ClientSend(client, state->host.address, k_ERemoteDeviceProofResponse,
-                                (ProtobufCMessage *) &response);
+            IHS_ClientSend(client, state->host.address, k_ERemoteDeviceProofResponse,
+                           (ProtobufCMessage *) &response);
             break;
         }
         case k_ERemoteDeviceStreamingResponse: {
@@ -175,8 +175,8 @@ static void StreamingRequestTimer(uv_timer_t *handle, int status) {
     EStreamTransport transports[] = {k_EStreamTransportUDP};
     message.supported_transport = transports;
 
-    IHS_PRIV_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest,
-                        (ProtobufCMessage *) &message);
+    IHS_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest,
+                   (ProtobufCMessage *) &message);
 }
 
 static void StreamingRequestCleanup(uv_handle_t *handle) {

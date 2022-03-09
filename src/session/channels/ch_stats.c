@@ -27,7 +27,7 @@
 
 
 static const IHS_SessionChannelClass ChannelClass = {
-        .received = IHS_SessionChannelReceivedPacketBase,
+        .received = IHS_SessionChannelReceivedPacketNoop,
         .instanceSize = sizeof(IHS_SessionChannel)
 };
 

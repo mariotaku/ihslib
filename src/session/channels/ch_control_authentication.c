@@ -29,13 +29,14 @@
 
 #include "session/frame.h"
 #include "client/client_pri.h"
+#include "protobuf/pb_utils.h"
 
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message);
 
 void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel) {
     CAuthenticationRequestMsg request = CAUTHENTICATION_REQUEST_MSG__INIT;
-    request.has_version = true;
-    request.version = k_EStreamVersionCurrent;
+    PROTOBUF_C_SET_VALUE(request, version, k_EStreamVersionCurrent);
+    PROTOBUF_C_SET_VALUE(request, steamid, channel->session->config.steamId);
     request.has_token = true;
     static const unsigned char plain[] = {'S', 't', 'e', 'a', 'm', ' ', 'I', 'n',
                                           '-', 'H', 'o', 'm', 'e', ' ', 'S', 't',
@@ -55,7 +56,7 @@ void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStr
                                                const uint8_t *payload, size_t payloadLen,
                                                const IHS_SessionPacketHeader *header) {
     IHS_UNUSED(header);
-    assert (type == k_EStreamControlAuthenticationResponse);
+    assert(type == k_EStreamControlAuthenticationResponse);
     CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payloadLen, payload);
     OnAuthenticationResponse(channel, message);
     cauthentication_response_msg__free_unpacked(message, NULL);

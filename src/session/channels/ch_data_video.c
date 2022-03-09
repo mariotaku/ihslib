@@ -113,6 +113,14 @@ static void DataStart(struct IHS_SessionChannel *channel) {
     const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
     if (!callbacks->start) return;
     callbacks->start(channel->session->videoContext, &videoCh->config);
+
+    CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;
+    message.info = "Marvell hardware decoding";
+    message.has_threads = true;
+    message.threads = 1;
+
+    IHS_SessionSendControlMessage(channel->session, k_EStreamControlVideoDecoderInfo,
+                                  (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
 }
 
 static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,

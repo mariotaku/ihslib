@@ -64,9 +64,9 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     memset(client, 0, sizeof(IHS_Client));
     IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
 
-    client->privCallbacks.discovery = IHS_PRIV_ClientDiscoveryCallback;
-    client->privCallbacks.authorization = IHS_PRIV_ClientAuthorizationCallback;
-    client->privCallbacks.streaming = IHS_PRIV_ClientStreamingCallback;
+    client->privCallbacks.discovery = IHS_ClientDiscoveryCallback;
+    client->privCallbacks.authorization = IHS_ClientAuthorizationCallback;
+    client->privCallbacks.streaming = IHS_ClientStreamingCallback;
     return client;
 }
 
@@ -101,8 +101,8 @@ const char *IHS_ClientError(IHS_Client *client) {
     return uv_err_name(err);
 }
 
-bool IHS_PRIV_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
-                         ProtobufCMessage *message) {
+bool IHS_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+                    ProtobufCMessage *message) {
     CMsgRemoteClientBroadcastHeader header;
     cmsg_remote_client_broadcast_header__init(&header);
     header.has_client_id = 1;

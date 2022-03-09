@@ -35,6 +35,7 @@ typedef struct IHS_SessionConfig {
     IHS_HostAddress address;
     uint8_t sessionKey[32];
     size_t sessionKeyLen;
+    uint64_t steamId;
 } IHS_SessionConfig;
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig);
@@ -48,7 +49,6 @@ void IHS_SessionThreadedRun(IHS_Session *session);
 void IHS_SessionThreadedJoin(IHS_Session *session);
 
 void IHS_SessionDestroy(IHS_Session *session);
-
 
 bool IHS_SessionConnect(IHS_Session *session);
 

@@ -22,9 +22,4 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#pragma once
-
-#include <protobuf-c/protobuf-c.h>
-
-#define PROTOBUF_C_SET_VALUE(message, key, value) message.has_##key = true; message.key = (value)
+#include "pb_utils.h"

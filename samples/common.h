@@ -26,17 +26,19 @@
 #pragma once
 
 #include <stdint.h>
+#include "ihslib.h"
 
-static const uint64_t deviceId = 11451419190810;
+static const uint64_t deviceId = 6002176711230249339;
+static const uint64_t steamId = 76561198142668823;
 
 static const uint8_t secretKey[32] = {
-        11, 45, 14, 19, 19, 8, 1, 0,
-        11, 45, 14, 19, 19, 8, 1, 0,
-        11, 45, 14, 19, 19, 8, 1, 0,
-        11, 45, 14, 19, 19, 8, 1, 0,
+        0x2b, 0xf7, 0x9a, 0xf4, 0xc3, 0x67, 0x9b, 0x47,
+        0x07, 0xf1, 0xf0, 0x24, 0x28, 0xb6, 0x31, 0x91,
+        0x30, 0xdb, 0x2e, 0xc7, 0x30, 0x70, 0x21, 0x34,
+        0xb9, 0xa4, 0x36, 0xed, 0xd6, 0x1a, 0x4a, 0x0f,
 };
 
-static const char deviceName[] = "BABYLON STAGE34\0";
+static const char deviceName[] = "Steam Link\0";
 
 
 static const IHS_ClientConfig clientConfig = {deviceId, secretKey, deviceName};

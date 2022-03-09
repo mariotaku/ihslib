@@ -8,7 +8,7 @@ find_program(PROTOC_C protoc-c)
 find_program(PYTHON python3)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV libuv REQUIRED)
-pkg_check_modules(PROTOBUF libprotobuf-c REQUIRED)
+pkg_check_modules(PROTOBUF libprotobuf-c libprotobuf-c-text REQUIRED)
 
 find_package(MbedTLS)
 find_package(OpenSSL)

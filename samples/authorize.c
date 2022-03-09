@@ -48,8 +48,9 @@ int main(int argc, char *argv[]) {
             .authorizationFailed = OnAuthorizationFailed,
             .authorizationSuccess = OnAuthorizationSuccess,
     };
-    IHS_ClientSetCallbacks(client, &callbacks);
+    IHS_ClientSetCallbacks(client, &callbacks, NULL);
     IHS_ClientDiscoveryBroadcast(client);
+    IHS_ClientRun(client);
     IHS_ClientDestroy(client);
 }
 

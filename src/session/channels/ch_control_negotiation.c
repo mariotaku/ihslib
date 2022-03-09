@@ -66,23 +66,16 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
         if (codec == k_EStreamAudioCodecOpus) {
             audioCodec = codec;
         }
-        const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_audio_codec__descriptor,
-                                                                               codec);
-        printf("Supported audio codec: %s\n", value->name);
     }
     for (int i = 0; i < message->n_supported_video_codecs; i++) {
         EStreamVideoCodec codec = message->supported_video_codecs[i];
         if (codec == k_EStreamVideoCodecH264) {
             videoCodec = codec;
         }
-        const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_video_codec__descriptor,
-                                                                               codec);
-        printf("Supported video codec: %s\n", value->name);
     }
 
     CNegotiatedConfig config = CNEGOTIATED_CONFIG__INIT;
-    config.has_reliable_data = message->has_reliable_data;
-    config.reliable_data = message->reliable_data;
+    PROTOBUF_C_SET_VALUE(config, reliable_data, false);
 
     config.has_selected_audio_codec = audioCodec != k_EStreamAudioCodecNone;
     config.selected_audio_codec = audioCodec;
@@ -91,8 +84,10 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     config.selected_video_codec = videoCodec;
 
     CStreamVideoMode availableVideoMode = CSTREAM_VIDEO_MODE__INIT;
-    availableVideoMode.width = 1280;
-    availableVideoMode.height = 720;
+    availableVideoMode.width = 1920;
+    availableVideoMode.height = 1080;
+    PROTOBUF_C_SET_VALUE(availableVideoMode, refresh_rate_numerator, 5994);
+    PROTOBUF_C_SET_VALUE(availableVideoMode, refresh_rate_denominator, 100);
 
     CStreamVideoMode *availableVideoModes[] = {&availableVideoMode};
     config.n_available_video_modes = 1;
@@ -100,14 +95,32 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
 
     CStreamingClientConfig clientConfig = CSTREAMING_CLIENT_CONFIG__INIT;
 
-    PROTOBUF_SET_VALUE(clientConfig, enable_hardware_decoding, true);
-    PROTOBUF_SET_VALUE(clientConfig, enable_video_streaming, true);
-    PROTOBUF_SET_VALUE(clientConfig, enable_audio_streaming, true);
+    PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_x, 0);
+    PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_y, 0);
+    PROTOBUF_C_SET_VALUE(clientConfig, enable_hardware_decoding, true);
+    PROTOBUF_C_SET_VALUE(clientConfig, enable_performance_overlay, true);
+    PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
+//    PROTOBUF_SET_VALUE(clientConfig, enable_video_streaming, true);
+//    PROTOBUF_SET_VALUE(clientConfig, audio_channels, 2);
+//    PROTOBUF_SET_VALUE(clientConfig, maximum_framerate_numerator, 5994);
+//    PROTOBUF_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
+//    PROTOBUF_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);
+//    PROTOBUF_SET_VALUE(clientConfig, maximum_bitrate_kbps, 30000);
 
     CStreamingClientCaps clientCaps = CSTREAMING_CLIENT_CAPS__INIT;
 
-    PROTOBUF_SET_VALUE(clientCaps, system_can_suspend, true);
-    PROTOBUF_SET_VALUE(clientCaps, form_factor, k_EStreamDeviceFormFactorTV);
+    clientCaps.system_info = "\"SystemInfo\"\n{\n\t\"OSType\"\t\t\"-197\"\n\t\"CPUID\"\t\t\"ARM\"\n"
+                             "\t\"CPUGhz\"\t\t\"0.000000\"\n\t\"PhysicalCPUCount\"\t\"1\"\n"
+                             "\t\"LogicalCPUCount\"\t\"1\"\n\t\"SystemRAM\"\t\t\"263\"\n"
+                             "\t\"VideoVendorID\"\t\"0\"\n\t\"VideoDeviceID\"\t\"0\"\n"
+                             "\t\"VideoRevision\"\t\"0\"\n\t\"VideoRAM\"\t\t\"0\"\n"
+                             "\t\"VideoDisplayX\"\t\"1920\"\n\t\"VideoDisplayY\"\t\"1080\"\n"
+                             "\t\"VideoDisplayNameID\"\t\"JN-MD133BFHDR\"\n}\n";
+    PROTOBUF_C_SET_VALUE(clientCaps, system_can_suspend, true);
+    PROTOBUF_C_SET_VALUE(clientCaps, maximum_decode_bitrate_kbps, 30000);
+    PROTOBUF_C_SET_VALUE(clientCaps, maximum_burst_bitrate_kbps, 90000);
+    PROTOBUF_C_SET_VALUE(clientCaps, supports_video_hevc, false);
+    PROTOBUF_C_SET_VALUE(clientCaps, form_factor, k_EStreamDeviceFormFactorTV);
 
     CNegotiationSetConfigMsg response = CNEGOTIATION_SET_CONFIG_MSG__INIT;
     response.config = &config;

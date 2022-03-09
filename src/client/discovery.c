@@ -33,12 +33,12 @@ bool IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
     discovery.has_seq_num = 1;
     discovery.seq_num = 0;
 
-    return IHS_PRIV_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+    return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }
 
 
-void IHS_PRIV_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
-                                      ProtobufCMessage *message) {
+void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+                                 ProtobufCMessage *message) {
     if (header->msg_type == k_ERemoteClientBroadcastMsgStatus) {
         CMsgRemoteClientBroadcastStatus *status = (CMsgRemoteClientBroadcastStatus *) message;
         char buf[64];
@@ -49,7 +49,7 @@ void IHS_PRIV_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRem
         info.instanceId = header->instance_id;
         info.address.ip = ip;
         info.address.port = status->connect_port;
-        info.euniverse = status->euniverse;
+        info.universe = status->euniverse;
         info.gamesRunning = status->games_running;
         strncpy(info.hostname, status->hostname, sizeof(info.hostname) - 1);
         info.hostname[sizeof(info.hostname) - 1] = '\0';

@@ -126,6 +126,12 @@ bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet
     return IHS_BaseSend(&session->base, config->address, data, dataSize);
 }
 
+bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type,
+                                   const ProtobufCMessage *message, int32_t packetId) {
+    IHS_SessionChannel *channel = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
+    return IHS_SessionChannelControlSend(channel, type, message, packetId);
+}
+
 static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {
     if (!nread) {
         goto cleanup;

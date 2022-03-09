@@ -40,7 +40,7 @@ typedef struct IHS_SessionChannelControl {
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session);
 
-void IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
+bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
                                    const ProtobufCMessage *message, int32_t packetId);
 
 void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networkTest);

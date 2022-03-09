@@ -67,6 +67,17 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
             cset_capture_size_msg__free_unpacked(message, NULL);
             break;
         }
+        case k_EStreamControlSetTargetFramerate: {
+            CSetTargetFramerateMsg *message = cset_target_framerate_msg__unpack(NULL, payloadLen, payload);
+            if (message->has_framerate_numerator && message->has_framerate_denominator) {
+                printf("SetTargetFramerate(fps=%.02f)\n",
+                       (float) message->framerate_numerator / (float) message->framerate_denominator);
+            } else {
+                printf("SetTargetFramerate(fps=%u)\n", message->framerate);
+            }
+            cset_target_framerate_msg__free_unpacked(message, NULL);
+            break;
+        }
         default: {
             abort();
         }

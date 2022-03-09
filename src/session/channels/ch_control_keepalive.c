@@ -35,7 +35,7 @@ void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     if (control->keepAliveTimer) return;
     control->keepAliveTimer = IHS_BaseTimerStart(&channel->session->base, SendKeepAlive,
-                                                 1000, 5000, control);
+                                                 5000, 10000, control);
 }
 
 void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel) {

@@ -55,6 +55,9 @@ void IHS_SessionChannelDestroy(IHS_SessionChannel *channel) {
 }
 
 IHS_SessionChannel *IHS_SessionChannelFor(IHS_Session *session, IHS_SessionChannelId channelId) {
+    if (channelId <= IHS_SessionChannelIdStats) {
+        return session->channels[channelId];
+    }
     for (int i = 0; i < session->numChannels; ++i) {
         IHS_SessionChannel *channel = session->channels[i];
         if (channel->id == channelId) return channel;
@@ -63,6 +66,9 @@ IHS_SessionChannel *IHS_SessionChannelFor(IHS_Session *session, IHS_SessionChann
 }
 
 IHS_SessionChannel *IHS_SessionChannelForType(IHS_Session *session, IHS_SessionChannelType channelType) {
+    if (channelType <= IHS_SessionChannelTypeStats) {
+        return session->channels[channelType];
+    }
     for (int i = 0; i < session->numChannels; ++i) {
         IHS_SessionChannel *channel = session->channels[i];
         if (channel->type == channelType) return channel;
@@ -104,8 +110,7 @@ void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_Ses
     channel->cls->received(channel, packet);
 }
 
-void IHS_SessionChannelReceivedPacketBase(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-//    printf("Received packet(type=%d, channel=%d)\n", packet->header.type, packet->header.channelId);
+void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
 }
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {
