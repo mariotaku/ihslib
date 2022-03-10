@@ -25,23 +25,9 @@
 
 #pragma once
 
-#include "channel.h"
-#include "protobuf/remoteplay.pb-c.h"
 
-typedef struct IHS_SessionVideoFrameHeader {
-    uint16_t sequence;
-    uint8_t flags;
-    uint16_t reserved1;
-    uint16_t reserved2;
-} IHS_SessionVideoFrameHeader;
+#include "session/channels/channel.h"
+#include "ch_data_video.h"
 
-enum {
-    VideoFrameFlagNeedStartSequence = 0x01,
-    VideoFrameFlagNeedEscape = 0x02,
-    VideoFrameFlagReserved1Increment = 0x04,
-    VideoFrameFlagFrameFinish = 0x08,
-    VideoFrameFlagKeyFrame = 0x10,
-    VideoFrameFlagEncrypted = 0x20,
-};
-
-IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message);
+void IHS_SessionVideoFrameSubmitH264(IHS_SessionChannel *channel, const uint8_t *data, size_t len,
+                                     const IHS_SessionVideoFrameHeader *header);

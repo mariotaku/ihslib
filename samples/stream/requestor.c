@@ -25,9 +25,9 @@
 
 #include <stdio.h>
 #include <memory.h>
+#include "ihslib.h"
 #include "stream.h"
 #include "common.h"
-#include "ihslib.h"
 
 typedef struct RequestorCallbacksContext {
     bool requested;

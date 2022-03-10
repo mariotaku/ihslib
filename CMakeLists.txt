@@ -8,7 +8,7 @@ find_program(PROTOC_C protoc-c)
 find_program(PYTHON python3)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV libuv REQUIRED)
-pkg_check_modules(PROTOBUF libprotobuf-c libprotobuf-c-text REQUIRED)
+pkg_check_modules(PROTOBUF libprotobuf-c REQUIRED)
 
 find_package(MbedTLS)
 find_package(OpenSSL)
@@ -23,6 +23,7 @@ target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 add_library(ihslib
         src/base.c
         src/crc32c.c
+        src/memmem.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
@@ -41,9 +42,9 @@ add_library(ihslib
         src/session/channels/ch_control_video.c
         src/session/channels/ch_data.c
         src/session/channels/ch_data_audio.c
-        src/session/channels/ch_data_video.c
+        src/session/channels/video/callback_h264.c
+        src/session/channels/video/ch_data_video.c
         src/session/channels/ch_stats.c
-        src/session/channels/video/partial_frame.c
         )
 
 target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})

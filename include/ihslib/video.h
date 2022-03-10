@@ -39,10 +39,10 @@ typedef enum IHS_StreamVideoCodec {
     IHS_StreamVideoCodecORBX2 = 7,
 } IHS_StreamVideoCodec;
 
-enum {
+typedef enum IHS_StreamVideoFrameFlag {
     IHS_StreamVideoFrameNone = 0x00,
     IHS_StreamVideoFrameKeyFrame = 0x01,
-};
+} IHS_StreamVideoFrameFlag;
 
 typedef struct IHS_StreamVideoConfig {
     uint32_t width, height;
@@ -52,9 +52,10 @@ typedef struct IHS_StreamVideoConfig {
 } IHS_StreamVideoConfig;
 
 typedef struct IHS_StreamVideoCallbacks {
-    void (*start)(void *context, const IHS_StreamVideoConfig *config);
+    int (*start)(void *context, const IHS_StreamVideoConfig *config);
 
-    void (*received)(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence, uint8_t flags);
+    int (*submit)(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence,
+                  IHS_StreamVideoFrameFlag flags);
 
     void (*stop)(void *context);
 } IHS_StreamVideoCallbacks;

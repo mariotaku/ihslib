@@ -29,9 +29,8 @@
 #include "ch_control.h"
 #include "client/client_pri.h"
 
-#include "protobuf/pb_utils.h"
 #include "protobuf/discovery.pb-c.h"
-#include "ch_data_video.h"
+#include "video/ch_data_video.h"
 
 
 void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamControlMessage type,
@@ -63,7 +62,7 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
         }
         case k_EStreamControlSetCaptureSize: {
             CSetCaptureSizeMsg *message = cset_capture_size_msg__unpack(NULL, payloadLen, payload);
-//            printf("SetCaptureSize(width=%d, height=%d)\n", message->width, message->height);
+            printf("SetCaptureSize(width=%d, height=%d)\n", message->width, message->height);
             cset_capture_size_msg__free_unpacked(message, NULL);
             break;
         }

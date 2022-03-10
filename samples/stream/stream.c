@@ -27,8 +27,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include <gst/gst.h>
-
 #include "ihslib.h"
 #include "stream.h"
 #include "common.h"
@@ -42,8 +40,6 @@ IHS_Session *ActiveSession = NULL;
 
 
 int main(int argc, char *argv[]) {
-    gst_init(&argc, &argv);
-
     signal(SIGINT, InterruptHandler);
 
     IHS_SessionConfig sessionConfig;

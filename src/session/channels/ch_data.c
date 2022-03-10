@@ -97,7 +97,10 @@ size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header
 static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
-    cls->start((IHS_SessionChannel *) channel);
+    if (!cls->start((IHS_SessionChannel *) channel)) {
+        IHS_SessionDisconnect(channel->base.session);
+        return;
+    }
     uv_mutex_lock(&channel->mutex);
     while (!channel->threadInterrupted) {
         uv_cond_wait(&channel->cond, &channel->mutex);

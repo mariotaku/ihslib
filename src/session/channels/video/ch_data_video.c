@@ -26,20 +26,13 @@
 #include <malloc.h>
 #include <memory.h>
 
-#include "ch_data.h"
+#include "session/channels/ch_data.h"
 #include "ch_data_video.h"
-#include "video/partial_frame.h"
 
 #include "crypto.h"
 #include "endianness.h"
+#include "session/channels/video/callback_h264.h"
 
-typedef struct ChannelVideo {
-    IHS_SessionChannelData base;
-    IHS_StreamVideoConfig config;
-    uint16_t expectedSequence;
-    bool waitingKeyFrame;
-    IHS_SessionVideoPartialFrame *partialFrames;
-} ChannelVideo;
 
 #define VIDEO_FRAME_HEADER_SIZE 7
 
@@ -47,7 +40,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config);
 
 static void ChannelVideoDeinit(IHS_SessionChannel *channel);
 
-static void DataStart(IHS_SessionChannel *channel);
+static bool DataStart(IHS_SessionChannel *channel);
 
 static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                          const uint8_t *data, size_t len);
@@ -56,19 +49,15 @@ static void DataStop(IHS_SessionChannel *channel);
 
 static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const uint8_t *data);
 
-static void NotifyReceived(IHS_SessionChannel *channel, const uint8_t *data, size_t len, uint8_t flags);
-
-static void ConsumePartialFrames(IHS_SessionChannel *channel);
-
-static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
-
+static void PreprocessAndSubmit(IHS_SessionChannel *channel, const uint8_t *data, size_t len,
+                                const IHS_SessionVideoFrameHeader *header);
 
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
                 .init = ChannelVideoInit,
                 .deinit = ChannelVideoDeinit,
                 .received = IHS_SessionChannelDataReceived,
-                .instanceSize = sizeof(ChannelVideo)
+                .instanceSize = sizeof(IHS_SessionChannelVideo)
         },
         .start = DataStart,
         .dataFrame = DataReceived,
@@ -86,7 +75,7 @@ IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, cons
 }
 
 static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
-    ChannelVideo *videoCh = (ChannelVideo *) channel;
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     const CStartVideoDataMsg *message = config;
     videoCh->config.width = message->width;
     videoCh->config.height = message->height;
@@ -101,31 +90,32 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
 
 static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelDataDeinit(channel);
-    ChannelVideo *videoCh = (ChannelVideo *) channel;
-    IHS_VideoPartialFrameClear(videoCh->partialFrames);
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     if (videoCh->config.codecData) {
         free(videoCh->config.codecData);
     }
 }
 
-static void DataStart(struct IHS_SessionChannel *channel) {
-    ChannelVideo *videoCh = (ChannelVideo *) channel;
+static bool DataStart(struct IHS_SessionChannel *channel) {
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
-    if (!callbacks->start) return;
-    callbacks->start(channel->session->videoContext, &videoCh->config);
+    if (!callbacks->start) return true;
+    if (callbacks->start(channel->session->videoContext, &videoCh->config) != 0) {
+        return false;
+    }
 
     CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;
     message.info = "Marvell hardware decoding";
     message.has_threads = true;
     message.threads = 1;
 
-    IHS_SessionSendControlMessage(channel->session, k_EStreamControlVideoDecoderInfo,
-                                  (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
+    return IHS_SessionSendControlMessage(channel->session, k_EStreamControlVideoDecoderInfo,
+                                         (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
 }
 
 static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                          const uint8_t *data, size_t len) {
-    ChannelVideo *videoCh = (ChannelVideo *) channel;
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     size_t offset = 0;
     IHS_SessionVideoFrameHeader vhead;
     offset += VideoFrameHeaderParse(&vhead, &data[offset]);
@@ -148,17 +138,11 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
         size_t decryptedLen = len;
         IHS_CryptoSymmetricDecryptWithIV(data, len, EmptyIV, sizeof(EmptyIV),
                                          config->sessionKey, config->sessionKeyLen, decrypted, &decryptedLen);
-//        videoCh->partialFrames = IHS_VideoPartialFrameInsert(videoCh->partialFrames, &vhead,
-//                                                             decrypted, decryptedLen);
-        NotifyReceived(channel, decrypted, decryptedLen, vhead.flags);
+        PreprocessAndSubmit(channel, decrypted, decryptedLen, &vhead);
         free(decrypted);
     } else {
-//        videoCh->partialFrames = IHS_VideoPartialFrameInsert(videoCh->partialFrames, &vhead,
-//
-//                                                             &data[offset], len - offset);
-        NotifyReceived(channel, &data[offset], len - offset, vhead.flags);
+        PreprocessAndSubmit(channel, &data[offset], len - offset, &vhead);
     }
-//    ConsumePartialFrames(channel);
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {
@@ -177,91 +161,9 @@ static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const u
 }
 
 
-static void ConsumePartialFrames(IHS_SessionChannel *channel) {
-    ChannelVideo *videoCh = (ChannelVideo *) channel;
-
-    IHS_SessionVideoPartialFrame *finishedNode = NULL;
-    uint16_t partialReserved1 = 0;
-    size_t frameLen = 0;
-    IHS_VideoPartialFrameForEach(videoCh->partialFrames, cur) {
-//        if (cur->reserved2) {
-//            printf("cur->reserved2=%u\n", cur->reserved2);
-//            if (cur->reserved1 != partialReserved1) {
-//                if (finishedNode) {
-//                    printf("Decode this frame\n");
-//                    break;
-//                }
-//            }
-//            if (cur->flags & VideoFrameFlagReserved1Increment) {
-//                if (cur->flags & VideoFrameFlagFrameFinish) {
-//                    partialReserved1 = 0;
-//                } else {
-//                    partialReserved1 = cur->reserved2 + 1;
-//                }
-//            }
-//        }
-        frameLen += cur->dataLen;
-        // TODO append buffer
-        if (cur->flags & VideoFrameFlagFrameFinish) {
-            finishedNode = cur;
-        }
-    }
-    if (!finishedNode || !frameLen) return;
-
-    IHS_SessionVideoPartialFrame *oldHead = videoCh->partialFrames;
-    IHS_SessionVideoPartialFrame *newHead = finishedNode->next;
-    if (newHead) {
-        newHead->prev = NULL;
-    }
-    finishedNode->next = NULL;
-    videoCh->partialFrames = newHead;
-
-    uint8_t *frameData = malloc(frameLen);
-    size_t frameSize = 0;
-    IHS_VideoPartialFrameForEach(oldHead, cur) {
-        memcpy(&frameData[frameSize], cur->data, cur->dataLen);
-        frameSize += cur->dataLen;
-    }
-    NotifyReceived(channel, frameData, frameSize, oldHead->flags);
-    free(frameData);
-    IHS_VideoPartialFrameClear(oldHead);
-}
-
-static void NotifyReceived(IHS_SessionChannel *channel, const uint8_t *data, size_t len, uint8_t hflags) {
-    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
-    if (!callbacks->received) return;
-    void *context = channel->session->videoContext;
-    uint8_t flags = IHS_StreamVideoFrameNone;
-    if (hflags & VideoFrameFlagKeyFrame) {
-        flags |= IHS_StreamVideoFrameKeyFrame;
-    }
-    if (hflags & VideoFrameFlagNeedEscape) {
-        size_t escapedCap = (len * 3) / 2 + 5;
-        uint8_t *escaped = malloc(escapedCap);
-        size_t escapedLen = 0;
-        if (hflags & VideoFrameFlagNeedStartSequence) {
-            assert(len >= 1);
-            const static uint8_t startSeq[] = {0x00, 0x00, 0x00, 0x01};
-            memcpy(&escaped[escapedLen], startSeq, sizeof(startSeq));
-            escapedLen += sizeof(startSeq);
-        }
-        escapedLen += EscapeNAL(&escaped[escapedLen], data, len);
-        callbacks->received(context, escaped, escapedLen, 0, flags);
-        free(escaped);
-    } else {
-        callbacks->received(context, data, len, 0, flags);
-    }
-}
-
-static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen) {
-    uint8_t *dst = out;
-    const uint8_t *end = src + inLen;
-    if (src < end) *dst++ = *src++;
-    if (src < end) *dst++ = *src++;
-    while (src < end) {
-        if (src[0] <= 0x03 && !dst[-2] && !dst[-1])
-            *dst++ = 0x03;
-        *dst++ = *src++;
-    }
-    return dst - out;
+static void PreprocessAndSubmit(IHS_SessionChannel *channel, const uint8_t *data, size_t len,
+                                const IHS_SessionVideoFrameHeader *header) {
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    assert (videoCh->config.codec == IHS_StreamVideoCodecH264);
+    IHS_SessionVideoFrameSubmitH264(channel, data, len, header);
 }

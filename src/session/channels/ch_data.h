@@ -48,7 +48,7 @@ typedef struct IHS_SessionChannelData {
 typedef struct IHS_SessionChannelDataClass {
     IHS_SessionChannelClass base;
 
-    void (*start)(struct IHS_SessionChannel *channel);
+    bool (*start)(struct IHS_SessionChannel *channel);
 
     void (*dataFrame)(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                       const uint8_t *data, size_t len);

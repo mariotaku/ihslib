@@ -22,28 +22,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 #pragma once
 
-#include <stdint.h>
+#define ERROR_OUT_OF_MEMORY -2
+#define ERROR_UNKNOWN_CODEC 0x1010
+#define ERROR_DECODER_OPEN_FAILED 0x1011
+#define ERROR_DECODER_CLOSE_FAILED 0x1012
+#define ERROR_AUDIO_OPEN_FAILED 0x1021
+#define ERROR_AUDIO_CLOSE_FAILED 0x1022
+#define ERROR_AUDIO_OPUS_INIT_FAILED 0x1023
 
-#include "session/channels/ch_data_video.h"
-
-typedef struct IHS_SessionVideoPartialFrame {
-    uint16_t sequence;
-    uint8_t flags;
-    uint16_t reserved1;
-    uint16_t reserved2;
-    uint8_t *data;
-    size_t dataLen;
-    struct IHS_SessionVideoPartialFrame *prev;
-    struct IHS_SessionVideoPartialFrame *next;
-} IHS_SessionVideoPartialFrame;
-
-#define IHS_VideoPartialFrameForEach(head, name) for (IHS_SessionVideoPartialFrame *name = (head); name; name = name->next)
-
-IHS_SessionVideoPartialFrame *IHS_VideoPartialFrameInsert(IHS_SessionVideoPartialFrame *head,
-                                                          const IHS_SessionVideoFrameHeader *header,
-                                                          const uint8_t *data, size_t dataLen);
-
-IHS_SessionVideoPartialFrame *IHS_VideoPartialFrameClear(IHS_SessionVideoPartialFrame *head);
+#define DR_OK 0
+#define DR_NEED_IDR 1

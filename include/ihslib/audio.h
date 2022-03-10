@@ -46,9 +46,9 @@ typedef struct IHS_StreamAudioConfig {
 } IHS_StreamAudioConfig;
 
 typedef struct IHS_StreamAudioCallbacks {
-    void (*start)(void *context, const IHS_StreamAudioConfig *config);
+    int (*start)(void *context, const IHS_StreamAudioConfig *config);
 
-    void (*received)(void *context, const uint8_t *data, size_t dataLen);
+    int (*submit)(void *context, const uint8_t *data, size_t dataLen);
 
     void (*stop)(void *context);
 } IHS_StreamAudioCallbacks;

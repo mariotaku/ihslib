@@ -38,7 +38,7 @@ static void ChannelAudioInit(IHS_SessionChannel *channel, const void *config);
 
 static void ChannelAudioDeinit(IHS_SessionChannel *channel);
 
-static void DataStart(struct IHS_SessionChannel *channel);
+static bool DataStart(struct IHS_SessionChannel *channel);
 
 static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                          const uint8_t *data, size_t len);
@@ -84,18 +84,18 @@ static void ChannelAudioDeinit(IHS_SessionChannel *channel) {
     }
 }
 
-static void DataStart(struct IHS_SessionChannel *channel) {
+static bool DataStart(struct IHS_SessionChannel *channel) {
     ChannelAudio *audioCh = (ChannelAudio *) channel;
     const IHS_StreamAudioCallbacks *callbacks = channel->session->audioCallbacks;
-    if (!callbacks->start) return;
-    callbacks->start(channel->session->audioContext, &audioCh->config);
+    if (!callbacks->start) return true;
+    return callbacks->start(channel->session->audioContext, &audioCh->config) == 0;
 }
 
 static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
                          const uint8_t *data, size_t len) {
     const IHS_StreamAudioCallbacks *callbacks = channel->session->audioCallbacks;
-    if (!callbacks->received) return;
-    callbacks->received(channel->session->audioContext, data, len);
+    if (!callbacks->submit) return;
+    callbacks->submit(channel->session->audioContext, data, len);
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {

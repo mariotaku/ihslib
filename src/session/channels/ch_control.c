@@ -36,7 +36,6 @@
 #include "protobuf/discovery.pb-c.h"
 #include "client/client_pri.h"
 #include "protobuf/pb_utils.h"
-#include <protobuf-c/protobuf-c-text.h>
 
 static void OnControlInit(IHS_SessionChannel *channel, const void *data);
 
@@ -68,9 +67,6 @@ IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session) {
 bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMessage type,
                                    const ProtobufCMessage *message, int32_t packetId) {
     assert(channel->id == IHS_SessionChannelIdControl);
-    char *msg = protobuf_c_text_to_string((ProtobufCMessage *) message, NULL);
-    printf("SendControlMessage: %u %s\n", type, msg);
-    free(msg);
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     size_t messageCapacity = protobuf_c_message_get_packed_size(message);
     bool ret;
