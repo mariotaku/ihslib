@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(ihslib C)
 
 set(CMAKE_C_STANDARD 11)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/scripts)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 find_program(PROTOC_C protoc-c)
 find_program(PYTHON python3)
