@@ -43,6 +43,8 @@ typedef struct IHS_SessionChannelData {
     bool threadInterrupted;
     uv_mutex_t mutex;
     uv_cond_t cond;
+
+    uint32_t lastPacketTimestamp;
 } IHS_SessionChannelData;
 
 typedef struct IHS_SessionChannelDataClass {

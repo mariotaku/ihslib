@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "stream.h"
 #include "decoders.h"
+#include "sps_parser.h"
 
 
 #define MAX_DECODE_UNIT_SIZE 262144
@@ -51,6 +52,12 @@ static VCOS_SEMAPHORE_T semaphore;
 static MMAL_COMPONENT_T *decoder = NULL, *renderer = NULL;
 static MMAL_POOL_T *pool_in = NULL, *pool_out = NULL;
 
+
+static bool SizeChanged(const MMAL_VIDEO_FORMAT_T *video, const sps_dimension_t *dimension);
+
+static void ChangedSize(const sps_dimension_t *dimension);
+
+static int setup_decoder(uint32_t width, uint32_t height);
 
 static void input_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf) {
     mmal_buffer_header_release(buf);
@@ -86,13 +93,19 @@ static int Start(void *context, const IHS_StreamVideoConfig *config) {
     bcm_host_init();
     mmal_vc_init();
 
+    uint32_t width = config->width;
+    uint32_t height = config->height;
+
+    return setup_decoder(width, height);
+
+}
+
+static int setup_decoder(uint32_t width, uint32_t height) {
     vcos_semaphore_create(&semaphore, "video_decoder", 1);
     if (mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_DECODER, &decoder) != MMAL_SUCCESS) {
         fprintf(stderr, "Can't create decoder\n");
         return ERROR_DECODER_OPEN_FAILED;
     }
-    uint32_t width = config->width;
-    uint32_t height = config->height;
     printf("create decoder %d x %d\n", width, height);
 
     MMAL_ES_FORMAT_T *format_in = decoder->input[0]->format;
@@ -102,7 +115,7 @@ static int Start(void *context, const IHS_StreamVideoConfig *config) {
     format_in->es->video.height = ALIGN(height, 16);
     format_in->es->video.crop.width = width;
     format_in->es->video.crop.height = height;
-    format_in->es->video.frame_rate.num = 60;
+    format_in->es->video.frame_rate.num = 0;
     format_in->es->video.frame_rate.den = 1;
     format_in->es->video.par.num = 1;
     format_in->es->video.par.den = 1;
@@ -234,7 +247,13 @@ static void Stop(void *context) {
 
 static int Submit(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence,
                   IHS_StreamVideoFrameFlag flags) {
-    printf("Submit: seq=%u, key=%d\n", sequence, (flags & IHS_StreamVideoFrameKeyFrame) != 0);
+    if (flags == IHS_StreamVideoFrameKeyFrame) {
+        sps_dimension_t dimension;
+        if (sps_parse_dimension_h264(&data[4], &dimension) &&
+            SizeChanged(&decoder->input[0]->format->es->video, &dimension)) {
+            ChangedSize(&dimension);
+        }
+    }
     MMAL_STATUS_T status;
     MMAL_BUFFER_HEADER_T *buf;
 
@@ -279,6 +298,15 @@ static int Submit(void *context, const uint8_t *data, size_t dataLen, uint16_t s
     (void) status;
 
     return DR_OK;
+}
+
+static void ChangedSize(const sps_dimension_t *dimension) {
+    Stop(NULL);
+    setup_decoder(dimension->width, dimension->height);
+}
+
+static bool SizeChanged(const MMAL_VIDEO_FORMAT_T *video, const sps_dimension_t *dimension) {
+    return ALIGN(dimension->width, 32) != video->width || ALIGN(dimension->height, 16) != video->height;
 }
 
 bool mmalvid_set_region(bool fullscreen, int x, int y, int w, int h) {

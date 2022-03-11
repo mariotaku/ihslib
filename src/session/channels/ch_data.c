@@ -70,6 +70,7 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_Sessi
         uv_mutex_unlock(&dataCh->mutex);
         return;
     }
+    dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
     uv_cond_signal(&dataCh->cond);
     uv_mutex_unlock(&dataCh->mutex);
 }

@@ -1,6 +1,6 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(sample-stream stream.c requestor.c alsaaud.c mmalvid.c)
+add_executable(sample-stream stream.c requestor.c alsaaud.c mmalvid.c sps_parser.c)
 
 find_package(BroadcomMMAL REQUIRED)
 find_package(Threads REQUIRED)
