@@ -50,6 +50,10 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     return session;
 }
 
+void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {
+    IHS_BaseSetLogFunction(&session->base, logFunction);
+}
+
 void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context) {
     IHS_BaseLock(&session->base);
     session->audioCallbacks = callbacks;

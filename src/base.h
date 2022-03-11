@@ -29,29 +29,9 @@
 #include <uv.h>
 #include "ihslib/common.h"
 
-
-typedef enum IHS_BaseLogLevel {
-    IHS_BaseLogLevelDebug,
-    IHS_BaseLogLevelInfo,
-    /**
-     * Problem that can be self recovered
-     */
-    IHS_BaseLogLevelWarn,
-    /**
-     * Error that should stop session
-     */
-    IHS_BaseLogLevelError,
-    /**
-     * Irrecoverable error, and the process should be aborted
-     */
-    IHS_BaseLogLevelFatal,
-} IHS_BaseLogLevel;
-
 typedef struct IHS_Base IHS_Base;
 
 typedef void (IHS_BaseTimerFunction)(IHS_Base *base, void *data);
-
-typedef void (IHS_BaseLogFunction)(IHS_BaseLogLevel level, const char *message);
 
 typedef struct IHS_BaseTimer IHS_BaseTimer;
 
@@ -61,7 +41,7 @@ struct IHS_Base {
     char deviceName[64];
     uint8_t deviceToken[32];
 
-    IHS_BaseLogFunction *logFunction;
+    IHS_LogFunction *logFunction;
     uv_loop_t *loop;
     uv_thread_t workerThread;
     uv_udp_t udp;
@@ -74,9 +54,9 @@ void IHS_BaseRun(IHS_Base *base);
 
 void IHS_BaseStop(IHS_Base *base);
 
-void IHS_BaseSetLogFunction(IHS_Base *base, IHS_BaseLogFunction *logFunction);
+void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction);
 
-void IHS_BaseLog(IHS_Base *base, IHS_BaseLogLevel level, const char *fmt, ...);
+void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...);
 
 void IHS_BaseThreadedRun(IHS_Base *base);
 

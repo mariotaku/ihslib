@@ -74,3 +74,22 @@ typedef struct IHS_HostInfo {
     IHS_SteamUniverse universe;
     bool gamesRunning;
 } IHS_HostInfo;
+
+typedef enum IHS_BaseLogLevel {
+    IHS_BaseLogLevelDebug,
+    IHS_BaseLogLevelInfo,
+    /**
+     * Problem that can be self recovered
+     */
+    IHS_BaseLogLevelWarn,
+    /**
+     * Error that should stop session
+     */
+    IHS_BaseLogLevelError,
+    /**
+     * Irrecoverable error, and the process should be aborted
+     */
+    IHS_BaseLogLevelFatal,
+} IHS_LogLevel;
+
+typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *message);

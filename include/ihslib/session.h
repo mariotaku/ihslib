@@ -40,6 +40,8 @@ typedef struct IHS_SessionConfig {
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig);
 
+void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
+
 void IHS_SessionRun(IHS_Session *session);
 
 void IHS_SessionStop(IHS_Session *session);

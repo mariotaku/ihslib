@@ -100,6 +100,8 @@ typedef struct IHS_ClientCallbacks {
 
 IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config);
 
+void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction);
+
 void IHS_ClientRun(IHS_Client *client);
 
 void IHS_ClientStop(IHS_Client *client);

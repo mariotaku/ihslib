@@ -70,6 +70,10 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     return client;
 }
 
+void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction) {
+    IHS_BaseSetLogFunction(&client->base, logFunction);
+}
+
 void IHS_ClientRun(IHS_Client *client) {
     IHS_BaseRun(&client->base);
 }

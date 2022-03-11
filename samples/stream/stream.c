@@ -34,6 +34,8 @@
 
 static void InterruptHandler(int sig);
 
+static void LogPrint(IHS_LogLevel level, const char *message);
+
 static bool Running = true;
 
 IHS_Session *ActiveSession = NULL;
@@ -54,6 +56,7 @@ int main(int argc, char *argv[]) {
     printf("\"\n");
 
     IHS_Session *session = IHS_SessionCreate(&clientConfig, &sessionConfig);
+    IHS_SessionSetLogFunction(session, LogPrint);
     IHS_SessionSetAudioCallbacks(session, &AudioCallbacks, NULL);
     IHS_SessionSetVideoCallbacks(session, &VideoCallbacks, NULL);
     if (!IHS_SessionConnect(session)) {
@@ -74,4 +77,12 @@ static void InterruptHandler(int sig) {
         return;
     }
     IHS_SessionDisconnect(ActiveSession);
+}
+
+static void LogPrint(IHS_LogLevel level, const char *message) {
+    if (level >= IHS_BaseLogLevelWarn) {
+        fprintf(stderr, "%s\n", message);
+    } else {
+        fprintf(stdout, "%s\n", message);
+    }
 }

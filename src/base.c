@@ -78,17 +78,17 @@ void IHS_BaseStop(IHS_Base *base) {
     uv_stop(base->loop);
 }
 
-void IHS_BaseSetLogFunction(IHS_Base *base, IHS_BaseLogFunction *logFunction) {
+void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
     base->logFunction = logFunction;
 }
 
-void IHS_BaseLog(IHS_Base *base, IHS_BaseLogLevel level, const char *fmt, ...) {
+void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...) {
     if (!base->logFunction) return;
     char buf[4096];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, 4095, fmt, args);
-    base->logFunction(level, fmt);
+    base->logFunction(level, buf);
     va_end(args);
 }
 
