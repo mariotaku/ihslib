@@ -124,8 +124,8 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
         videoCh->expectedSequence = vhead.sequence;
     }
     if (vhead.sequence != videoCh->expectedSequence) {
-        fprintf(stderr, "Expected sequence %u, got %u\n", videoCh->expectedSequence,
-                vhead.sequence);
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Expected video frame sequence %u, got %u",
+                       videoCh->expectedSequence, vhead.sequence);
         IHS_SessionChannelDataLost(channel);
         videoCh->waitingKeyFrame = true;
         videoCh->expectedSequence = vhead.sequence;

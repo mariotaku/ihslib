@@ -132,7 +132,7 @@ static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
     }
     size_t offset = 0;
     if (memcmp(&buf.base[offset], PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
-        fprintf(stderr, "Unrecognized packet!\n");
+        IHS_ClientLog(handle->loop->data, IHS_BaseLogLevelDebug, "Unrecognized packet!");
         goto cleanup;
     }
     IHS_HostIP address;

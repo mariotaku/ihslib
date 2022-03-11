@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.0)
+
 project(ihslib C)
 
 set(CMAKE_C_STANDARD 11)
@@ -58,9 +59,12 @@ elseif (OPENSSL_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_openssl.c)
 endif ()
 
-add_custom_target(protoc-gen
-        COMMAND ${PROTOC_C} --c_out=src ${PROTOBUF_FILES}
-        COMMAND ${PYTHON} scripts/protobuf-src-fixup.py src/protobuf
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# Don't include tools and samples if used as library
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    add_custom_target(protoc-gen
+            COMMAND ${PROTOC_C} --c_out=src ${PROTOBUF_FILES}
+            COMMAND ${PYTHON} scripts/protobuf-src-fixup.py src/protobuf
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-add_subdirectory(samples)
+    add_subdirectory(samples)
+endif ()

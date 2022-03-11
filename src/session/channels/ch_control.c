@@ -80,7 +80,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
                                     control->sendEncryptSequence++) != 0) {
             free(serialized);
             free(payload);
-            fprintf(stderr, "Failed to encrypt payload\n");
+            IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Failed to encrypt payload\n");
             IHS_SessionDisconnect(channel->session);
             return false;
         }
@@ -130,7 +130,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         case IHS_SessionPacketTypeReliable:
         case IHS_SessionPacketTypeReliableFrag:
             if (!IHS_SessionPacketsWindowAdd(window, packet)) {
-                fprintf(stderr, "Packets window overflow\n");
+                IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Packets window overflow");
                 IHS_SessionDisconnect(channel->session);
             }
             IHS_SessionChannelPacketAck(channel, packet->header.packetId, true);
@@ -141,7 +141,8 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
             break;
         default:
             // Other packets should not come here
-            fprintf(stderr, "Unrecognized packet %u in Control Channel\n", packet->header.type);
+            IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Unrecognized packet %u in Control Channel\n",
+                           packet->header.type);
             IHS_SessionDisconnect(channel->session);
             break;
     }
@@ -154,8 +155,9 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
             if (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen,
                                         plain, &messageLen, control->recvEncryptSequence) != 0) {
                 free(plain);
-                fprintf(stderr, "Failed to decrypt message id=%d, retransmit=%d, type=%d\n",
-                        frame.header.packetId, frame.header.retransmitCount, type);
+                IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
+                               "Failed to decrypt message id=%d, retransmit=%d, type=%d",
+                               frame.header.packetId, frame.header.retransmitCount, type);
                 IHS_SessionDisconnect(channel->session);
                 continue;
             }
@@ -211,7 +213,8 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         default: {
             const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
                                                                                    type);
-            fprintf(stderr, "Unhandled control message: %s\n", value ? value->name : "unknown");
+            IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Unhandled control message: %s",
+                           value ? value->name : "unknown");
             break;
         }
     }

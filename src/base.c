@@ -25,23 +25,24 @@
 
 #include "base.h"
 
-#include <string.h>
 #include <malloc.h>
+#include <memory.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "endianness.h"
 #include "crypto.h"
 
 static void SendCallback(uv_udp_send_t *req, int status);
 
-static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size);
+static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t size);
 
 static void BaseTimer(uv_timer_t *handle, int status);
 
 static void BaseTimerCleanup(uv_handle_t *handle);
 
 struct IHS_BaseTimer {
-    IHS_BaseTimerFunction fn;
+    IHS_BaseTimerFunction *fn;
     uv_timer_t *uv;
     void *data;
 };
@@ -75,6 +76,20 @@ void IHS_BaseRun(IHS_Base *base) {
 
 void IHS_BaseStop(IHS_Base *base) {
     uv_stop(base->loop);
+}
+
+void IHS_BaseSetLogFunction(IHS_Base *base, IHS_BaseLogFunction *logFunction) {
+    base->logFunction = logFunction;
+}
+
+void IHS_BaseLog(IHS_Base *base, IHS_BaseLogLevel level, const char *fmt, ...) {
+    if (!base->logFunction) return;
+    char buf[4096];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, 4095, fmt, args);
+    base->logFunction(level, fmt);
+    va_end(args);
 }
 
 void IHS_BaseThreadedRun(IHS_Base *base) {
@@ -129,19 +144,21 @@ void IHS_BaseTimerStop(IHS_BaseTimer *timer) {
     uv_timer_stop(timer->uv);
 }
 
-static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t suggested_size) {
+static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t size) {
     (void) handle;
-    char *buf = malloc(suggested_size);
+    char *buf = malloc(size);
     if (buf == NULL) {
-        fprintf(stderr, "Failed to allocate %u bytes of buffer!!!\n", suggested_size);
+        IHS_Base *base = handle->loop->data;
+        IHS_BaseLog(base, IHS_BaseLogLevelFatal, "Failed to allocate %u bytes of buffer!!!", size);
         abort();
     }
-    return uv_buf_init(buf, suggested_size);
+    return uv_buf_init(buf, size);
 }
 
 static void SendCallback(uv_udp_send_t *req, int status) {
     if (status != 0) {
-        printf("Error: %s\n", strerror(status));
+        IHS_Base *base = req->handle->loop->data;
+        IHS_BaseLog(base, IHS_BaseLogLevelError, "Error: %s", strerror(status));
     }
     free(req->bufsml[0].base);
     free(req);

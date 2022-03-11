@@ -64,9 +64,8 @@ void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStr
 
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message) {
     if (!message->has_result || message->result != CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED) {
-        fprintf(stderr, "Failed to authenticate\n");
-        IHS_SessionDisconnect(channel->session);
+        IHS_BaseLog(&channel->session->base, IHS_BaseLogLevelError, "Failed to authenticate");
         return;
     }
-    printf("Authenticated\n");
+    IHS_BaseLog(&channel->session->base, IHS_BaseLogLevelInfo, "Authenticated");
 }

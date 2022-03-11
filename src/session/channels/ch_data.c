@@ -47,7 +47,7 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     uv_mutex_init(&dataCh->mutex);
     uv_cond_init(&dataCh->cond);
-    dataCh->window = IHS_SessionPacketsWindowCreate(1024);
+    dataCh->window = IHS_SessionPacketsWindowCreate(128);
     dataCh->threadInterrupted = false;
     uv_thread_create(&dataCh->workerThread, (void (*)(void *)) DataThreadWorker, dataCh);
 }

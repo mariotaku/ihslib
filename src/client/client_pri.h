@@ -54,6 +54,7 @@ struct IHS_Client {
 
 #define IHS_UNUSED(x) (void) (x)
 
+#define IHS_ClientLog(client, ...) IHS_BaseLog((IHS_Base*) (client), __VA_ARGS__)
 
 bool IHS_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
                     ProtobufCMessage *message);
