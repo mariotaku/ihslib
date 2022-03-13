@@ -85,25 +85,26 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
             if (response->request_id != state->requestId) return;
             switch (response->result) {
                 case k_ERemoteDeviceStreamingSuccess:
-                    if (client->callbacks.streamingSuccess) {
+                    if (client->callbacks.streaming && client->callbacks.streaming->success) {
                         ProtobufCBinaryData enc = response->encrypted_session_key;
                         uint8_t key[128];
                         size_t keyLen = sizeof(key);
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
                         IHS_SocketAddress address = {state->host.address.ip, response->port};
-                        client->callbacks.streamingSuccess(client, address, key, keyLen, client->callbacksContext);
+                        client->callbacks.streaming->success(client, address, key, keyLen,
+                                                             client->callbackContexts.streaming);
                     }
                     break;
                 case k_ERemoteDeviceStreamingInProgress:
-                    if (client->callbacks.streamingInProgress) {
-                        client->callbacks.streamingInProgress(client, client->callbacksContext);
+                    if (client->callbacks.streaming && client->callbacks.streaming->progress) {
+                        client->callbacks.streaming->progress(client, client->callbackContexts.streaming);
                     }
                     break;
                 default:
-                    if (client->callbacks.streamingFailed) {
-                        client->callbacks.streamingFailed(client, (IHS_StreamingResult) response->result,
-                                                          client->callbacksContext);
+                    if (client->callbacks.streaming && client->callbacks.streaming->failed) {
+                        client->callbacks.streaming->failed(client, (IHS_StreamingResult) response->result,
+                                                            client->callbackContexts.streaming);
                     }
                     break;
             }

@@ -93,9 +93,20 @@ void IHS_ClientDestroy(IHS_Client *client) {
     free(client);
 }
 
-void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callbacks, void *context) {
-    client->callbacks = *callbacks;
-    client->callbacksContext = context;
+void IHS_ClientSetDiscoveryCallbacks(IHS_Client *client, const IHS_ClientDiscoveryCallbacks *callbacks, void *context) {
+    client->callbacks.discovery = callbacks;
+    client->callbackContexts.discovery = context;
+}
+
+void IHS_ClientSetAuthorizationCallbacks(IHS_Client *client, const IHS_ClientAuthorizationCallbacks *callbacks,
+                                         void *context) {
+    client->callbacks.authorization = callbacks;
+    client->callbackContexts.authorization = context;
+}
+
+void IHS_ClientSetStreamingCallbacks(IHS_Client *client, const IHS_ClientStreamingCallbacks *callbacks, void *context) {
+    client->callbacks.streaming = callbacks;
+    client->callbackContexts.streaming = context;
 }
 
 const char *IHS_ClientError(IHS_Client *client) {

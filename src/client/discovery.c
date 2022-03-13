@@ -50,6 +50,8 @@ void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
         info.gamesRunning = status->games_running;
         strncpy(info.hostname, status->hostname, sizeof(info.hostname) - 1);
         info.hostname[sizeof(info.hostname) - 1] = '\0';
-        client->callbacks.hostDiscovered(client, info, client->callbacksContext);
+        if (client->callbacks.discovery && client->callbacks.discovery->discovered) {
+            client->callbacks.discovery->discovered(client, info, client->callbackContexts.discovery);
+        }
     }
 }

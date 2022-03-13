@@ -37,9 +37,16 @@ typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_IPAddress ip, CMsgRem
 
 struct IHS_Client {
     IHS_Base base;
-    IHS_ClientCallbacks callbacks;
-    void *callbacksContext;
-
+    struct {
+        const IHS_ClientDiscoveryCallbacks *discovery;
+        const IHS_ClientAuthorizationCallbacks *authorization;
+        const IHS_ClientStreamingCallbacks *streaming;
+    } callbacks;
+    struct {
+        void *discovery;
+        void *authorization;
+        void *streaming;
+    } callbackContexts;
     struct {
         IHS_MessageCallback *discovery;
         IHS_MessageCallback *authorization;
@@ -58,8 +65,8 @@ struct IHS_Client {
 bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClientBroadcastMsg type,
                     ProtobufCMessage *message);
 
- bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
-                                       ProtobufCMessage *message);
+bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
+                         ProtobufCMessage *message);
 
 bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse universe, uint8_t *key, size_t *keyLen);
 

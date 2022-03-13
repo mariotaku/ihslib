@@ -71,19 +71,19 @@ void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip,
     CMsgRemoteDeviceAuthorizationResponse *resp = (CMsgRemoteDeviceAuthorizationResponse *) message;
     switch (resp->result) {
         case k_ERemoteDeviceAuthorizationInProgress:
-            if (client->callbacks.authorizationInProgress) {
-                client->callbacks.authorizationInProgress(client, client->callbacksContext);
+            if (client->callbacks.authorization && client->callbacks.authorization->progress) {
+                client->callbacks.authorization->progress(client, client->callbackContexts.authorization);
             }
             return;
         case k_ERemoteDeviceAuthorizationSuccess:
-            if (client->callbacks.authorizationSuccess) {
-                client->callbacks.authorizationSuccess(client, resp->steamid, client->callbacksContext);
+            if (client->callbacks.authorization && client->callbacks.authorization->success) {
+                client->callbacks.authorization->success(client, resp->steamid, client->callbackContexts.authorization);
             }
             break;
         default:
-            if (client->callbacks.authorizationFailed) {
-                client->callbacks.authorizationFailed(client, (IHS_AuthorizationResult) resp->result,
-                                                      client->callbacksContext);
+            if (client->callbacks.authorization && client->callbacks.authorization->failed) {
+                client->callbacks.authorization->failed(client, (IHS_AuthorizationResult) resp->result,
+                                                        client->callbackContexts.authorization);
             }
             break;
     }
