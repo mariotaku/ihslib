@@ -103,7 +103,6 @@ static bool DataStart(struct IHS_SessionChannel *channel) {
     if (callbacks->start(channel->session->videoContext, &videoCh->config) != 0) {
         return false;
     }
-
     CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;
     message.info = "Marvell hardware decoding";
     message.has_threads = true;

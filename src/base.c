@@ -29,26 +29,31 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "endianness.h"
 #include "crypto.h"
+#include "ihs_queue.h"
 
-static void SendCallback(uv_udp_send_t *req, int status);
-
-static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t size);
-
-static void BaseTimer(uv_timer_t *handle, int status);
-
-static void BaseTimerCleanup(uv_handle_t *handle);
-
-struct IHS_BaseTimer {
-    IHS_BaseTimerFunction *fn;
-    uv_timer_t *uv;
-    void *data;
+struct IHS_QueueItem {
+    enum {
+        IHS_BaseQueueSend
+    } type;
+    union {
+        IHS_UDPPacket send;
+    };
 };
 
-void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast) {
+static void QueueItemDestroy(IHS_QueueItem *item);
+
+
+void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast) {
     memset(base, 0, sizeof(IHS_Base));
+    base->lock = IHS_MutexCreate();
+    base->queue = IHS_QueueCreate(sizeof(IHS_QueueItem), QueueItemDestroy);
+    base->timers = IHS_TimersCreate();
+    base->receivedCallback = recvCb;
+
     base->deviceId = config->deviceId;
     memcpy(base->secretKey, config->secretKey, 32);
     strncpy(base->deviceName, config->deviceName ? config->deviceName : "IHSLib", sizeof(base->deviceName));
@@ -58,24 +63,37 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb
     IHS_WriteUInt64LE(in, base->deviceId);
     IHS_CryptoSymmetricEncrypt(in, 8, base->secretKey, sizeof(base->secretKey),
                                base->deviceToken, &deviceTokenLen);
-
-    base->loop = uv_loop_new();
-    uv_mutex_init(&base->mutex);
-    base->loop->data = base;
-    uv_udp_init(base->loop, &base->udp);
-    struct sockaddr_in listenAddr = {AF_INET, 0, INADDR_ANY};
-    uv_udp_bind(&base->udp, listenAddr, 0);
-
-    uv_udp_set_broadcast(&base->udp, broadcast);
-    uv_udp_recv_start(&base->udp, BufferAlloc, recvCb);
 }
 
 void IHS_BaseRun(IHS_Base *base) {
-    uv_run(base->loop, UV_RUN_DEFAULT);
+    base->socket = IHS_UDPSocketOpen();
+    while (!base->interrupted) {
+        IHS_TimersTick(base->timers);
+        for (IHS_QueueItem *item; (item = IHS_QueuePoll(base->queue)) != NULL; IHS_QueueItemFree(base->queue, item)) {
+            switch (item->type) {
+                case IHS_BaseQueueSend:
+                    IHS_UDPSocketSend(base->socket, &item->send);
+                    break;
+                default:
+                    IHS_BaseLog(base, IHS_BaseLogLevelFatal, "Unrecognized queue item %d", item->type);
+                    abort();
+            }
+        }
+        IHS_UDPPacket recv;
+        int ret;
+        if ((ret = IHS_UDPSocketReceive(base->socket, &recv)) < 0) {
+            break;
+        }
+        if (ret) {
+            base->receivedCallback(base, &recv.address, recv.buffer, recv.length);
+        }
+        usleep(1);
+    }
+    IHS_UDPSocketClose(base->socket);
 }
 
 void IHS_BaseStop(IHS_Base *base) {
-    uv_stop(base->loop);
+    base->interrupted = true;
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
@@ -93,83 +111,47 @@ void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...) {
 }
 
 void IHS_BaseThreadedRun(IHS_Base *base) {
-    uv_thread_create(&base->workerThread, (void (*)(void *)) IHS_BaseRun, base);
+    base->worker = IHS_ThreadCreate((IHS_ThreadFunction *) IHS_BaseRun, NULL, base);
 }
 
 void IHS_BaseThreadedJoin(IHS_Base *base) {
-    uv_thread_join(&base->workerThread);
+    IHS_ThreadJoin(base->worker);
+    base->worker = NULL;
 }
 
 void IHS_BaseFree(IHS_Base *base) {
-    uv_mutex_destroy(&base->mutex);
-    uv_loop_delete(base->loop);
+    IHS_TimersDestroy(base->timers);
+    IHS_QueueDestroy(base->queue);
+    IHS_MutexDestroy(base->lock);
 }
 
-bool IHS_BaseSend(IHS_Base *base, IHS_HostAddress address, const uint8_t *data, size_t dataLen) {
-    uv_buf_t uvbuf = uv_buf_init(malloc(dataLen), dataLen);
-    memcpy(uvbuf.base, data, dataLen);
-    uv_udp_send_t *req = malloc(sizeof(uv_udp_send_t));
-    if (address.ip.type == IHS_HostIPv4) {
-        struct sockaddr_in send_addr = {AF_INET, htons(address.port), .sin_addr= address.ip.value.v4};
-        return uv_udp_send(req, &base->udp, &uvbuf, 1, send_addr, SendCallback) == 0;
-    } else if (address.ip.type == IHS_HostIPv6) {
-        struct sockaddr_in6 send_addr = {AF_INET6, htons(address.port), .sin6_addr = address.ip.value.v6};
-        return uv_udp_send6(req, &base->udp, &uvbuf, 1, send_addr, SendCallback) == 0;
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data, size_t dataLen) {
+    IHS_QueueItem *item = IHS_QueueItemObtain(base->queue);
+    item->type = IHS_BaseQueueSend;
+    item->send.address = address;
+    item->send.length = dataLen;
+    item->send.buffer = malloc(dataLen);
+    memcpy(item->send.buffer, data, dataLen);
+
+    if (data[4] == 1 && data[0] == 0x85) {
+        IHS_BaseLog(base, IHS_BaseLogLevelDebug, "Send control message %d", data[13]);
     }
-    return false;
+    IHS_QueueAppend(base->queue, item);
+    return true;
 }
 
 void IHS_BaseLock(IHS_Base *base) {
-    uv_mutex_lock(&base->mutex);
+    IHS_MutexLock(base->lock);
 }
 
 void IHS_BaseUnlock(IHS_Base *base) {
-    uv_mutex_unlock(&base->mutex);
+    IHS_MutexUnlock(base->lock);
 }
 
-IHS_BaseTimer *IHS_BaseTimerStart(IHS_Base *base, IHS_BaseTimerFunction timerFn, uint64_t timeout, uint64_t repeat,
-                                  void *data) {
-    IHS_BaseTimer *timer = malloc(sizeof(IHS_BaseTimer));
-    timer->fn = timerFn;
-    timer->uv = malloc(sizeof(uv_timer_t));
-    timer->data = data;
-    uv_timer_init(base->loop, timer->uv);
-    timer->uv->data = timer;
-    timer->uv->close_cb = BaseTimerCleanup;
-    uv_timer_start(timer->uv, BaseTimer, timeout, repeat);
-    return timer;
-}
-
-void IHS_BaseTimerStop(IHS_BaseTimer *timer) {
-    uv_timer_stop(timer->uv);
-}
-
-static uv_buf_t BufferAlloc(uv_handle_t *handle, size_t size) {
-    (void) handle;
-    char *buf = malloc(size);
-    if (buf == NULL) {
-        IHS_Base *base = handle->loop->data;
-        IHS_BaseLog(base, IHS_BaseLogLevelFatal, "Failed to allocate %u bytes of buffer!!!", size);
-        abort();
+static void QueueItemDestroy(IHS_QueueItem *item) {
+    switch (item->type) {
+        case IHS_BaseQueueSend:
+            free(item->send.buffer);
+            break;
     }
-    return uv_buf_init(buf, size);
-}
-
-static void SendCallback(uv_udp_send_t *req, int status) {
-    if (status != 0) {
-        IHS_Base *base = req->handle->loop->data;
-        IHS_BaseLog(base, IHS_BaseLogLevelError, "Error: %s", strerror(status));
-    }
-    free(req->bufsml[0].base);
-    free(req);
-}
-
-static void BaseTimer(uv_timer_t *handle, int status) {
-    IHS_BaseTimer *timer = handle->data;
-    timer->fn(handle->loop->data, timer->data);
-}
-
-static void BaseTimerCleanup(uv_handle_t *handle) {
-    free(handle->data);
-    free(handle);
 }

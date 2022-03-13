@@ -45,3 +45,5 @@ int IHS_CryptoSymmetricDecryptWithIV(const uint8_t *in, size_t inLen, const uint
 
 int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
                          size_t *outLen);
+
+uint32_t IHS_CryptoRandomUInt32();

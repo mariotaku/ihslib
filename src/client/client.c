@@ -29,8 +29,6 @@
 #include <malloc.h>
 #include <memory.h>
 
-#include <uv.h>
-
 #include "protobuf/discovery.pb-c.h"
 #include "endianness.h"
 #include "client_pri.h"
@@ -40,7 +38,7 @@
 
 static const unsigned char PACKET_MAGIC[8] = {0xff, 0xff, 0xff, 0xff, 0x21, 0x4c, 0x5f, 0xa0};
 
-static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
+static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len);
 
 static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStreamingProgress + 1] = {
         &cmsg_remote_client_broadcast_discovery__descriptor,
@@ -101,11 +99,10 @@ void IHS_ClientSetCallbacks(IHS_Client *client, const IHS_ClientCallbacks *callb
 }
 
 const char *IHS_ClientError(IHS_Client *client) {
-    uv_err_t err = uv_last_error(client->base.loop);
-    return uv_err_name(err);
+    return "";
 }
 
-bool IHS_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClientBroadcastMsg type,
                     ProtobufCMessage *message) {
     CMsgRemoteClientBroadcastHeader header;
     cmsg_remote_client_broadcast_header__init(&header);
@@ -129,51 +126,40 @@ bool IHS_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBr
     return IHS_BaseSend(&client->base, address, buf.data, buf.len);
 }
 
-static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
-                               struct sockaddr *addr, unsigned flags) {
-    if (!nread) {
-        goto cleanup;
+bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
+                         ProtobufCMessage *message) {
+    static const IHS_SocketAddress address = {{.v4={IHS_IPAddressFamilyIPv4, {0xFF, 0xFF, 0xFF, 0xFF}}}, 27036};
+    return IHS_ClientSend(client, address, type, message);
+}
+
+static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {
+    if (memcmp(data, PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
+        IHS_BaseLog(base, IHS_BaseLogLevelDebug, "Unrecognized packet!");
+        return;
     }
-    size_t offset = 0;
-    if (memcmp(&buf.base[offset], PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
-        IHS_ClientLog(handle->loop->data, IHS_BaseLogLevelDebug, "Unrecognized packet!");
-        goto cleanup;
-    }
-    IHS_HostIP address;
-    switch (addr->sa_family) {
-        case AF_INET:
-            address.type = IHS_HostIPv4;
-            address.value.v4 = ((struct sockaddr_in *) addr)->sin_addr;
-            break;
-        case AF_INET6:
-            address.type = IHS_HostIPv6;
-            address.value.v6 = ((struct sockaddr_in6 *) addr)->sin6_addr;
-            break;
-    }
-    offset += sizeof(PACKET_MAGIC);
+    size_t offset = sizeof(PACKET_MAGIC);
     uint32_t header_size, payload_size;
-    offset += IHS_ReadUInt32LE((uint8_t *) &buf.base[offset], &header_size);
+    offset += IHS_ReadUInt32LE((uint8_t *) &data[offset], &header_size);
     CMsgRemoteClientBroadcastHeader *header = cmsg_remote_client_broadcast_header__unpack(NULL, header_size,
-                                                                                          (uint8_t *) &
-                                                                                                  buf.base[offset]);
+                                                                                          &data[offset]);
     offset += header_size;
-    offset += IHS_ReadUInt32LE((uint8_t *) &buf.base[offset], &payload_size);
+    offset += IHS_ReadUInt32LE((uint8_t *) &data[offset], &payload_size);
     ERemoteClientBroadcastMsg type = header->msg_type;
     const ProtobufCMessageDescriptor *descriptor = MessageDescriptors[type];
     ProtobufCMessage *message = descriptor ? protobuf_c_message_unpack(descriptor, NULL, payload_size,
-                                                                       (uint8_t *) &buf.base[offset]) : NULL;
-    IHS_Client *client = handle->loop->data;
+                                                                       &data[offset]) : NULL;
+    IHS_Client *client = (IHS_Client *) base;
     switch (type) {
         case k_ERemoteClientBroadcastMsgDiscovery:
         case k_ERemoteClientBroadcastMsgStatus:
         case k_ERemoteClientBroadcastMsgOffline:
         case k_ERemoteClientBroadcastMsgClientIDDeconflict:
-            client->privCallbacks.discovery(client, address, header, message);
+            client->privCallbacks.discovery(client, address->ip, header, message);
             break;
         case k_ERemoteDeviceAuthorizationRequest:
         case k_ERemoteDeviceAuthorizationResponse:
         case k_ERemoteDeviceAuthorizationCancelRequest:
-            client->privCallbacks.authorization(client, address, header, message);
+            client->privCallbacks.authorization(client, address->ip, header, message);
             break;
         case k_ERemoteDeviceStreamingRequest:
         case k_ERemoteDeviceStreamingResponse:
@@ -181,13 +167,11 @@ static void ClientRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf,
         case k_ERemoteDeviceStreamingCancelRequest:
         case k_ERemoteDeviceProofRequest:
         case k_ERemoteDeviceProofResponse:
-            client->privCallbacks.streaming(client, address, header, message);
+            client->privCallbacks.streaming(client, address->ip, header, message);
             break;
         default:
             break;
     }
     cmsg_remote_client_broadcast_header__free_unpacked(header, NULL);
     protobuf_c_message_free_unpacked(message, NULL);
-    cleanup:
-    free(buf.base);
 }

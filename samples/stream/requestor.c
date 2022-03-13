@@ -31,7 +31,7 @@
 
 typedef struct RequestorCallbacksContext {
     bool requested;
-    IHS_HostAddress address;
+    IHS_SocketAddress address;
     uint8_t sessionKey[64];
     size_t sessionKeyLen;
     bool succeeded;
@@ -41,7 +41,7 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
 
 static void OnStreamingInProgress(IHS_Client *client, void *context);
 
-static void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey,
+static void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey,
                                size_t sessionKeyLen, void *context);
 
 static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result, void *context);
@@ -103,7 +103,7 @@ void OnStreamingInProgress(IHS_Client *client, void *context) {
     printf("OnStreamingInProgress\n");
 }
 
-void OnStreamingSuccess(IHS_Client *client, IHS_HostAddress address, const uint8_t *sessionKey, size_t sessionKeyLen,
+void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey, size_t sessionKeyLen,
                         void *context) {
     RequestorCallbacksContext *reqContext = context;
 

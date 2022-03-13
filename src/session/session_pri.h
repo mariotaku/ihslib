@@ -52,6 +52,8 @@ struct IHS_Session {
 
 #define IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(millis) ((uint32_t) (((uint64_t) (millis)) * 65536 / 1000))
 
+#define IHS_SESSION_PACKET_TIMESTAMP_FROM_MICROS(micros) ((uint32_t) (((uint64_t) (micros)) * 65536))
+
 #define IHS_SESSION_PACKET_TIMESTAMP_TO_MILLIS(diff) ((uint32_t) (((uint64_t) (diff)) * 1000 / 65536))
 
 #define IHS_SessionLog(session, ...) IHS_BaseLog((IHS_Base*) (session), __VA_ARGS__)

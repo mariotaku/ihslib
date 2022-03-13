@@ -253,6 +253,7 @@ static int Submit(void *context, const uint8_t *data, size_t dataLen, uint16_t s
             SizeChanged(&decoder->input[0]->format->es->video, &dimension)) {
             ChangedSize(&dimension);
         }
+        printf("keyframe %d x %d\n", dimension.width, dimension.height);
     }
     MMAL_STATUS_T status;
     MMAL_BUFFER_HEADER_T *buf;

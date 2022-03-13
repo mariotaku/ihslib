@@ -29,26 +29,26 @@
 #include "session/session_pri.h"
 #include "client/client_pri.h"
 
-static void SendKeepAlive(IHS_Base *base, void *data);
+static uint64_t SendKeepAlive(void *data);
 
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     if (control->keepAliveTimer) return;
-    control->keepAliveTimer = IHS_BaseTimerStart(&channel->session->base, SendKeepAlive,
-                                                 5000, 10000, control);
+    control->keepAliveTimer = IHS_TimerStart(channel->session->base.timers, SendKeepAlive, NULL,
+                                             5000, control);
 }
 
 void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     if (!control->keepAliveTimer) return;
-    IHS_BaseTimerStop(control->keepAliveTimer);
+    IHS_TimerStop(control->keepAliveTimer);
     control->keepAliveTimer = NULL;
 }
 
-static void SendKeepAlive(IHS_Base *base, void *data) {
-    IHS_UNUSED(base);
+static uint64_t SendKeepAlive(void *data) {
     IHS_SessionChannel *channel = data;
     CKeepAliveMsg message = CKEEP_ALIVE_MSG__INIT;
     IHS_SessionChannelControlSend(channel, k_EStreamControlKeepAlive, (const ProtobufCMessage *) &message,
                                   IHS_PACKET_ID_NEXT);
+    return 10000;
 }

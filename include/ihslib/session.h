@@ -32,7 +32,7 @@
 typedef struct IHS_Session IHS_Session;
 
 typedef struct IHS_SessionConfig {
-    IHS_HostAddress address;
+    IHS_SocketAddress address;
     uint8_t sessionKey[32];
     size_t sessionKeyLen;
     uint64_t steamId;

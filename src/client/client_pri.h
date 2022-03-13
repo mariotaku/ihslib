@@ -27,13 +27,12 @@
 
 #include "ihslib/client.h"
 
-#include <uv.h>
-
 #include "protobuf/discovery.pb-c.h"
 #include "base.h"
+#include "ihs_timer.h"
 
 
-typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                    ProtobufCMessage *message);
 
 struct IHS_Client {
@@ -47,8 +46,8 @@ struct IHS_Client {
         IHS_MessageCallback *streaming;
     } privCallbacks;
     struct {
-        uv_timer_t *authorization;
-        uv_timer_t *streaming;
+        IHS_Timer *authorization;
+        IHS_Timer *streaming;
     } taskHandles;
 };
 
@@ -56,22 +55,19 @@ struct IHS_Client {
 
 #define IHS_ClientLog(client, ...) IHS_BaseLog((IHS_Base*) (client), __VA_ARGS__)
 
-bool IHS_ClientSend(IHS_Client *client, IHS_HostAddress address, ERemoteClientBroadcastMsg type,
+bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClientBroadcastMsg type,
                     ProtobufCMessage *message);
 
-static inline bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
-                                       ProtobufCMessage *message) {
-    IHS_HostAddress address = {{IHS_HostIPv4, {.v4 = INADDR_BROADCAST}}, 27036};
-    return IHS_ClientSend(client, address, type, message);
-}
+ bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
+                                       ProtobufCMessage *message);
 
 bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse universe, uint8_t *key, size_t *keyLen);
 
-void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message);
 
-void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                      ProtobufCMessage *message);
 
-void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message);

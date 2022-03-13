@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <memory.h>
+#include <time.h>
 
 #include "ihslib/session.h"
 #include "ihslib/common.h"
@@ -35,8 +36,9 @@
 #include "session/channels/ch_discovery.h"
 #include "session/channels/ch_control.h"
 #include "session/channels/ch_stats.h"
+#include "crypto.h"
 
-static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags);
+static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len);
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig) {
     IHS_Session *session = malloc(sizeof(IHS_Session));
@@ -70,9 +72,7 @@ void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCal
 
 bool IHS_SessionConnect(IHS_Session *session) {
     IHS_BaseLock(&session->base);
-    srand(time(NULL)); // NOLINT(cert-msc51-cpp)
-    /* A bad RNG is enough */
-    session->state.connectionId = rand() % 0xFF; // NOLINT(cert-msc50-cpp)
+    session->state.connectionId = IHS_CryptoRandomUInt32();
     IHS_BaseUnlock(&session->base);
 
     /* crc32c(b'Connect') */
@@ -119,8 +119,10 @@ void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet
 }
 
 uint32_t IHS_SessionPacketTimestamp(IHS_Session *session) {
-    uint64_t now = uv_now(session->base.loop);
-    return IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(now);
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    uint64_t now = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
+    return IHS_SESSION_PACKET_TIMESTAMP_FROM_MICROS(now);
 }
 
 bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {
@@ -136,21 +138,16 @@ bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage t
     return IHS_SessionChannelControlSend(channel, type, message, packetId);
 }
 
-static void SessionRecvCallback(uv_udp_t *handle, ssize_t nread, uv_buf_t buf, struct sockaddr *addr, unsigned flags) {
-    if (!nread) {
-        goto cleanup;
-    }
-    IHS_Session *session = handle->loop->data;
+static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {
+    IHS_Session *session = (IHS_Session *) base;
     IHS_SessionPacket packet;
-    IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, (const uint8_t *) buf.base, nread);
+    IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, data, len);
     if (ret != IHS_SessionPacketResultOK) {
-        goto cleanup;
+        return;
     }
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, packet.header.channelId);
     if (!channel) {
-        goto cleanup;
+        return;
     }
     IHS_SessionChannelReceivedPacket(channel, &packet);
-    cleanup:
-    free(buf.base);
 }

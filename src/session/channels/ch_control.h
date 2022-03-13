@@ -29,13 +29,14 @@
 
 #include "protobuf/remoteplay.pb-c.h"
 #include "session/frame.h"
+#include "ihs_timer.h"
 
 typedef struct IHS_SessionChannelControl {
     IHS_SessionChannel base;
     uint64_t sendEncryptSequence;
     uint64_t recvEncryptSequence;
     IHS_SessionPacketsWindow *framePacketWindow;
-    IHS_BaseTimer *keepAliveTimer;
+    IHS_Timer *keepAliveTimer;
 } IHS_SessionChannelControl;
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session);

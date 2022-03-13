@@ -8,8 +8,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 find_program(PROTOC_C protoc-c)
 find_program(PYTHON python3)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBUV libuv REQUIRED)
+
 pkg_check_modules(PROTOBUF libprotobuf-c REQUIRED)
+pkg_check_modules(SDL2 sdl2)
+pkg_check_modules(SDL2_NET SDL2_net)
 
 find_package(MbedTLS)
 find_package(OpenSSL)
@@ -25,6 +27,10 @@ add_library(ihslib
         src/base.c
         src/crc32c.c
         src/memmem.c
+        src/ihs_timer.c
+        src/ihs_udp.c
+        src/ihs_thread.c
+        src/ihs_queue.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
@@ -48,8 +54,20 @@ add_library(ihslib
         src/session/channels/ch_stats.c
         )
 
-target_include_directories(ihslib PUBLIC include PRIVATE src PRIVATE SYSTEM ${LIBUV_INCLUDE_DIRS})
-target_link_libraries(ihslib PUBLIC ${LIBUV_LIBRARIES} ihs-protobuf)
+target_include_directories(ihslib PUBLIC include PRIVATE src)
+target_link_libraries(ihslib PUBLIC ihs-protobuf)
+
+if (SDL2_FOUND)
+    target_sources(ihslib PRIVATE src/ihs_thread_sdl.c)
+    target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(ihslib PUBLIC ${SDL2_LIBRARIES})
+endif()
+
+if (SDL2_NET_FOUND)
+    target_sources(ihslib PRIVATE src/ihs_udp_sdl.c)
+    target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_NET_INCLUDE_DIRS})
+    target_link_libraries(ihslib PUBLIC ${SDL2_NET_LIBRARIES})
+endif()
 
 if (MBEDTLS_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_mbedtls.c)

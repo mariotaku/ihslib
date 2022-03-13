@@ -24,7 +24,6 @@
  */
 
 #include <memory.h>
-#include <malloc.h>
 
 #include "ch_data.h"
 #include "client/client_pri.h"
@@ -36,6 +35,8 @@ static void DataThreadInterrupt(IHS_SessionChannelData *channel);
 
 static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame);
 
+static const char *DataChannelName(IHS_SessionChannelType type);
+
 IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataClass *cls, IHS_Session *session,
                                                  IHS_SessionChannelType type, IHS_SessionChannelId id,
                                                  const void *config) {
@@ -45,11 +46,10 @@ IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataCla
 
 void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
-    uv_mutex_init(&dataCh->mutex);
-    uv_cond_init(&dataCh->cond);
+    dataCh->lock = IHS_MutexCreate();
     dataCh->window = IHS_SessionPacketsWindowCreate(128);
-    dataCh->threadInterrupted = false;
-    uv_thread_create(&dataCh->workerThread, (void (*)(void *)) DataThreadWorker, dataCh);
+    dataCh->interrupted = false;
+    dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker, NULL, dataCh);
 }
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
@@ -57,22 +57,18 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
 
     DataThreadInterrupt(dataCh);
 
-    uv_thread_join(&dataCh->workerThread);
+    IHS_ThreadJoin(dataCh->worker);
     IHS_SessionPacketsWindowDestroy(dataCh->window);
-    uv_cond_destroy(&dataCh->cond);
-    uv_mutex_destroy(&dataCh->mutex);
+    IHS_MutexDestroy(dataCh->lock);
 }
 
 void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
-    uv_mutex_lock(&dataCh->mutex);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-        uv_mutex_unlock(&dataCh->mutex);
+//        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
         return;
     }
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
-    uv_cond_signal(&dataCh->cond);
-    uv_mutex_unlock(&dataCh->mutex);
 }
 
 void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
@@ -98,28 +94,27 @@ size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header
 static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
+    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "Starting %s channel", DataChannelName(channel->base.type));
     if (!cls->start((IHS_SessionChannel *) channel)) {
+        IHS_SessionLog(channel->base.session, IHS_BaseLogLevelError, "Failed to start %s channel");
         IHS_SessionDisconnect(channel->base.session);
         return;
     }
-    uv_mutex_lock(&channel->mutex);
-    while (!channel->threadInterrupted) {
-        uv_cond_wait(&channel->cond, &channel->mutex);
+    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started", DataChannelName(channel->base.type));
+    while (!channel->interrupted) {
         for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
              IHS_SessionPacketsWindowReleaseFrame(&frame)) {
             ReceivedFrame(channel, &frame);
         }
     }
-    uv_mutex_unlock(&channel->mutex);
     cls->stop((IHS_SessionChannel *) channel);
 }
 
 static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
-    uv_mutex_lock(&channel->mutex);
-    channel->threadInterrupted = true;
-    uv_cond_signal(&channel->cond);
-    uv_mutex_unlock(&channel->mutex);
+    IHS_MutexLock(channel->lock);
+    channel->interrupted = true;
+    IHS_MutexUnlock(channel->lock);
 }
 
 static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame) {
@@ -136,6 +131,20 @@ static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFram
         bodyOffset += IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body[bodyOffset]);
     }
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
+    if (channel->base.type == IHS_SessionChannelTypeDataVideo) {
+        IHS_SessionLog(channel->base.session, IHS_BaseLogLevelDebug, "Received video frame %u bytes", frame->bodyLen);
+    }
     cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body[bodyOffset],
                    frame->bodyLen - bodyOffset);
+}
+
+static const char *DataChannelName(IHS_SessionChannelType type) {
+    switch (type) {
+        case IHS_SessionChannelTypeDataAudio:
+            return "Audio";
+        case IHS_SessionChannelTypeDataVideo:
+            return "Video";
+        default:
+            return "Data";
+    }
 }

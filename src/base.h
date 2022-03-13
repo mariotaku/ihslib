@@ -26,14 +26,18 @@
 #pragma once
 
 #include <stdint.h>
-#include <uv.h>
+#include <stddef.h>
+
 #include "ihslib/common.h"
+#include "ihs_udp.h"
+#include "ihs_thread.h"
+#include "ihs_queue.h"
+#include "ihs_timer.h"
 
 typedef struct IHS_Base IHS_Base;
 
-typedef void (IHS_BaseTimerFunction)(IHS_Base *base, void *data);
-
-typedef struct IHS_BaseTimer IHS_BaseTimer;
+typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data,
+                                        size_t len);
 
 struct IHS_Base {
     uint64_t deviceId;
@@ -42,13 +46,17 @@ struct IHS_Base {
     uint8_t deviceToken[32];
 
     IHS_LogFunction *logFunction;
-    uv_loop_t *loop;
-    uv_thread_t workerThread;
-    uv_udp_t udp;
-    uv_mutex_t mutex;
+    IHS_BaseReceivedFunction *receivedCallback;
+    IHS_UDPSocket *socket;
+
+    IHS_Thread *worker;
+    IHS_Queue *queue;
+    IHS_Timers *timers;
+    IHS_Mutex *lock;
+    bool interrupted;
 };
 
-void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, uv_udp_recv_cb recvCb, bool broadcast);
+void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast);
 
 void IHS_BaseRun(IHS_Base *base);
 
@@ -62,17 +70,10 @@ void IHS_BaseThreadedRun(IHS_Base *base);
 
 void IHS_BaseThreadedJoin(IHS_Base *base);
 
-void IHS_BaseWaitFinish(IHS_Base *base);
-
 void IHS_BaseFree(IHS_Base *base);
 
-bool IHS_BaseSend(IHS_Base *base, IHS_HostAddress address, const uint8_t *data, size_t dataLen);
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data, size_t dataLen);
 
 void IHS_BaseLock(IHS_Base *base);
 
 void IHS_BaseUnlock(IHS_Base *base);
-
-IHS_BaseTimer *IHS_BaseTimerStart(IHS_Base *base, IHS_BaseTimerFunction timerFn, uint64_t timeout, uint64_t repeat,
-                                  void *data);
-
-void IHS_BaseTimerStop(IHS_BaseTimer *timer);

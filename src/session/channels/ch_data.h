@@ -39,10 +39,9 @@ typedef struct IHS_SessionDataFrameHeader {
 typedef struct IHS_SessionChannelData {
     IHS_SessionChannel base;
     IHS_SessionPacketsWindow *window;
-    uv_thread_t workerThread;
-    bool threadInterrupted;
-    uv_mutex_t mutex;
-    uv_cond_t cond;
+    IHS_Thread *worker;
+    bool interrupted;
+    IHS_Mutex *lock;
 
     uint32_t lastPacketTimestamp;
 } IHS_SessionChannelData;

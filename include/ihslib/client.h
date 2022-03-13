@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "common.h"
 
@@ -91,7 +92,7 @@ typedef struct IHS_ClientCallbacks {
 
     void (*streamingInProgress)(IHS_Client *client, void *context);
 
-    void (*streamingSuccess)(IHS_Client *client, IHS_HostAddress address,
+    void (*streamingSuccess)(IHS_Client *client, IHS_SocketAddress address,
                              const uint8_t *sessionKey, size_t sessionKeyLen, void *context);
 
     void (*streamingFailed)(IHS_Client *client, IHS_StreamingResult result, void *context);

@@ -26,16 +26,7 @@
 #pragma once
 
 #include <stdbool.h>
-
-#if __WIN32__
-#include <in6addr.h>
-#include <winsock2.h>
-#else
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-#endif
+#include <stdint.h>
 
 typedef struct IHS_ClientConfig {
     uint64_t deviceId;
@@ -43,21 +34,27 @@ typedef struct IHS_ClientConfig {
     const char *deviceName;
 } IHS_ClientConfig;
 
-typedef struct IHS_HostIP {
-    enum {
-        IHS_HostIPv4 = AF_INET,
-        IHS_HostIPv6 = AF_INET6,
-    } type;
-    union {
-        struct in_addr v4;
-        struct in6_addr v6;
-    } value;
-} IHS_HostIP;
+typedef enum IHS_IPAddressFamily {
+    IHS_IPAddressFamilyIPv4,
+    IHS_IPAddressFamilyIPv6,
+} IHS_IPAddressFamily;
 
-typedef struct IHS_HostAddress {
-    IHS_HostIP ip;
+typedef union IHS_IPAddress {
+    IHS_IPAddressFamily family;
+    struct {
+        IHS_IPAddressFamily family;
+        uint8_t data[4];
+    } v4;
+    struct {
+        IHS_IPAddressFamily family;
+        uint8_t data[16];
+    } v6;
+} IHS_IPAddress;
+
+typedef struct IHS_SocketAddress {
+    IHS_IPAddress ip;
     uint16_t port;
-} IHS_HostAddress;
+} IHS_SocketAddress;
 
 typedef enum IHS_SteamUniverse {
     IHS_SteamUniversePublic = 1,
@@ -69,7 +66,7 @@ typedef enum IHS_SteamUniverse {
 typedef struct IHS_HostInfo {
     uint64_t clientId;
     uint64_t instanceId;
-    IHS_HostAddress address;
+    IHS_SocketAddress address;
     char hostname[64];
     IHS_SteamUniverse universe;
     bool gamesRunning;

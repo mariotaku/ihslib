@@ -37,13 +37,10 @@ bool IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
 }
 
 
-void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message) {
     if (header->msg_type == k_ERemoteClientBroadcastMsgStatus) {
         CMsgRemoteClientBroadcastStatus *status = (CMsgRemoteClientBroadcastStatus *) message;
-        char buf[64];
-        inet_ntop(ip.type, &ip.value, buf, 64);
-
         IHS_HostInfo info;
         info.clientId = header->client_id;
         info.instanceId = header->instance_id;

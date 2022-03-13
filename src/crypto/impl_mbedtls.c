@@ -24,6 +24,7 @@
  */
 
 #include "crypto.h"
+#include "endianness.h"
 
 #include <string.h>
 
@@ -151,7 +152,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
             }
             if (inCopyLen < IHS_CRYPTO_AES_BLOCK_SIZE) {
                 /* Perform PKCS7 padding */
-                memset(&block[inCopyLen], (uint8_t) (IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen),
+                memset(&block[inCopyLen], (uint8_t)(IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen),
                        IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen);
             }
             ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, IHS_CRYPTO_AES_BLOCK_SIZE, blockIv, block, &out[i]);
@@ -203,5 +204,22 @@ static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLe
     }
     ret = mbedtls_aes_crypt_ecb(&aes, enc ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT, in, out);
     mbedtls_aes_free(&aes);
+    return ret;
+}
+
+uint32_t IHS_CryptoRandomUInt32() {
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_entropy_context entropy;
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                          (const unsigned char *) "@IHSlib@", 8);
+    uint8_t out[4];
+    mbedtls_ctr_drbg_random(&ctr_drbg, out, 4);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+    uint32_t ret;
+    IHS_ReadUInt32LE(out, &ret);
     return ret;
 }

@@ -31,14 +31,15 @@
 #include <malloc.h>
 
 typedef struct IHS_AuthorizationState {
+    IHS_Client *client;
     IHS_HostInfo host;
     char deviceName[64];
     char pin[16];
 } IHS_AuthorizationState;
 
-static void AuthorizationRequestTimer(uv_timer_t *handle, int status);
+static uint64_t AuthorizationRequestTimer(void *data);
 
-static void AuthorizationRequestCleanup(uv_handle_t *handle);
+static void AuthorizationRequestCleanup(void *data);
 
 static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationState *state,
                                          CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket *ticket);
@@ -47,25 +48,22 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
     if (client->taskHandles.authorization) {
         return false;
     }
-    uv_timer_t *timer = malloc(sizeof(uv_timer_t));
-    uv_timer_init(client->base.loop, timer);
-    timer->close_cb = AuthorizationRequestCleanup;
     IHS_AuthorizationState *state = malloc(sizeof(IHS_AuthorizationState));
+    state->client = client;
     state->host = *host;
     strncpy(state->deviceName, client->base.deviceName, sizeof(state->deviceName) - 1);
     strncpy(state->pin, pin, sizeof(state->pin) - 1);
-    timer->data = state;
     IHS_BaseLock(&client->base);
-    client->taskHandles.authorization = timer;
+    client->taskHandles.authorization = IHS_TimerStart(client->base.timers, AuthorizationRequestTimer,
+                                                       AuthorizationRequestCleanup, 0, state);
     IHS_BaseUnlock(&client->base);
-    uv_timer_start(timer, AuthorizationRequestTimer, 0, 1000);
     return true;
 }
 
 
-void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip,
+void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip,
                                      CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
-    uv_timer_t *timer = client->taskHandles.authorization;
+    IHS_Timer *timer = client->taskHandles.authorization;
     if (!timer) return;
     if (header->msg_type != k_ERemoteDeviceAuthorizationResponse) {
         return;
@@ -89,7 +87,7 @@ void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_HostIP ip,
             }
             break;
     }
-    uv_timer_stop(timer);
+    IHS_TimerStop(timer);
 }
 
 
@@ -118,9 +116,9 @@ bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse univers
     return true;
 }
 
-static void AuthorizationRequestTimer(uv_timer_t *handle, int status) {
-    IHS_Client *client = handle->loop->data;
-    IHS_AuthorizationState *state = handle->data;
+static uint64_t AuthorizationRequestTimer(void *data) {
+    IHS_AuthorizationState *state = data;
+    IHS_Client *client = state->client;
     uint8_t pubKey[384];
     size_t pubKeyLen = sizeof(pubKey);
     IHS_ClientAuthorizationPubKey(client, state->host.universe, pubKey, &pubKeyLen);
@@ -144,8 +142,9 @@ static void AuthorizationRequestTimer(uv_timer_t *handle, int status) {
     request.device_token = deviceToken;
     request.encrypted_request = encryptedRequest;
 
-    IHS_HostAddress address = state->host.address;
+    IHS_SocketAddress address = state->host.address;
     IHS_ClientSend(client, address, k_ERemoteDeviceAuthorizationRequest, (ProtobufCMessage *) &request);
+    return 1000;
 }
 
 static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationState *state,
@@ -167,11 +166,11 @@ static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationSt
     ticket->device_name = client->base.deviceName;
 }
 
-static void AuthorizationRequestCleanup(uv_handle_t *handle) {
-    IHS_Client *client = handle->loop->data;
+static void AuthorizationRequestCleanup(void *data) {
+    IHS_AuthorizationState *state = data;
+    IHS_Client *client = state->client;
     IHS_BaseLock(&client->base);
     client->taskHandles.authorization = NULL;
     IHS_BaseUnlock(&client->base);
-    free(handle->data);
-    free(handle);
+    free(data);
 }

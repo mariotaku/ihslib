@@ -23,48 +23,44 @@
  *
  */
 
-#include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
 #include "client_pri.h"
 #include "crypto.h"
 
 typedef struct IHS_StreamingState {
+    IHS_Client *client;
     IHS_HostInfo host;
     IHS_StreamingRequest request;
-    int32_t requestId;
+    uint32_t requestId;
 } IHS_StreamingState;
 
-static void StreamingRequestTimer(uv_timer_t *handle, int status);
+static uint64_t StreamingRequestTimer(void *context);
 
-static void StreamingRequestCleanup(uv_handle_t *handle);
+static void StreamingRequestCleanup(void *context);
 
 bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, const IHS_StreamingRequest *request) {
     if (client->taskHandles.streaming) {
         return false;
     }
-    uv_timer_t *timer = malloc(sizeof(uv_timer_t));
-    uv_timer_init(client->base.loop, timer);
-    timer->close_cb = StreamingRequestCleanup;
     IHS_StreamingState *state = malloc(sizeof(IHS_StreamingState));
-    srand(time(NULL)); // NOLINT(cert-msc51-cpp)
+    state->client = client;
     state->host = *host;
     state->request = *request;
-    state->requestId = rand(); // NOLINT(cert-msc50-cpp)
-    timer->data = state;
+    state->requestId = IHS_CryptoRandomUInt32();
     IHS_BaseLock(&client->base);
-    client->taskHandles.streaming = timer;
+    client->taskHandles.streaming = IHS_TimerStart(client->base.timers, StreamingRequestTimer, StreamingRequestCleanup,
+                                                   0, state);
     IHS_BaseUnlock(&client->base);
-    uv_timer_start(timer, StreamingRequestTimer, 0, 10000);
     return true;
 }
 
-void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteClientBroadcastHeader *header,
+void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message) {
     IHS_UNUSED(ip);
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
-            IHS_StreamingState *state = client->taskHandles.streaming->data;
+            IHS_StreamingState *state = IHS_TimerGetContext(client->taskHandles.streaming);
             CMsgRemoteDeviceProofRequest *request = (CMsgRemoteDeviceProofRequest *) message;
             if (request->request_id != state->requestId) return;
             CMsgRemoteDeviceProofResponse response = CMSG_REMOTE_DEVICE_PROOF_RESPONSE__INIT;
@@ -84,7 +80,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteCl
             break;
         }
         case k_ERemoteDeviceStreamingResponse: {
-            IHS_StreamingState *state = client->taskHandles.streaming->data;
+            IHS_StreamingState *state = IHS_TimerGetContext(client->taskHandles.streaming);
             CMsgRemoteDeviceStreamingResponse *response = (CMsgRemoteDeviceStreamingResponse *) message;
             if (response->request_id != state->requestId) return;
             switch (response->result) {
@@ -95,7 +91,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteCl
                         size_t keyLen = sizeof(key);
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
-                        IHS_HostAddress address = {state->host.address.ip, response->port};
+                        IHS_SocketAddress address = {state->host.address.ip, response->port};
                         client->callbacks.streamingSuccess(client, address, key, keyLen, client->callbacksContext);
                     }
                     break;
@@ -118,10 +114,9 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_HostIP ip, CMsgRemoteCl
     }
 }
 
-static void StreamingRequestTimer(uv_timer_t *handle, int status) {
-    IHS_UNUSED(status);
-    IHS_Client *client = handle->loop->data;
-    IHS_StreamingState *state = handle->data;
+static uint64_t StreamingRequestTimer(void *context) {
+    IHS_StreamingState *state = context;
+    IHS_Client *client = state->client;
     IHS_HostInfo host = state->host;
     IHS_StreamingRequest request = state->request;
 
@@ -177,13 +172,14 @@ static void StreamingRequestTimer(uv_timer_t *handle, int status) {
 
     IHS_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest,
                    (ProtobufCMessage *) &message);
+    return 3000;
 }
 
-static void StreamingRequestCleanup(uv_handle_t *handle) {
-    IHS_Client *client = handle->loop->data;
+static void StreamingRequestCleanup(void *context) {
+    IHS_StreamingState *state = context;
+    IHS_Client *client = state->client;
     IHS_BaseLock(&client->base);
     client->taskHandles.streaming = NULL;
     IHS_BaseUnlock(&client->base);
-    free(handle->data);
-    free(handle);
+    free(context);
 }
