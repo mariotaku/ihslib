@@ -52,7 +52,7 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
     base->lock = IHS_MutexCreate();
     base->queue = IHS_QueueCreate(sizeof(IHS_QueueItem), QueueItemDestroy);
     base->timers = IHS_TimersCreate();
-    base->receivedCallback = recvCb;
+    base->callbacks.received = recvCb;
 
     base->deviceId = config->deviceId;
     memcpy(base->secretKey, config->secretKey, 32);
@@ -67,6 +67,9 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
 
 void IHS_BaseRun(IHS_Base *base) {
     base->socket = IHS_UDPSocketOpen();
+    if (base->callbacks.run && base->callbacks.run->initialized) {
+        base->callbacks.run->initialized(base, base->callbackContexts.run);
+    }
     while (!base->interrupted) {
         IHS_TimersTick(base->timers);
         for (IHS_QueueItem *item; (item = IHS_QueuePoll(base->queue)) != NULL; IHS_QueueItemFree(base->queue, item)) {
@@ -85,9 +88,12 @@ void IHS_BaseRun(IHS_Base *base) {
             break;
         }
         if (ret) {
-            base->receivedCallback(base, &recv.address, recv.buffer, recv.length);
+            base->callbacks.received(base, &recv.address, recv.buffer, recv.length);
         }
         usleep(1);
+    }
+    if (base->callbacks.run && base->callbacks.run->finalized) {
+        base->callbacks.run->finalized(base, base->callbackContexts.run);
     }
     IHS_UDPSocketClose(base->socket);
 }
@@ -97,21 +103,25 @@ void IHS_BaseStop(IHS_Base *base) {
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
-    base->logFunction = logFunction;
+    base->callbacks.log = logFunction;
 }
 
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...) {
-    if (!base->logFunction) return;
+    if (!base->callbacks.log) return;
     char buf[4096];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, 4095, fmt, args);
-    base->logFunction(level, buf);
+    base->callbacks.log(level, buf);
     va_end(args);
 }
 
-void IHS_BaseThreadedRun(IHS_Base *base) {
-    base->worker = IHS_ThreadCreate((IHS_ThreadFunction *) IHS_BaseRun, NULL, base);
+void IHS_BaseStartWorker(IHS_Base *base, const char *name, IHS_ThreadFunction *worker) {
+    IHS_BaseLock(base);
+    if (!base->worker) {
+        base->worker = IHS_ThreadCreate(worker, name, base);
+    }
+    IHS_BaseUnlock(base);
 }
 
 void IHS_BaseThreadedJoin(IHS_Base *base) {

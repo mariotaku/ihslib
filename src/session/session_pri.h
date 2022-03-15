@@ -44,10 +44,16 @@ struct IHS_Session {
     IHS_SessionState state;
     uint8_t numChannels;
     IHS_SessionChannel *channels[16];
-    const IHS_StreamAudioCallbacks *audioCallbacks;
-    void *audioContext;
-    const IHS_StreamVideoCallbacks *videoCallbacks;
-    void *videoContext;
+    struct {
+        const IHS_StreamSessionCallbacks *session;
+        const IHS_StreamAudioCallbacks *audio;
+        const IHS_StreamVideoCallbacks *video;
+    } callbacks;
+    struct {
+        void *session;
+        void *audio;
+        void *video;
+    } callbackContexts;
 };
 
 #define IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(millis) ((uint32_t) (((uint64_t) (millis)) * 65536 / 1000))

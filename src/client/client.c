@@ -81,7 +81,7 @@ void IHS_ClientStop(IHS_Client *client) {
 }
 
 void IHS_ClientThreadedStart(IHS_Client *client) {
-    IHS_BaseThreadedRun(&client->base);
+    IHS_BaseStartWorker(&client->base, "IHSClient", (IHS_ThreadFunction *) IHS_ClientRun);
 }
 
 void IHS_ClientThreadedJoin(IHS_Client *client) {

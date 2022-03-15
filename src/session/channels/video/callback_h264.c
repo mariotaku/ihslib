@@ -36,9 +36,10 @@ static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
 
 void IHS_SessionVideoFrameSubmitH264(IHS_SessionChannel *channel, const uint8_t *data, size_t len,
                                      const IHS_SessionVideoFrameHeader *header) {
-    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
+    IHS_Session *session = channel->session;
+    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     if (!callbacks->submit) return;
-    void *context = channel->session->videoContext;
+    void *context = session->callbackContexts.video;
     IHS_StreamVideoFrameFlag flags = IHS_StreamVideoFrameNone;
     if (header->flags & VideoFrameFlagKeyFrame) {
         flags |= IHS_StreamVideoFrameKeyFrame;
@@ -54,10 +55,10 @@ void IHS_SessionVideoFrameSubmitH264(IHS_SessionChannel *channel, const uint8_t 
             escapedLen += sizeof(startSeq);
         }
         escapedLen += EscapeNAL(&escaped[escapedLen], data, len);
-        callbacks->submit(context, escaped, escapedLen, header->sequence, flags);
+        callbacks->submit(session, escaped, escapedLen, header->sequence, flags, context);
         free(escaped);
     } else {
-        callbacks->submit(context, data, len, header->sequence, flags);
+        callbacks->submit(session, data, len, header->sequence, flags, context);
     }
 }
 

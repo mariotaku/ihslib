@@ -24,14 +24,14 @@
  */
 
 #include "client_pri.h"
+#include "protobuf/pb_utils.h"
 
 #include <string.h>
 
 
 bool IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
     CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
-    discovery.has_seq_num = 1;
-    discovery.seq_num = 0;
+    PROTOBUF_C_SET_VALUE(discovery, seq_num, client->discoverySeq++);
 
     return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }

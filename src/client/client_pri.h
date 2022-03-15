@@ -37,6 +37,7 @@ typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_IPAddress ip, CMsgRem
 
 struct IHS_Client {
     IHS_Base base;
+    uint32_t discoverySeq;
     struct {
         const IHS_ClientDiscoveryCallbacks *discovery;
         const IHS_ClientAuthorizationCallbacks *authorization;

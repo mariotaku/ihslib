@@ -38,6 +38,18 @@ typedef struct IHS_SessionConfig {
     uint64_t steamId;
 } IHS_SessionConfig;
 
+typedef struct IHS_StreamSessionCallbacks {
+    void (*initialized)(IHS_Session *session, void *context);
+
+    void (*connecting)(IHS_Session *session, void *context);
+
+    void (*connected)(IHS_Session *session, void *context);
+
+    void (*disconnected)(IHS_Session *session, void *context);
+
+    void (*finalized)(IHS_Session *session, void *context);
+} IHS_StreamSessionCallbacks;
+
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig);
 
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
@@ -55,6 +67,8 @@ void IHS_SessionDestroy(IHS_Session *session);
 bool IHS_SessionConnect(IHS_Session *session);
 
 void IHS_SessionDisconnect(IHS_Session *session);
+
+void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context);
 
 void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context);
 

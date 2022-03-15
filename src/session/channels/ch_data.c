@@ -49,7 +49,8 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
     dataCh->lock = IHS_MutexCreate();
     dataCh->window = IHS_SessionPacketsWindowCreate(128);
     dataCh->interrupted = false;
-    dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker, NULL, dataCh);
+    dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker,
+                                      DataChannelName(channel->type), dataCh);
 }
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
@@ -65,7 +66,7 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
 void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-//        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
         return;
     }
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
@@ -94,13 +95,15 @@ size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header
 static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
-    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "Starting %s channel", DataChannelName(channel->base.type));
+    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "Starting %s channel",
+                   DataChannelName(channel->base.type));
     if (!cls->start((IHS_SessionChannel *) channel)) {
         IHS_SessionLog(channel->base.session, IHS_BaseLogLevelError, "Failed to start %s channel");
         IHS_SessionDisconnect(channel->base.session);
         return;
     }
-    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started", DataChannelName(channel->base.type));
+    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started",
+                   DataChannelName(channel->base.type));
     while (!channel->interrupted) {
         for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);

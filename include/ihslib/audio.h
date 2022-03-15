@@ -28,6 +28,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef struct IHS_Session IHS_Session;
+
 typedef enum IHS_StreamAudioCodec {
     IHS_StreamAudioCodecNone = 0,
     IHS_StreamAudioCodecRaw = 1,
@@ -46,9 +48,9 @@ typedef struct IHS_StreamAudioConfig {
 } IHS_StreamAudioConfig;
 
 typedef struct IHS_StreamAudioCallbacks {
-    int (*start)(void *context, const IHS_StreamAudioConfig *config);
+    int (*start)(IHS_Session *session, const IHS_StreamAudioConfig *config, void *context);
 
-    int (*submit)(void *context, const uint8_t *data, size_t dataLen);
+    int (*submit)(IHS_Session *session, const uint8_t *data, size_t dataLen, void *context);
 
-    void (*stop)(void *context);
+    void (*stop)(IHS_Session *session, void *context);
 } IHS_StreamAudioCallbacks;

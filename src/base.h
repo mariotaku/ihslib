@@ -39,14 +39,28 @@ typedef struct IHS_Base IHS_Base;
 typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data,
                                         size_t len);
 
+typedef struct IHS_BaseRunCallbacks {
+    void (*initialized)(IHS_Base *base, void *context);
+
+    void (*finalized)(IHS_Base *base, void *context);
+} IHS_BaseRunCallbacks;
+
 struct IHS_Base {
     uint64_t deviceId;
     uint8_t secretKey[32];
     char deviceName[64];
     uint8_t deviceToken[32];
 
-    IHS_LogFunction *logFunction;
-    IHS_BaseReceivedFunction *receivedCallback;
+    struct {
+        IHS_LogFunction *log;
+        IHS_BaseReceivedFunction *received;
+        const IHS_BaseRunCallbacks *run;
+    } callbacks;
+
+    struct {
+        void *run;
+    } callbackContexts;
+
     IHS_UDPSocket *socket;
 
     IHS_Thread *worker;
@@ -64,9 +78,11 @@ void IHS_BaseStop(IHS_Base *base);
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction);
 
+void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context);
+
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...);
 
-void IHS_BaseThreadedRun(IHS_Base *base);
+void IHS_BaseStartWorker(IHS_Base *base, const char *name, IHS_ThreadFunction *worker);
 
 void IHS_BaseThreadedJoin(IHS_Base *base);
 

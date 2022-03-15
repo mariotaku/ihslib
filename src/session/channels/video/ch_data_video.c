@@ -98,9 +98,10 @@ static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
 
 static bool DataStart(struct IHS_SessionChannel *channel) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
-    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
+    IHS_Session *session = channel->session;
+    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     if (!callbacks->start) return true;
-    if (callbacks->start(channel->session->videoContext, &videoCh->config) != 0) {
+    if (callbacks->start(session, session->callbackContexts.video, &videoCh->config) != 0) {
         return false;
     }
     CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;
@@ -108,7 +109,7 @@ static bool DataStart(struct IHS_SessionChannel *channel) {
     message.has_threads = true;
     message.threads = 1;
 
-    return IHS_SessionSendControlMessage(channel->session, k_EStreamControlVideoDecoderInfo,
+    return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
                                          (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
 }
 
@@ -145,9 +146,10 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
 }
 
 static void DataStop(struct IHS_SessionChannel *channel) {
-    const IHS_StreamVideoCallbacks *callbacks = channel->session->videoCallbacks;
+    IHS_Session *session = channel->session;
+    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     if (!callbacks->stop) return;
-    callbacks->stop(channel->session->videoContext);
+    callbacks->stop(session, session->callbackContexts.video);
 }
 
 static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const uint8_t *data) {

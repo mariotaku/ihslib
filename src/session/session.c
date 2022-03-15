@@ -40,10 +40,19 @@
 
 static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len);
 
+static void SessionInitialized(IHS_Base *base, void *context);
+
+static void SessionFinalized(IHS_Base *base, void *context);
+
+static const IHS_BaseRunCallbacks SessionRunCallbacks = {
+        .initialized = SessionInitialized,
+        .finalized = SessionFinalized,
+};
+
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig) {
-    IHS_Session *session = malloc(sizeof(IHS_Session));
-    memset(session, 0, sizeof(IHS_Session));
+    IHS_Session *session = calloc(1, sizeof(IHS_Session));
     IHS_BaseInit(&session->base, clientConfig, SessionRecvCallback, 0);
+    IHS_BaseSetRunCallbacks(&session->base, &SessionRunCallbacks, session);
     session->config = *sessionConfig;
     session->numChannels = 3;
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
@@ -56,17 +65,24 @@ void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunctio
     IHS_BaseSetLogFunction(&session->base, logFunction);
 }
 
+void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context) {
+    IHS_BaseLock(&session->base);
+    session->callbacks.session = callbacks;
+    session->callbackContexts.session = context;
+    IHS_BaseUnlock(&session->base);
+}
+
 void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context) {
     IHS_BaseLock(&session->base);
-    session->audioCallbacks = callbacks;
-    session->audioContext = context;
+    session->callbacks.audio = callbacks;
+    session->callbackContexts.audio = context;
     IHS_BaseUnlock(&session->base);
 }
 
 void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context) {
     IHS_BaseLock(&session->base);
-    session->videoCallbacks = callbacks;
-    session->videoContext = context;
+    session->callbacks.video = callbacks;
+    session->callbackContexts.video = context;
     IHS_BaseUnlock(&session->base);
 }
 
@@ -96,7 +112,7 @@ void IHS_SessionStop(IHS_Session *session) {
 }
 
 void IHS_SessionThreadedRun(IHS_Session *session) {
-    IHS_BaseThreadedRun(&session->base);
+    IHS_BaseStartWorker(&session->base, "IHSSession", (IHS_ThreadFunction *) IHS_SessionRun);
 }
 
 void IHS_SessionThreadedJoin(IHS_Session *session) {
@@ -150,4 +166,18 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
         return;
     }
     IHS_SessionChannelReceivedPacket(channel, &packet);
+}
+
+static void SessionInitialized(IHS_Base *base, void *context) {
+    IHS_Session *session = (IHS_Session *) base;
+    if (session->callbacks.session && session->callbacks.session->initialized) {
+        session->callbacks.session->initialized(session, context);
+    }
+}
+
+static void SessionFinalized(IHS_Base *base, void *context) {
+    IHS_Session *session = (IHS_Session *) base;
+    if (session->callbacks.session && session->callbacks.session->finalized) {
+        session->callbacks.session->finalized(session, context);
+    }
 }
