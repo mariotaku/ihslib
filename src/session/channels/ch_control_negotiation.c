@@ -137,4 +137,9 @@ static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiati
     IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationComplete,
                                   (const ProtobufCMessage *) &response, packetId);
     IHS_SessionChannelControlStartHeartbeat(channel);
+
+    IHS_Session *session = channel->session;
+    if (session->callbacks.session && session->callbacks.session->connected) {
+        session->callbacks.session->connected(session, session->callbackContexts.session);
+    }
 }

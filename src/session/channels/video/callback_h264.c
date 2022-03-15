@@ -38,7 +38,7 @@ void IHS_SessionVideoFrameSubmitH264(IHS_SessionChannel *channel, const uint8_t 
                                      const IHS_SessionVideoFrameHeader *header) {
     IHS_Session *session = channel->session;
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
-    if (!callbacks->submit) return;
+    if (!callbacks || !callbacks->submit) return;
     void *context = session->callbackContexts.video;
     IHS_StreamVideoFrameFlag flags = IHS_StreamVideoFrameNone;
     if (header->flags & VideoFrameFlagKeyFrame) {

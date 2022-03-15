@@ -103,7 +103,16 @@ void IHS_BaseStop(IHS_Base *base) {
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
+    IHS_BaseLock(base);
     base->callbacks.log = logFunction;
+    IHS_BaseUnlock(base);
+}
+
+void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context) {
+    IHS_BaseLock(base);
+    base->callbacks.run = callbacks;
+    base->callbackContexts.run = context;
+    IHS_BaseUnlock(base);
 }
 
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...) {

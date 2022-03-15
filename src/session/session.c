@@ -87,6 +87,10 @@ void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCal
 }
 
 bool IHS_SessionConnect(IHS_Session *session) {
+    if (session->callbacks.session && session->callbacks.session->connecting) {
+        session->callbacks.session->connecting(session, session->callbackContexts.session);
+    }
+    
     IHS_BaseLock(&session->base);
     session->state.connectionId = IHS_CryptoRandomUInt32();
     IHS_BaseUnlock(&session->base);

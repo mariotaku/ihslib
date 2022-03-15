@@ -100,7 +100,7 @@ static bool DataStart(struct IHS_SessionChannel *channel) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_Session *session = channel->session;
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
-    if (!callbacks->start) return true;
+    if (!callbacks || !callbacks->start) return true;
     if (callbacks->start(session, session->callbackContexts.video, &videoCh->config) != 0) {
         return false;
     }
@@ -148,7 +148,7 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
 static void DataStop(struct IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
-    if (!callbacks->stop) return;
+    if (!callbacks || !callbacks->stop) return;
     callbacks->stop(session, session->callbackContexts.video);
 }
 

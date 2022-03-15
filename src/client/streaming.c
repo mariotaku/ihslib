@@ -58,9 +58,11 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
 void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message) {
     IHS_UNUSED(ip);
+    IHS_Timer *timer = client->taskHandles.streaming;
+    if (!timer) return;
+    IHS_StreamingState *state = IHS_TimerGetContext(timer);
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
-            IHS_StreamingState *state = IHS_TimerGetContext(client->taskHandles.streaming);
             CMsgRemoteDeviceProofRequest *request = (CMsgRemoteDeviceProofRequest *) message;
             if (request->request_id != state->requestId) return;
             CMsgRemoteDeviceProofResponse response = CMSG_REMOTE_DEVICE_PROOF_RESPONSE__INIT;
@@ -80,10 +82,14 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
             break;
         }
         case k_ERemoteDeviceStreamingResponse: {
-            IHS_StreamingState *state = IHS_TimerGetContext(client->taskHandles.streaming);
             CMsgRemoteDeviceStreamingResponse *response = (CMsgRemoteDeviceStreamingResponse *) message;
             if (response->request_id != state->requestId) return;
             switch (response->result) {
+                case k_ERemoteDeviceStreamingInProgress:
+                    if (client->callbacks.streaming && client->callbacks.streaming->progress) {
+                        client->callbacks.streaming->progress(client, client->callbackContexts.streaming);
+                    }
+                    return;
                 case k_ERemoteDeviceStreamingSuccess:
                     if (client->callbacks.streaming && client->callbacks.streaming->success) {
                         ProtobufCBinaryData enc = response->encrypted_session_key;
@@ -96,11 +102,6 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
                                                              client->callbackContexts.streaming);
                     }
                     break;
-                case k_ERemoteDeviceStreamingInProgress:
-                    if (client->callbacks.streaming && client->callbacks.streaming->progress) {
-                        client->callbacks.streaming->progress(client, client->callbackContexts.streaming);
-                    }
-                    break;
                 default:
                     if (client->callbacks.streaming && client->callbacks.streaming->failed) {
                         client->callbacks.streaming->failed(client, (IHS_StreamingResult) response->result,
@@ -108,6 +109,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
                     }
                     break;
             }
+            IHS_TimerStop(timer);
             break;
         }
         default:
