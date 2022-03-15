@@ -46,6 +46,7 @@ IHS_UDPSocket *IHS_UDPSocketOpen() {
 void IHS_UDPSocketClose(IHS_UDPSocket *socket) {
     SDLNet_UDP_Close(socket->socket);
     SDLNet_FreePacket(socket->packet);
+    SDL_free(socket);
 }
 
 int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
