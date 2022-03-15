@@ -4,7 +4,6 @@ add_executable(sample-stream stream.c requestor.c alsaaud.c mmalvid.c sps_parser
 
 find_package(BroadcomMMAL REQUIRED)
 find_package(Threads REQUIRED)
-pkg_check_modules(GSTREAMER gstreamer-1.0 gstreamer-app-1.0 REQUIRED)
 pkg_check_modules(OPUS opus REQUIRED)
 pkg_check_modules(ALSA alsa REQUIRED)
 

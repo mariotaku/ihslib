@@ -63,7 +63,7 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
     for (int i = 0; i < message->n_supported_audio_codecs; i++) {
         EStreamAudioCodec codec = message->supported_audio_codecs[i];
-        if (codec == k_EStreamAudioCodecOpus) {
+        if (codec == k_EStreamAudioCodecAAC) {
             audioCodec = codec;
         }
     }
@@ -100,12 +100,12 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     PROTOBUF_C_SET_VALUE(clientConfig, enable_hardware_decoding, true);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_performance_overlay, true);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
-//    PROTOBUF_SET_VALUE(clientConfig, enable_video_streaming, true);
-//    PROTOBUF_SET_VALUE(clientConfig, audio_channels, 2);
-//    PROTOBUF_SET_VALUE(clientConfig, maximum_framerate_numerator, 5994);
-//    PROTOBUF_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
-//    PROTOBUF_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);
-//    PROTOBUF_SET_VALUE(clientConfig, maximum_bitrate_kbps, 30000);
+    PROTOBUF_C_SET_VALUE(clientConfig, enable_video_streaming, true);
+    PROTOBUF_C_SET_VALUE(clientConfig, audio_channels, 2);
+    PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_numerator, 5994);
+    PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
+    PROTOBUF_C_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);
+    PROTOBUF_C_SET_VALUE(clientConfig, maximum_bitrate_kbps, 30000);
 
     CStreamingClientCaps clientCaps = CSTREAMING_CLIENT_CAPS__INIT;
 

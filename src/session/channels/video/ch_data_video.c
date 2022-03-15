@@ -101,7 +101,7 @@ static bool DataStart(struct IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     if (!callbacks || !callbacks->start) return true;
-    if (callbacks->start(session, session->callbackContexts.video, &videoCh->config) != 0) {
+    if (callbacks->start(session, &videoCh->config, session->callbackContexts.video) != 0) {
         return false;
     }
     CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;

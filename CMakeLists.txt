@@ -14,14 +14,19 @@ if (NOT PROTOBUF_C_FOUND)
     pkg_check_modules(PROTOBUF_C libprotobuf-c REQUIRED)
 endif ()
 
-find_package(MbedTLS)
-find_package(OpenSSL)
+if (NOT MBEDTLS_FOUND)
+    find_package(MbedTLS)
+endif()
+
+if (NOT MBEDTLS_FOUND)
+    find_package(OpenSSL)
+endif()
 
 set(PROTOBUF_FILES protobuf/discovery.proto protobuf/remoteplay.proto)
 
 file(GLOB PROTOBUF_SOURCES src/protobuf/*.c)
 add_library(ihs-protobuf STATIC ${PROTOBUF_SOURCES})
-target_include_directories(ihs-protobuf PRIVATE src PRIVATE SYSTEM ${PROTOBUF_C_INCLUDE_DIRS})
+target_include_directories(ihs-protobuf PRIVATE src PUBLIC SYSTEM ${PROTOBUF_C_INCLUDE_DIRS})
 target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_C_LIBRARIES})
 
 add_library(ihslib
@@ -56,7 +61,7 @@ add_library(ihslib
         )
 
 target_include_directories(ihslib PUBLIC include PRIVATE src)
-target_link_libraries(ihslib PUBLIC ihs-protobuf)
+target_link_libraries(ihslib PRIVATE ihs-protobuf)
 
 if (SDL2_FOUND)
     target_sources(ihslib PRIVATE src/ihs_thread_sdl.c)

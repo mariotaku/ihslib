@@ -60,11 +60,13 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
 
     IHS_ThreadJoin(dataCh->worker);
     IHS_SessionPacketsWindowDestroy(dataCh->window);
+    dataCh->window = NULL;
     IHS_MutexDestroy(dataCh->lock);
 }
 
 void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
+    assert(dataCh->window != NULL);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
         IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
         return;

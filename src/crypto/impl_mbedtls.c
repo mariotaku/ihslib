@@ -27,10 +27,10 @@
 #include "endianness.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <mbedtls/pk.h>
 #include <mbedtls/ctr_drbg.h>
-#include <mbedtls/cipher.h>
 #include <mbedtls/entropy.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -104,7 +104,7 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
     mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
                           (const unsigned char *) "@IHSlib@", 8);
 
-    int ret = 0;
+    int ret;
     if ((ret = mbedtls_pk_parse_public_key(&pk, key, keyLen)) != 0) {
         goto exit;
     }
@@ -119,8 +119,13 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
 
     mbedtls_rsa_set_padding(rsa, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA1);
 
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+    ret = mbedtls_rsa_rsaes_oaep_encrypt(rsa, mbedtls_ctr_drbg_random, &ctr_drbg, NULL, 0, inLen,
+                                         in, out);
+#else
     ret = mbedtls_rsa_rsaes_oaep_encrypt(rsa, mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PUBLIC, NULL, 0, inLen,
                                          in, out);
+#endif
     if (ret == 0) {
         *outLen = mbedtls_rsa_get_len(rsa);
     }
@@ -152,7 +157,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
             }
             if (inCopyLen < IHS_CRYPTO_AES_BLOCK_SIZE) {
                 /* Perform PKCS7 padding */
-                memset(&block[inCopyLen], (uint8_t)(IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen),
+                memset(&block[inCopyLen], (uint8_t) (IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen),
                        IHS_CRYPTO_AES_BLOCK_SIZE - inCopyLen);
             }
             ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, IHS_CRYPTO_AES_BLOCK_SIZE, blockIv, block, &out[i]);
@@ -194,7 +199,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
 }
 
 static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc) {
-    int ret = 0;
+    int ret;
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
     if (enc) {
