@@ -52,7 +52,7 @@ IHS_Timers *IHS_TimersCreate() {
 void IHS_TimersDestroy(IHS_Timers *timers) {
     for (int i = 0; i < MAX_TIMERS_COUNT; i++) {
         IHS_Timer *timer = timers->timers[i];
-        if (!timer) return;
+        if (!timer) continue;
         if (timer->end) {
             timer->end(timer->context);
         }
