@@ -28,13 +28,13 @@
 #include "ihslib/client.h"
 
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info);
+static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
 
-void OnStreamingInProgress(IHS_Client *client);
+void OnAuthorizationInProgress(IHS_Client *client, void *context);
 
-void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId);
+void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId, void *context);
 
-void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result);
+void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result, void *context);
 
 static bool AuthorizationStart = false;
 
@@ -42,19 +42,22 @@ static bool AuthorizationStart = false;
 int main(int argc, char *argv[]) {
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
-    IHS_ClientCallbacks callbacks = {
-            .hostDiscovered = OnHostStatus,
-            .authorizationInProgress = OnStreamingInProgress,
-            .authorizationFailed = OnAuthorizationFailed,
-            .authorizationSuccess = OnAuthorizationSuccess,
+    IHS_ClientDiscoveryCallbacks dcallbacks = {
+            .discovered = OnHostStatus,
     };
-    IHS_ClientSetCallbacks(client, &callbacks, NULL);
+    IHS_ClientAuthorizationCallbacks acallbacks = {
+            .progress = OnAuthorizationInProgress,
+            .failed = OnAuthorizationFailed,
+            .success = OnAuthorizationSuccess,
+    };
+    IHS_ClientSetDiscoveryCallbacks(client, &dcallbacks, NULL);
+    IHS_ClientSetAuthorizationCallbacks(client, &acallbacks, NULL);
     IHS_ClientDiscoveryBroadcast(client);
     IHS_ClientRun(client);
     IHS_ClientDestroy(client);
 }
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
+static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
     if (AuthorizationStart) return;
     AuthorizationStart = true;
     printf("IHS_ClientAuthorizationRequest");
@@ -62,16 +65,16 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info) {
 }
 
 
-void OnStreamingInProgress(IHS_Client *client) {
+void OnAuthorizationInProgress(IHS_Client *client, void *context) {
 }
 
-void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId) {
+void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId, void *context) {
     printf("OnStreamingSuccess(steamId=%llu)\n", steamId);
     IHS_ClientStop(client);
 
 }
 
-void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result) {
+void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result, void *context) {
     printf("OnStreamingFailed(result=%d)\n", result);
     IHS_ClientStop(client);
 }

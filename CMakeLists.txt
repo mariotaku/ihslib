@@ -57,6 +57,7 @@ add_library(ihslib
         src/session/channels/ch_data_audio.c
         src/session/channels/video/callback_h264.c
         src/session/channels/video/ch_data_video.c
+        src/session/channels/control/control_cursor.c
         src/session/channels/ch_stats.c
         )
 

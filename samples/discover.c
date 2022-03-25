@@ -38,10 +38,10 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
-    IHS_ClientCallbacks callbacks = {
-            .hostDiscovered = OnHostStatus
+    IHS_ClientDiscoveryCallbacks callbacks = {
+            .discovered = OnHostStatus
     };
-    IHS_ClientSetCallbacks(client, &callbacks, NULL);
+    IHS_ClientSetDiscoveryCallbacks(client, &callbacks, NULL);
     IHS_ClientDiscoveryBroadcast(client);
     ActiveClient = client;
     IHS_ClientRun(client);

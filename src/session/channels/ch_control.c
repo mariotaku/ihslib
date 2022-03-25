@@ -206,8 +206,13 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
         case k_EStreamControlSetQoS:
         case k_EStreamControlSetTargetBitrate:
+            break;
         case k_EStreamControlShowCursor:
-        case k_EStreamControlSetCursor: {
+        case k_EStreamControlHideCursor:
+        case k_EStreamControlDeleteCursor:
+        case k_EStreamControlSetCursor:
+        case k_EStreamControlSetCursorImage: {
+            IHS_SessionChannelControlOnCursor(channel, type, payload, payloadLen, header);
             break;
         }
         default: {

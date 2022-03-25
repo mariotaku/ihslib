@@ -50,7 +50,7 @@ bool RequestStream(IHS_SessionConfig *config) {
     IHS_Client *client = IHS_ClientCreate(&clientConfig);
     IHS_ClientCallbacks callbacks = {
             .hostDiscovered = OnHostStatus,
-            .streamingInProgress = OnStreamingInProgress,
+            .streamingInProgress = OnAuthorizationInProgress,
             .streamingFailed = OnStreamingFailed,
             .streamingSuccess = OnStreamingSuccess,
     };
@@ -100,7 +100,7 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
 
 
 void OnStreamingInProgress(IHS_Client *client, void *context) {
-    printf("OnStreamingInProgress\n");
+    printf("OnAuthorizationInProgress\n");
 }
 
 void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey, size_t sessionKeyLen,

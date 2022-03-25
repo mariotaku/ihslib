@@ -67,6 +67,10 @@ void IHS_SessionChannelControlOnAudio(IHS_SessionChannel *channel, EStreamContro
                                       const uint8_t *payload, size_t payloadLen,
                                       const IHS_SessionPacketHeader *header);
 
+void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamControlMessage type,
+                                       const uint8_t *payload, size_t payloadLen,
+                                       const IHS_SessionPacketHeader *header);
+
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel);
 
 void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel);

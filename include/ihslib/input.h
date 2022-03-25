@@ -25,6 +25,12 @@
 
 #pragma once
 
-typedef struct IHS_StreamInputCallbacks {
+#include <stdint.h>
+#include <stddef.h>
 
+typedef struct IHS_Session IHS_Session;
+
+typedef struct IHS_StreamInputCallbacks {
+    void (*showCursor)(IHS_Session *session, float x, float y, void *context);
+    void (*hideCursor)(IHS_Session *session, void *context);
 } IHS_StreamInputCallbacks;
