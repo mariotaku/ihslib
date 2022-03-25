@@ -48,11 +48,13 @@ struct IHS_Session {
         const IHS_StreamSessionCallbacks *session;
         const IHS_StreamAudioCallbacks *audio;
         const IHS_StreamVideoCallbacks *video;
+        const IHS_StreamInputCallbacks *input;
     } callbacks;
     struct {
         void *session;
         void *audio;
         void *video;
+        void *input;
     } callbackContexts;
 };
 
