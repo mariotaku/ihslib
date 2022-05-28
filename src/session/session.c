@@ -162,6 +162,9 @@ bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type,
                                    const ProtobufCMessage *message, int32_t packetId) {
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
+    const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
+                                                                           type);
+    IHS_SessionLog(session, IHS_BaseLogLevelInfo, "Send control message: %s", value->name);
     return IHS_SessionChannelControlSend(channel, type, message, packetId);
 }
 

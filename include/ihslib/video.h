@@ -60,4 +60,6 @@ typedef struct IHS_StreamVideoCallbacks {
                   IHS_StreamVideoFrameFlag flags, void *context);
 
     void (*stop)(IHS_Session *session, void *context);
+
+    int (*setCaptureSize)(IHS_Session *session, int width, int height, void *context);
 } IHS_StreamVideoCallbacks;

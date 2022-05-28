@@ -23,4 +23,21 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "ihs_udp.h"
+
+char *IHS_IPAddressToString(const IHS_IPAddress *address) {
+    switch (address->family) {
+        case IHS_IPAddressFamilyIPv4: {
+            char *result = calloc(16, 1);
+            snprintf(result, 16, "%u.%u.%u.%u", address->v4.data[0], address->v4.data[1],
+                     address->v4.data[2], address->v4.data[3]);
+            return result;
+        }
+        default: {
+            abort();
+        }
+    }
+}

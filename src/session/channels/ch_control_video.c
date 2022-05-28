@@ -56,24 +56,28 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
         }
         case k_EStreamControlVideoEncoderInfo: {
             CVideoEncoderInfoMsg *message = cvideo_encoder_info_msg__unpack(NULL, payloadLen, payload);
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "VideoEncoderInfo(%s)", message->info);
+            IHS_SessionLog(session, IHS_BaseLogLevelDebug, "VideoEncoderInfo(%s)", message->info);
             cvideo_encoder_info_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetCaptureSize: {
             CSetCaptureSizeMsg *message = cset_capture_size_msg__unpack(NULL, payloadLen, payload);
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "SetCaptureSize(width=%d, height=%d)",
+            IHS_SessionLog(session, IHS_BaseLogLevelDebug, "SetCaptureSize(width=%d, height=%d)",
                            message->width, message->height);
+            const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+            if (callbacks && callbacks->setCaptureSize) {
+                callbacks->setCaptureSize(session, message->width, message->height, session->callbackContexts.video);
+            }
             cset_capture_size_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetTargetFramerate: {
             CSetTargetFramerateMsg *message = cset_target_framerate_msg__unpack(NULL, payloadLen, payload);
             if (message->has_framerate_numerator && message->has_framerate_denominator) {
-                IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "SetTargetFramerate(fps=%.02f)",
+                IHS_SessionLog(session, IHS_BaseLogLevelDebug, "SetTargetFramerate(fps=%.02f)",
                                (float) message->framerate_numerator / (float) message->framerate_denominator);
             } else {
-                IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "SetTargetFramerate(fps=%u)",
+                IHS_SessionLog(session, IHS_BaseLogLevelDebug, "SetTargetFramerate(fps=%u)",
                                message->framerate);
             }
             cset_target_framerate_msg__free_unpacked(message, NULL);

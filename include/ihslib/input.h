@@ -30,7 +30,31 @@
 
 typedef struct IHS_Session IHS_Session;
 
+typedef struct IHS_StreamInputCursorImage {
+    uint64_t cursorId;
+    int32_t width;
+    int32_t height;
+    int32_t hotX;
+    int32_t hotY;
+    const uint8_t *image;
+    size_t imageLen;
+} IHS_StreamInputCursorImage;
+
 typedef struct IHS_StreamInputCallbacks {
+    /**
+     *
+     * @param session
+     * @param cursorId
+     * @param context
+     * @return `true` if cursor image exists, `false` will cause library to request for the icon
+     */
+    bool (*setCursor)(IHS_Session *session, uint64_t cursorId, void *context);
+
+    bool (*deleteCursor)(IHS_Session *session, uint64_t cursorId, void *context);
+
+    void (*cursorImage)(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context);
+
     void (*showCursor)(IHS_Session *session, float x, float y, void *context);
+
     void (*hideCursor)(IHS_Session *session, void *context);
 } IHS_StreamInputCallbacks;

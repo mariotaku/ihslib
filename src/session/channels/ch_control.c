@@ -209,9 +209,10 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             break;
         case k_EStreamControlShowCursor:
         case k_EStreamControlHideCursor:
-        case k_EStreamControlDeleteCursor:
         case k_EStreamControlSetCursor:
-        case k_EStreamControlSetCursorImage: {
+        case k_EStreamControlGetCursorImage:
+        case k_EStreamControlSetCursorImage:
+        case k_EStreamControlDeleteCursor: {
             IHS_SessionChannelControlOnCursor(channel, type, payload, payloadLen, header);
             break;
         }

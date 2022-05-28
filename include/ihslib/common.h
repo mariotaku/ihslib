@@ -72,7 +72,7 @@ typedef struct IHS_HostInfo {
     bool gamesRunning;
 } IHS_HostInfo;
 
-typedef enum IHS_BaseLogLevel {
+typedef enum IHS_LogLevel {
     IHS_BaseLogLevelDebug,
     IHS_BaseLogLevelInfo,
     /**
@@ -90,3 +90,5 @@ typedef enum IHS_BaseLogLevel {
 } IHS_LogLevel;
 
 typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *message);
+
+char *IHS_IPAddressToString(const IHS_IPAddress *address);

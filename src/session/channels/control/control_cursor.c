@@ -32,9 +32,22 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
     IHS_Session *session = channel->session;
     switch (type) {
         case k_EStreamControlSetCursor: {
+            uint64_t cursorId;
             CSetCursorMsg *message = cset_cursor_msg__unpack(NULL, payloadLen, payload);
-
+            cursorId = message->cursor_id;
             cset_cursor_msg__free_unpacked(message, NULL);
+            const IHS_StreamInputCallbacks *cb = session->callbacks.input;
+            bool requestImage = false;
+            if (cb && cb->setCursor) {
+                requestImage = !cb->setCursor(session, cursorId, session->callbackContexts.input);
+            }
+            if (requestImage) {
+                CGetCursorImageMsg request = CGET_CURSOR_IMAGE_MSG__INIT;
+                request.cursor_id = cursorId;
+                IHS_SessionSendControlMessage(session, k_EStreamControlGetCursorImage,
+                                              (const ProtobufCMessage *) &request,
+                                              IHS_PACKET_ID_NEXT);
+            }
             break;
         }
         case k_EStreamControlShowCursor: {
@@ -55,9 +68,33 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
             chide_cursor_msg__free_unpacked(message, NULL);
             break;
         }
-        case k_EStreamControlDeleteCursor:
-        case k_EStreamControlSetCursorImage:
+        case k_EStreamControlDeleteCursor: {
+            CDeleteCursorMsg *message = cdelete_cursor_msg__unpack(NULL, payloadLen, payload);
+            const IHS_StreamInputCallbacks *cb = session->callbacks.input;
+            if (cb && cb->deleteCursor) {
+                cb->deleteCursor(session, message->cursor_id, session->callbackContexts.input);
+            }
+            cdelete_cursor_msg__free_unpacked(message, NULL);
             break;
+        }
+        case k_EStreamControlSetCursorImage: {
+            CSetCursorImageMsg *message = cset_cursor_image_msg__unpack(NULL, payloadLen, payload);
+            const IHS_StreamInputCallbacks *cb = session->callbacks.input;
+            const IHS_StreamInputCursorImage image = {
+                    .cursorId = message->cursor_id,
+                    .width = message->width,
+                    .height = message->height,
+                    .hotX = message->hot_x,
+                    .hotY = message->hot_y,
+                    .image = message->image.data,
+                    .imageLen = message->image.len,
+            };
+            if (cb && cb->cursorImage) {
+                cb->cursorImage(session, &image, session->callbackContexts.input);
+            }
+            cset_cursor_image_msg__free_unpacked(message, NULL);
+            break;
+        }
         default: {
             break;
         }
