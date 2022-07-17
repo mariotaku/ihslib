@@ -24,6 +24,7 @@
  */
 
 #include <memory.h>
+#include <stdlib.h>
 
 #include "ch_data.h"
 #include "client/client_pri.h"
@@ -47,7 +48,7 @@ IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataCla
 void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     dataCh->lock = IHS_MutexCreate();
-    dataCh->window = IHS_SessionPacketsWindowCreate(128);
+    dataCh->window = IHS_SessionPacketsWindowCreate(256);
     dataCh->interrupted = false;
     dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker,
                                       DataChannelName(channel->type), dataCh);
@@ -69,7 +70,7 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_Sessi
     assert(dataCh->window != NULL);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
         IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
-        return;
+        abort();
     }
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
 }
@@ -107,9 +108,13 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started",
                    DataChannelName(channel->base.type));
     while (!channel->interrupted) {
-        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
+        for (uint16_t discarded = IHS_SessionPacketsWindowDiscard(channel->window,
+                                                                  IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
              IHS_SessionPacketsWindowReleaseFrame(&frame)) {
+            if (discarded > 0) {
+                IHS_SessionLog(channel->base.session, IHS_BaseLogLevelWarn, "%u frames discarded", discarded);
+            }
             ReceivedFrame(channel, &frame);
         }
     }

@@ -37,15 +37,19 @@ struct IHS_SessionPacketsWindow {
     uint16_t capacity;
     /*
      * [+][+][+][-]
-     *       ^ head = 2
+     *       ^ head.pos = 2
      */
-    int head;
+    struct {
+        int pos;
+    } head;
     /*
      * [+][+][+][-]
-     *         ^ tail = 2
+     *         ^ tail.pos = 2
      */
-    int tail;
-    uint16_t tailId;
+    struct {
+        int pos;
+        uint16_t id;
+    } tail;
 };
 
 #define IS_FRAME_HEAD(type) ((type) == IHS_SessionPacketTypeReliable || (type) == IHS_SessionPacketTypeUnreliable)
@@ -59,8 +63,8 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
     window->mutex = IHS_MutexCreate();
     window->capacity = capacity;
     window->data = calloc(capacity, sizeof(IHS_SessionFramePacket));
-    window->head = 0;
-    window->tail = -1;
+    window->head.pos = 0;
+    window->tail.pos = -1;
     return window;
 }
 
@@ -75,13 +79,13 @@ void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
 bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_SessionPacket *packet) {
     IHS_MutexLock(window->mutex);
     /* Calculate distance of 2 packets */
-    int tailOffset = window->tail < 0 ? 1 : (packet->header.packetId - window->tailId);
+    int tailOffset = window->tail.pos < 0 ? 1 : ((int) packet->header.packetId) - window->tail.id;
     bool ret = false;
-    /* Packet with window->tailId is guaranteed to be processed, so ignore it */
-    if (tailOffset == 0) {
-        ret = true;
-        goto unlock;
-    }
+    /* Packet with window->tail.id is guaranteed to be processed, so ignore it */
+//    if (tailOffset == 0) {
+//        ret = true;
+//        goto unlock;
+//    }
     /* Offset is over -32768, treat it as a rollover */
     if (tailOffset < INT16_MIN) {
         tailOffset = UINT16_MAX + tailOffset;
@@ -96,8 +100,8 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
         ret = false;
         goto unlock;
     }
-    window->tail = (window->tail + tailOffset) % window->capacity;
-    IHS_SessionFramePacket *tailPkt = &window->data[window->tail];
+    const int writePos = (window->tail.pos + tailOffset + window->capacity) % window->capacity;
+    IHS_SessionFramePacket *tailPkt = &window->data[writePos];
     /* Ignore if the slot is used */
     if (tailPkt->used) {
         ret = true;
@@ -108,9 +112,11 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
     tailPkt->bodyLen = packet->bodyLen;
     tailPkt->body = malloc(packet->bodyLen);
     memcpy(tailPkt->body, packet->body, packet->bodyLen);
+
     /* Only do incremental update */
     if (tailOffset > 0) {
-        window->tailId = packet->header.packetId;
+        window->tail.pos = writePos;
+        window->tail.id = packet->header.packetId;
     }
     ret = true;
     unlock:
@@ -127,22 +133,24 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         goto unlock;
     }
     IHS_SessionFramePacket *data = window->data;
-    assert(window->head >= 0);
-    IHS_SessionFramePacket *packet = &data[window->head % window->capacity];
-    IHS_SessionPacketType type = packet->header.type;
+    assert(window->head.pos >= 0);
+    IHS_SessionFramePacket *head = &data[window->head.pos % window->capacity];
+
     /* Must start from packet head */
-    if (!IS_FRAME_HEAD(type)) {
+    if (!IS_FRAME_HEAD(head->header.type)) {
         ret = false;
         goto unlock;
     }
+
     /* Must have size enough for all fragments */
-    int packetsCount = 1 + packet->header.fragmentId;
+    int packetsCount = 1 + head->header.fragmentId;
     if (size < packetsCount) {
         ret = false;
         goto unlock;
     }
+
     size_t frameBodyLen = 0;
-    for (int i = window->head, j = window->head + packetsCount; i < j; i++) {
+    for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         /* The array is sparse, must collect all fragments */
         const IHS_SessionFramePacket *item = &data[i % window->capacity];
         if (!item->used) {
@@ -153,24 +161,24 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
     }
     uint8_t *frameBody = malloc(frameBodyLen);
 
-    frame->header = data[window->head % window->capacity].header;
+    frame->header = head->header;
     frame->body = frameBody;
     frame->bodyLen = frameBodyLen;
 
     size_t frameBodyOffset = 0;
-    for (int i = window->head, j = window->head + packetsCount; i < j; i++) {
+    for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         IHS_SessionFramePacket *item = &data[i % window->capacity];
         memcpy(&frameBody[frameBodyOffset], item->body, item->bodyLen);
         frameBodyOffset += item->bodyLen;
 
-        /* This packet is used, recycle it */
+        /* This item is used, recycle it */
         free(item->body);
         memset(item, 0, sizeof(IHS_SessionFramePacket));
     }
 
-    window->head = window->head + packetsCount;
-    if (window->head > window->capacity) {
-        window->head = window->head % window->capacity;
+    window->head.pos = window->head.pos + packetsCount;
+    if (window->head.pos > window->capacity) {
+        window->head.pos = window->head.pos % window->capacity;
     }
     ret = true;
     unlock:
@@ -178,19 +186,20 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
     return ret;
 }
 
-void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff) {
+uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff) {
     IHS_MutexLock(window->mutex);
     uint16_t size = IHS_SessionPacketsWindowSize(window);
+    uint16_t discarded = 0;
     if (!size) goto unlock;
     IHS_SessionFramePacket *data = window->data;
-    IHS_SessionFramePacket *tailPkt = &data[window->tail];
+    IHS_SessionFramePacket *tailPkt = &data[window->tail.pos];
     if (tailPkt->header.sendTimestamp < diff) goto unlock;
     /* Should discard all frames older than discardBefore */
     uint32_t discardBefore = tailPkt->header.sendTimestamp - diff;
     /* Find first valid index after discardBefore */
     int firstValid = -1;
-    for (int i = window->head, j = window->head + size; i < j; i++) {
-        IHS_SessionFramePacket *item = &data[i % window->capacity];
+    for (int i = window->head.pos, j = window->head.pos + size; i < j; i++) {
+        const IHS_SessionFramePacket *item = &data[i % window->capacity];
         if (!item->used || !IS_FRAME_HEAD(item->header.type)) {
             continue;
         }
@@ -200,8 +209,9 @@ void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t 
         }
     }
     if (firstValid < 0) goto unlock;
-    for (int i = window->head; i < firstValid; i++) {
+    for (int i = window->head.pos; i < firstValid; i++) {
         IHS_SessionFramePacket *item = &data[i % window->capacity];
+        discarded++;
         if (!item->used) {
             continue;
         }
@@ -209,12 +219,13 @@ void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t 
         free(item->body);
         memset(item, 0, sizeof(IHS_SessionFramePacket));
     }
-    window->head = firstValid;
-    if (window->head > window->capacity) {
-        window->head = window->head % window->capacity;
+    window->head.pos = firstValid;
+    if (window->head.pos > window->capacity) {
+        window->head.pos = window->head.pos % window->capacity;
     }
     unlock:
     IHS_MutexUnlock(window->mutex);
+    return discarded;
 }
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame) {
@@ -226,32 +237,32 @@ uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *windo
 }
 
 uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window) {
-    if (window->tail < 0) {
+    if (window->tail.pos < 0) {
         return 0;
-    } else if (window->tail + 1 >= window->head) {
+    } else if (window->tail.pos + 1 >= window->head.pos) {
         /*
-         * Head is before tail, just calculate their distance
+         * Head is before tail.pos, just calculate their distance
          *
          * |[+][+][+][+][+][-][-][-]| capacity = 8
-         *  ^ head = 0    ^ tail = 4
-         * distance = tail + 1 - head = 5
+         *  ^ head.pos = 0    ^ tail.pos = 4
+         * distance = tail.pos + 1 - head.pos = 5
          *
          * |[-][-][-][-][-][-][-][-]| capacity = 8
-         *                         ^ head = 8, tail = 7
-         * distance = tail + 1 - head = 0
+         *                         ^ head.pos = 8, tail.pos = 7
+         * distance = tail.pos + 1 - head.pos = 0
          */
-        return window->tail + 1 - window->head;
+        return window->tail.pos + 1 - window->head.pos;
     } else {
-        /* Head is after tail
+        /* Head is after tail.pos
          *
          * |[+][+][-][-][-][-][+][+]| capacity = 8
-         *       ^ tail = 1   ^ head = 6
-         * distance = capacity - head + tail + 1 = 4
+         *       ^ tail.pos = 1   ^ head.pos = 6
+         * distance = capacity - head.pos + tail.pos + 1 = 4
          *
          * |[+][+][-][-][-][-][-][-]| capacity = 8
-         *       ^ tail = 1        ^ head = 8
-         * distance = capacity - head + tail + 1 = 2
+         *       ^ tail.pos = 1        ^ head.pos = 8
+         * distance = capacity - head.pos + tail.pos + 1 = 2
          */
-        return window->capacity - window->head + window->tail + 1;
+        return window->capacity - window->head.pos + window->tail.pos + 1;
     }
 }

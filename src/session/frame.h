@@ -57,7 +57,7 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
  * @param window
  * @param diff
  */
-void IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff);
+uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff);
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
 
