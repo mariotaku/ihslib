@@ -44,6 +44,15 @@ typedef struct IHS_SessionFrame {
     size_t bodyLen;
 } IHS_SessionFrame;
 
+typedef enum IHS_SessionFrameDecryptResult {
+    IHS_SessionFrameDecryptOK = 0,
+    /* Not normal state but can be ignored */
+    IHS_SessionFrameDecryptOldSequence = 1,
+    IHS_SessionFrameDecryptSequenceMismatch = -1,
+    IHS_SessionFrameDecryptHashMismatch = -2,
+    IHS_SessionFrameDecryptFailed = -3,
+} IHS_SessionFrameDecryptResult;
+
 IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity);
 
 void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window);
@@ -68,7 +77,7 @@ uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence);
 
-int IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
-                            uint64_t expectedSequence);
+IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen,
+                                                      uint8_t *out, size_t *outLen, uint64_t expectedSequence);
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen);

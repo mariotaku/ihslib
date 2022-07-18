@@ -152,13 +152,17 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         size_t messageLen = frame.bodyLen - 1;
         if (IsMessageEncrypted(type)) {
             uint8_t *plain = malloc(messageLen);
-            if (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen,
-                                        plain, &messageLen, control->recvEncryptSequence) != 0) {
+            IHS_SessionFrameDecryptResult decryptResult = IHS_SessionFrameDecrypt(channel->session, &frame.body[1],
+                                                                                  messageLen, plain, &messageLen,
+                                                                                  control->recvEncryptSequence);
+            if (decryptResult != IHS_SessionPacketResultOK) {
                 free(plain);
-                IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
-                               "Failed to decrypt message id=%d, retransmit=%d, type=%d",
-                               frame.header.packetId, frame.header.retransmitCount, type);
-                IHS_SessionDisconnect(channel->session);
+                if (decryptResult != IHS_SessionFrameDecryptOldSequence) {
+                    IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
+                                   "Failed to decrypt message id=%d, retransmit=%d, type=%d",
+                                   frame.header.packetId, frame.header.retransmitCount, type);
+                    IHS_SessionDisconnect(channel->session);
+                }
                 continue;
             }
             control->recvEncryptSequence++;

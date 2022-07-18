@@ -62,25 +62,27 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
     return ret;
 }
 
-int IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
-                            uint64_t expectedSequence) {
+IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen,
+                                                      uint8_t *out, size_t *outLen, uint64_t expectedSequence) {
     const uint8_t *iv = in;
 
     const uint8_t *key = session->config.sessionKey;
     const size_t keyLen = session->config.sessionKeyLen;
-    int ret;
-    if ((ret = IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen)) != 0) {
+    IHS_SessionFrameDecryptResult result = IHS_SessionFrameDecryptFailed;
+    if (IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen) != 0) {
         goto exit;
     }
 
     const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_MD5);
     uint8_t hash[16];
-    if ((ret = mbedtls_md_hmac(md, key, keyLen, out, *outLen, hash)) != 0) {
-        fprintf(stderr, "HMAC failed: %x\n", -ret);
+    int hmacRet;
+    if ((hmacRet = mbedtls_md_hmac(md, key, keyLen, out, *outLen, hash)) != 0) {
+        result = IHS_SessionFrameDecryptFailed;
+        fprintf(stderr, "HMAC failed: %x\n", -hmacRet);
         goto exit;
     }
     if (memcmp(hash, iv, 16) != 0) {
-        ret = -1;
+        result = IHS_SessionFrameDecryptHashMismatch;
         fprintf(stderr, "HMAC mismatch\n");
         goto exit;
     }
@@ -89,13 +91,15 @@ int IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLe
     uint64_t sequence;
     IHS_ReadUInt64LE(out, &sequence);
     memmove(out, &out[8], *outLen);
+    // Sequence may smaller than expected, in that case we just ignore the frame
     if (sequence != expectedSequence) {
-        ret = -1;
-        fprintf(stderr, "Sequence mismatch: %llu, expect %llu\n", sequence, expectedSequence);
+        result = sequence < expectedSequence ? IHS_SessionFrameDecryptOldSequence :
+                 IHS_SessionFrameDecryptSequenceMismatch;
         goto exit;
     }
+    result = IHS_SessionFrameDecryptOK;
     exit:
-    return ret;
+    return result;
 }
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen) {
