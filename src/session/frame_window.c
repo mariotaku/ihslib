@@ -82,16 +82,21 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
     int tailOffset = window->tail.pos < 0 ? 1 : ((int) packet->header.packetId) - window->tail.id;
     bool ret = false;
     /* Packet with window->tail.id is guaranteed to be processed, so ignore it */
-//    if (tailOffset == 0) {
-//        ret = true;
-//        goto unlock;
-//    }
     /* Offset is over -32768, treat it as a rollover */
     if (tailOffset < INT16_MIN) {
         tailOffset = UINT16_MAX + tailOffset;
     }
+    /* Offset is over 32767, also treat it as a rollover */
+    if (tailOffset > INT16_MAX) {
+        tailOffset = tailOffset - UINT16_MAX - 1;
+    }
     /* We already processed this packet, so ignore it */
     if (tailOffset < 0 && -tailOffset > IHS_SessionPacketsWindowSize(window)) {
+        ret = true;
+        goto unlock;
+    }
+    /* Not sure why but the offset is significantly larger than window capacity. Ignore it first */
+    if (tailOffset > window->capacity) {
         ret = true;
         goto unlock;
     }

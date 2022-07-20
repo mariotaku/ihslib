@@ -26,6 +26,11 @@
 
 #pragma once
 
+#include <protobuf-c/protobuf-c.h>
 #include "channel.h"
+#include "protobuf/remoteplay.pb-c.h"
 
 IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session);
+
+bool IHS_SessionChannelStatsSend(IHS_SessionChannel *channel, EStreamStatsMessage type,
+                                 const ProtobufCMessage *message, int32_t packetId);

@@ -23,6 +23,7 @@
  *
  */
 
+#include <malloc.h>
 #include "ch_stats.h"
 
 
@@ -34,4 +35,16 @@ static const IHS_SessionChannelClass ChannelClass = {
 IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session) {
     return IHS_SessionChannelCreate(&ChannelClass, session, IHS_SessionChannelTypeStats, IHS_SessionChannelIdStats,
                                     NULL);
+}
+
+bool IHS_SessionChannelStatsSend(IHS_SessionChannel *channel, EStreamStatsMessage type,
+                                 const ProtobufCMessage *message, int32_t packetId) {
+    size_t messageCapacity = protobuf_c_message_get_packed_size(message);
+    uint8_t *payload = malloc(1 + messageCapacity);
+    payload[0] = type;
+    size_t payloadSize = 1 + protobuf_c_message_pack(message, &payload[1]);
+    bool ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
+                                           payload, payloadSize, 0);
+    free(payload);
+    return ret;
 }

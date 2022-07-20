@@ -32,9 +32,8 @@
 #include "crypto.h"
 #include "endianness.h"
 #include "session/channels/video/callback_h264.h"
+#include "session/channels/ch_stats.h"
 
-
-#define VIDEO_FRAME_HEADER_SIZE 7
 
 static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config);
 
@@ -51,6 +50,8 @@ static size_t VideoFrameHeaderParse(IHS_SessionVideoFrameHeader *header, const u
 
 static void PreprocessAndSubmit(IHS_SessionChannel *channel, const uint8_t *data, size_t len,
                                 const IHS_SessionVideoFrameHeader *header);
+
+static uint64_t ReportVideoStats(void *data);
 
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
@@ -96,7 +97,7 @@ static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
     }
 }
 
-static bool DataStart(struct IHS_SessionChannel *channel) {
+static bool DataStart(IHS_SessionChannel *channel) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_Session *session = channel->session;
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
@@ -109,12 +110,14 @@ static bool DataStart(struct IHS_SessionChannel *channel) {
     message.has_threads = true;
     message.threads = 1;
 
+    videoCh->statsTimer = IHS_TimerStart(session->base.timers, ReportVideoStats, NULL, 1000, videoCh);
+
     return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
                                          (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
 }
 
-static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header,
-                         const uint8_t *data, size_t len) {
+static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header, const uint8_t *data,
+                         size_t len) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     size_t offset = 0;
     IHS_SessionVideoFrameHeader vhead;
@@ -123,15 +126,27 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
         videoCh->waitingKeyFrame = false;
         videoCh->expectedSequence = vhead.sequence;
     }
-    if (vhead.sequence != videoCh->expectedSequence) {
-        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Expected video frame sequence %u, got %u",
-                       videoCh->expectedSequence, vhead.sequence);
+    if (videoCh->waitingKeyFrame) {
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Waiting for key frame. sequence=%u", vhead.sequence);
+        return;
+    }
+    int seqDiff = ((int) vhead.sequence) - videoCh->expectedSequence;
+    if (seqDiff != 0) {
+        if (seqDiff > INT16_MAX || seqDiff < INT16_MIN) {
+            IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Unexpected video frame sequence %u (expect %u), "
+                                                                   "ignoring because the difference is too large",
+                           vhead.sequence, videoCh->expectedSequence);
+            return;
+        }
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Unexpected video frame sequence %u (expect %u), "
+                                                               "request keyframe", vhead.sequence,
+                       videoCh->expectedSequence);
         IHS_SessionChannelDataLost(channel);
         videoCh->waitingKeyFrame = true;
-        videoCh->expectedSequence = vhead.sequence;
+        return;
     }
+    videoCh->lastFrameId = header->id;
     videoCh->expectedSequence++;
-    if (videoCh->waitingKeyFrame) return;
     if (vhead.flags & VideoFrameFlagEncrypted) {
         const IHS_SessionConfig *config = &channel->session->config;
         uint8_t *decrypted = malloc(len);
@@ -145,8 +160,13 @@ static void DataReceived(struct IHS_SessionChannel *channel, const IHS_SessionDa
     }
 }
 
-static void DataStop(struct IHS_SessionChannel *channel) {
+static void DataStop(IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    if (videoCh->statsTimer != NULL) {
+        IHS_TimerStop(videoCh->statsTimer);
+        videoCh->statsTimer = NULL;
+    }
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     if (!callbacks || !callbacks->stop) return;
     callbacks->stop(session, session->callbackContexts.video);
@@ -167,4 +187,18 @@ static void PreprocessAndSubmit(IHS_SessionChannel *channel, const uint8_t *data
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     assert (videoCh->config.codec == IHS_StreamVideoCodecH264);
     IHS_SessionVideoFrameSubmitH264(channel, data, len, header);
+}
+
+static uint64_t ReportVideoStats(void *data) {
+    IHS_SessionChannel *channel = data;
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    IHS_SessionChannel *statsCh = IHS_SessionChannelFor(channel->session, IHS_SessionChannelIdStats);
+    CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
+    message.data_type = k_EStreamingVideoData;
+    message.latest_frame_id = videoCh->lastFrameId;
+
+//    IHS_SessionChannelStatsSend(statsCh, k_EStreamStatsFrameEvents, (const ProtobufCMessage *) &message,
+//                                IHS_PACKET_ID_NEXT);
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Reported video stats");
+    return 1000;
 }

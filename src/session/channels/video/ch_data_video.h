@@ -49,8 +49,10 @@ typedef struct IHS_SessionChannelVideo {
     IHS_SessionChannelData base;
     IHS_StreamVideoConfig config;
     uint16_t expectedSequence;
+    uint16_t lastFrameId;
     bool waitingKeyFrame;
     bool finishedFrame;
+    IHS_Timer *statsTimer;
 } IHS_SessionChannelVideo;
 
 IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message);

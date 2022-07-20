@@ -69,7 +69,8 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_Sessi
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     assert(dataCh->window != NULL);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "%s packets overflow!", DataChannelName(channel->type));
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "%s channel packets overflow! Available: %u",
+                       DataChannelName(channel->type), IHS_SessionPacketsWindowAvailable(dataCh->window));
         abort();
     }
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
