@@ -82,7 +82,7 @@ static void output_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf) {
     }
 }
 
-static int Start(void *context, const IHS_StreamVideoConfig *config) {
+static int Start(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context) {
     MMAL_STATUS_T status;
 
     if (config->codec != IHS_StreamVideoCodecH264) {
@@ -229,7 +229,7 @@ static int setup_decoder(uint32_t width, uint32_t height) {
     return 0;
 }
 
-static void Stop(void *context) {
+static void Stop(IHS_Session *session, void *context) {
     if (decoder)
         mmal_component_destroy(decoder);
 
@@ -245,8 +245,8 @@ static void Stop(void *context) {
     vcos_semaphore_delete(&semaphore);
 }
 
-static int Submit(void *context, const uint8_t *data, size_t dataLen, uint16_t sequence,
-                  IHS_StreamVideoFrameFlag flags) {
+static int Submit(IHS_Session *session, const uint8_t *data, size_t dataLen, uint16_t sequence,
+                  IHS_StreamVideoFrameFlag flags, void *context) {
     if (flags == IHS_StreamVideoFrameKeyFrame) {
         sps_dimension_t dimension;
         if (sps_parse_dimension_h264(&data[4], &dimension) &&
@@ -302,7 +302,7 @@ static int Submit(void *context, const uint8_t *data, size_t dataLen, uint16_t s
 }
 
 static void ChangedSize(const sps_dimension_t *dimension) {
-    Stop(NULL);
+    Stop(NULL, NULL);
     setup_decoder(dimension->width, dimension->height);
 }
 

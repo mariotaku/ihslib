@@ -48,14 +48,17 @@ static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result, vo
 
 bool RequestStream(IHS_SessionConfig *config) {
     IHS_Client *client = IHS_ClientCreate(&clientConfig);
-    IHS_ClientCallbacks callbacks = {
-            .hostDiscovered = OnHostStatus,
-            .streamingInProgress = OnAuthorizationInProgress,
-            .streamingFailed = OnStreamingFailed,
-            .streamingSuccess = OnStreamingSuccess,
+    IHS_ClientDiscoveryCallbacks discoveryCallbacks = {
+            .discovered = OnHostStatus,
+    };
+    IHS_ClientStreamingCallbacks streamingCallbacks = {
+            .progress = OnStreamingInProgress,
+            .failed = OnStreamingFailed,
+            .success = OnStreamingSuccess,
     };
     RequestorCallbacksContext context = {.requested = false, .succeeded = false};
-    IHS_ClientSetCallbacks(client, &callbacks, &context);
+    IHS_ClientSetDiscoveryCallbacks(client, &discoveryCallbacks, &context);
+    IHS_ClientSetStreamingCallbacks(client, &streamingCallbacks, &context);
     bool ret = false;
     if (!IHS_ClientDiscoveryBroadcast(client)) {
         fprintf(stderr, "Broadcast error: %s\n", IHS_ClientError(client));
@@ -100,7 +103,7 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
 
 
 void OnStreamingInProgress(IHS_Client *client, void *context) {
-    printf("OnAuthorizationInProgress\n");
+    printf("OnStreamingInProgress\n");
 }
 
 void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey, size_t sessionKeyLen,
