@@ -36,9 +36,18 @@ static void InterruptHandler(int sig);
 
 static void LogPrint(IHS_LogLevel level, const char *message);
 
+static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
+
+static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context);
+
 static bool Running = true;
 
 IHS_Session *ActiveSession = NULL;
+
+static IHS_StreamInputCallbacks InputCallbacks = {
+        .setCursor = SetCursor,
+        .cursorImage = CursorImage
+};
 
 
 int main(int argc, char *argv[]) {
@@ -59,6 +68,7 @@ int main(int argc, char *argv[]) {
     IHS_SessionSetLogFunction(session, LogPrint);
     IHS_SessionSetAudioCallbacks(session, &AudioCallbacks, NULL);
     IHS_SessionSetVideoCallbacks(session, &VideoCallbacks, NULL);
+    IHS_SessionSetInputCallbacks(session, &InputCallbacks, NULL);
     if (!IHS_SessionConnect(session)) {
         fprintf(stderr, "Failed to start session\n");
         goto sessionExit;
@@ -85,4 +95,12 @@ static void LogPrint(IHS_LogLevel level, const char *message) {
     } else {
         fprintf(stdout, "%s\n", message);
     }
+}
+
+static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context) {
+    return false;
+}
+
+static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context) {
+    printf("Set cursor image: %d * %d\n", image->width, image->height);
 }

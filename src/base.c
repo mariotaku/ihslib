@@ -152,9 +152,6 @@ bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data
     item->send.buffer = malloc(dataLen);
     memcpy(item->send.buffer, data, dataLen);
 
-    if (data[4] == 1 && data[0] == 0x85) {
-        IHS_BaseLog(base, IHS_BaseLogLevelDebug, "Send control message %d", data[13]);
-    }
     IHS_QueueAppend(base->queue, item);
     return true;
 }

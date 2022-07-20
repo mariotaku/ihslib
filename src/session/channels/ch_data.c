@@ -142,9 +142,6 @@ static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFram
         bodyOffset += IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body[bodyOffset]);
     }
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
-    if (channel->base.type == IHS_SessionChannelTypeDataVideo) {
-        IHS_SessionLog(channel->base.session, IHS_BaseLogLevelDebug, "Received video frame %u bytes", frame->bodyLen);
-    }
     cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body[bodyOffset],
                    frame->bodyLen - bodyOffset);
 }

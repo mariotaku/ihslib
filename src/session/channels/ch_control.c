@@ -37,6 +37,10 @@
 #include "client/client_pri.h"
 #include "protobuf/pb_utils.h"
 
+static bool IsMessageEncrypted(EStreamControlMessage type);
+
+static size_t EncryptedMessageCapacity(size_t plainSize);
+
 static void OnControlInit(IHS_SessionChannel *channel, const void *data);
 
 static void OnControlDeinit(IHS_SessionChannel *channel);
@@ -46,11 +50,11 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
 static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, const uint8_t *payload,
                                      size_t payloadLen, const IHS_SessionPacketHeader *header);
 
-static bool IsMessageEncrypted(EStreamControlMessage type);
-
-static size_t EncryptedMessageCapacity(size_t plainSize);
-
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message);
+
+static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message);
+
+static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message);
 
 static const IHS_SessionChannelClass ChannelClass = {
         .init = OnControlInit,
@@ -70,6 +74,9 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     size_t messageCapacity = protobuf_c_message_get_packed_size(message);
     bool ret;
+    const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
+                                                                           type);
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Send control message: %s, id=%d", value->name, packetId);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
         uint8_t *payload = malloc(1 + cipherSize);
@@ -130,7 +137,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         case IHS_SessionPacketTypeReliable:
         case IHS_SessionPacketTypeReliableFrag:
             if (!IHS_SessionPacketsWindowAdd(window, packet)) {
-                IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Packets window overflow");
+                IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Control frames window overflow");
                 IHS_SessionDisconnect(channel->session);
             }
             IHS_SessionChannelPacketAck(channel, packet->header.packetId, true);
@@ -152,21 +159,35 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         size_t messageLen = frame.bodyLen - 1;
         if (IsMessageEncrypted(type)) {
             uint8_t *plain = malloc(messageLen);
-            IHS_SessionFrameDecryptResult decryptResult = IHS_SessionFrameDecrypt(channel->session, &frame.body[1],
-                                                                                  messageLen, plain, &messageLen,
-                                                                                  control->recvEncryptSequence);
-            if (decryptResult != IHS_SessionPacketResultOK) {
-                free(plain);
-                if (decryptResult != IHS_SessionFrameDecryptOldSequence) {
+            uint64_t sequence = control->recvEncryptSequence;
+            switch (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen, plain, &messageLen,
+                                            &sequence)) {
+                case IHS_SessionPacketResultOK: {
+                    control->recvEncryptSequence = sequence + 1;
+                    OnControlMessageReceived(channel, type, plain, messageLen, &frame.header);
+                    break;
+                }
+                case IHS_SessionFrameDecryptHashMismatch:
+                case IHS_SessionFrameDecryptOldSequence: {
+                    // Ignore this packet
+                    break;
+                }
+                case IHS_SessionFrameDecryptSequenceMismatch: {
                     IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
-                                   "Failed to decrypt message id=%d, retransmit=%d, type=%d",
+                                   "Control message sequence expect %llu but got %llu. id=%d, retransmit=%d, type=%d",
+                                   control->recvEncryptSequence, sequence, frame.header.packetId,
+                                   frame.header.retransmitCount, type);
+                    control->recvEncryptSequence = sequence + 1;
+                    break;
+                }
+                case IHS_SessionFrameDecryptFailed: {
+                    IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
+                                   "Failed to decrypt control message. id=%d, retransmit=%d, type=%d",
                                    frame.header.packetId, frame.header.retransmitCount, type);
                     IHS_SessionDisconnect(channel->session);
+                    break;
                 }
-                continue;
             }
-            control->recvEncryptSequence++;
-            OnControlMessageReceived(channel, type, plain, messageLen, &frame.header);
             // There is no way that this is a dangling pointer
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "DanglingPointer"
@@ -187,12 +208,25 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cserver_handshake_msg__free_unpacked(message, NULL);
             break;
         }
-        case k_EStreamControlAuthenticationResponse:
+        case k_EStreamControlAuthenticationResponse: {
             IHS_SessionChannelControlOnAuthentication(channel, type, payload, payloadLen, header);
             break;
+        }
         case k_EStreamControlNegotiationInit:
         case k_EStreamControlNegotiationSetConfig: {
             IHS_SessionChannelControlOnNegotiation(channel, type, payload, payloadLen, header);
+            break;
+        }
+        case k_EStreamControlSetStreamingClientConfig: {
+            CSetStreamingClientConfig *message = cset_streaming_client_config__unpack(NULL, payloadLen, payload);
+            OnSetClientConfig(channel, message);
+            cset_streaming_client_config__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetSpectatorMode: {
+            CSetSpectatorModeMsg *message = cset_spectator_mode_msg__unpack(NULL, payloadLen, payload);
+            OnSetSpectatorMode(channel, message);
+            cset_spectator_mode_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlStartAudioData:
@@ -239,6 +273,15 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
     IHS_SessionChannelControlRequestAuthentication(channel);
 }
 
+static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message) {
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set client config. enable_video_hevc=%u",
+                   message->config->enable_video_hevc);
+}
+
+static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message) {
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set client config. spectator_mode=%u",
+                   message->enabled);
+}
 
 static bool IsMessageEncrypted(EStreamControlMessage type) {
     switch (type) {

@@ -78,6 +78,6 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
                             uint64_t sequence);
 
 IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen,
-                                                      uint8_t *out, size_t *outLen, uint64_t expectedSequence);
+                                                      uint8_t *out, size_t *outLen, uint64_t *sequence);
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen);

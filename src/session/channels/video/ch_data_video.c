@@ -33,6 +33,7 @@
 #include "endianness.h"
 #include "session/channels/video/callback_h264.h"
 #include "session/channels/ch_stats.h"
+#include "protobuf/pb_utils.h"
 
 
 static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config);
@@ -86,12 +87,14 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
         videoCh->config.codecData = malloc(message->codec_data.len);
         memcpy(videoCh->config.codecData, message->codec_data.data, message->codec_data.len);
     }
+    videoCh->stateMutex = IHS_MutexCreate();
     IHS_SessionChannelDataInit(channel);
 }
 
 static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelDataDeinit(channel);
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    IHS_MutexDestroy(videoCh->stateMutex);
     if (videoCh->config.codecData) {
         free(videoCh->config.codecData);
     }
@@ -107,8 +110,7 @@ static bool DataStart(IHS_SessionChannel *channel) {
     }
     CVideoDecoderInfoMsg message = CVIDEO_DECODER_INFO_MSG__INIT;
     message.info = "Marvell hardware decoding";
-    message.has_threads = true;
-    message.threads = 1;
+    PROTOBUF_C_SET_VALUE(message, threads, 1);
 
     videoCh->statsTimer = IHS_TimerStart(session->base.timers, ReportVideoStats, NULL, 1000, videoCh);
 
@@ -122,13 +124,15 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     size_t offset = 0;
     IHS_SessionVideoFrameHeader vhead;
     offset += VideoFrameHeaderParse(&vhead, &data[offset]);
+
+    IHS_MutexLock(videoCh->stateMutex);
+
     if (vhead.flags & VideoFrameFlagKeyFrame) {
         videoCh->waitingKeyFrame = false;
         videoCh->expectedSequence = vhead.sequence;
     }
     if (videoCh->waitingKeyFrame) {
-        IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Waiting for key frame. sequence=%u", vhead.sequence);
-        return;
+        goto unlock;
     }
     int seqDiff = ((int) vhead.sequence) - videoCh->expectedSequence;
     if (seqDiff != 0) {
@@ -136,17 +140,18 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
             IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Unexpected video frame sequence %u (expect %u), "
                                                                    "ignoring because the difference is too large",
                            vhead.sequence, videoCh->expectedSequence);
-            return;
+            goto unlock;
         }
         IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "Unexpected video frame sequence %u (expect %u), "
                                                                "request keyframe", vhead.sequence,
                        videoCh->expectedSequence);
         IHS_SessionChannelDataLost(channel);
         videoCh->waitingKeyFrame = true;
-        return;
+        goto unlock;
     }
     videoCh->lastFrameId = header->id;
     videoCh->expectedSequence++;
+    videoCh->frameCounter++;
     if (vhead.flags & VideoFrameFlagEncrypted) {
         const IHS_SessionConfig *config = &channel->session->config;
         uint8_t *decrypted = malloc(len);
@@ -158,6 +163,8 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     } else {
         PreprocessAndSubmit(channel, &data[offset], len - offset, &vhead);
     }
+    unlock:
+    IHS_MutexUnlock(videoCh->stateMutex);
 }
 
 static void DataStop(IHS_SessionChannel *channel) {
@@ -192,13 +199,22 @@ static void PreprocessAndSubmit(IHS_SessionChannel *channel, const uint8_t *data
 static uint64_t ReportVideoStats(void *data) {
     IHS_SessionChannel *channel = data;
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    IHS_MutexLock(videoCh->stateMutex);
+
     IHS_SessionChannel *statsCh = IHS_SessionChannelFor(channel->session, IHS_SessionChannelIdStats);
     CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
     message.data_type = k_EStreamingVideoData;
     message.latest_frame_id = videoCh->lastFrameId;
 
+    if (videoCh->frameCounter == 0) {
+        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "No frames coming in, request keyframe");
+        IHS_SessionChannelDataLost(channel);
+        videoCh->waitingKeyFrame = true;
+    }
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Video %.2f FPS", videoCh->frameCounter / 1.0);
+    videoCh->frameCounter = 0;
+    IHS_MutexUnlock(videoCh->stateMutex);
 //    IHS_SessionChannelStatsSend(statsCh, k_EStreamStatsFrameEvents, (const ProtobufCMessage *) &message,
 //                                IHS_PACKET_ID_NEXT);
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Reported video stats");
     return 1000;
 }

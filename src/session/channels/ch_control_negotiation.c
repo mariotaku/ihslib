@@ -128,14 +128,14 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     response.streaming_client_caps = &clientCaps;
 
     IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationSetConfig,
-                                  (const ProtobufCMessage *) &response, packetId);
+                                  (const ProtobufCMessage *) &response, IHS_PACKET_ID_NEXT);
 }
 
 static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiationSetConfigMsg *message,
                                    uint16_t packetId) {
     CNegotiationCompleteMsg response = CNEGOTIATION_COMPLETE_MSG__INIT;
     IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationComplete,
-                                  (const ProtobufCMessage *) &response, packetId);
+                                  (const ProtobufCMessage *) &response, IHS_PACKET_ID_NEXT);
     IHS_SessionChannelControlStartHeartbeat(channel);
 
     IHS_Session *session = channel->session;
