@@ -63,7 +63,7 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
 }
 
 IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen,
-                                                      uint8_t *out, size_t *outLen, uint64_t *sequence) {
+                                                      uint8_t *out, size_t *outLen, uint64_t expectedSequence) {
     const uint8_t *iv = in;
 
     const uint8_t *key = session->config.sessionKey;
@@ -88,12 +88,12 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
     }
 
     *outLen -= 8;
-    uint64_t expectedSequence = *sequence;
-    IHS_ReadUInt64LE(out, sequence);
+    uint64_t actualSequence;
+    IHS_ReadUInt64LE(out, &actualSequence);
     memmove(out, &out[8], *outLen);
     // Sequence may smaller than expected, in that case we just ignore the frame
-    if (*sequence != expectedSequence) {
-        result = *sequence < expectedSequence ? IHS_SessionFrameDecryptOldSequence :
+    if (actualSequence != expectedSequence) {
+        result = actualSequence < expectedSequence ? IHS_SessionFrameDecryptOldSequence :
                  IHS_SessionFrameDecryptSequenceMismatch;
         goto exit;
     }

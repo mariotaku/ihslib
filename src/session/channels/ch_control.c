@@ -56,6 +56,10 @@ static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingCl
 
 static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message);
 
+static void OnSetQoS(IHS_SessionChannel *channel, const CSetQoSMsg *message);
+
+static const char *ControlMessageTypeName(EStreamControlMessage type);
+
 static const IHS_SessionChannelClass ChannelClass = {
         .init = OnControlInit,
         .deinit = OnControlDeinit,
@@ -159,11 +163,10 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         size_t messageLen = frame.bodyLen - 1;
         if (IsMessageEncrypted(type)) {
             uint8_t *plain = malloc(messageLen);
-            uint64_t sequence = control->recvEncryptSequence;
+            uint64_t expectedSequence = control->recvEncryptSequence++;
             switch (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen, plain, &messageLen,
-                                            &sequence)) {
+                                            expectedSequence)) {
                 case IHS_SessionPacketResultOK: {
-                    control->recvEncryptSequence = sequence + 1;
                     OnControlMessageReceived(channel, type, plain, messageLen, &frame.header);
                     break;
                 }
@@ -173,18 +176,15 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
                     break;
                 }
                 case IHS_SessionFrameDecryptSequenceMismatch: {
-                    IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
-                                   "Control message sequence expect %llu but got %llu. id=%d, retransmit=%d, type=%d",
-                                   control->recvEncryptSequence, sequence, frame.header.packetId,
-                                   frame.header.retransmitCount, type);
-                    control->recvEncryptSequence = sequence + 1;
+                    IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn,
+                                   "Mismatched control message sequence. id=%d, retransmit=%d, type=%s",
+                                   frame.header.packetId, frame.header.retransmitCount, ControlMessageTypeName(type));
                     break;
                 }
                 case IHS_SessionFrameDecryptFailed: {
-                    IHS_SessionLog(channel->session, IHS_BaseLogLevelError,
-                                   "Failed to decrypt control message. id=%d, retransmit=%d, type=%d",
-                                   frame.header.packetId, frame.header.retransmitCount, type);
-                    IHS_SessionDisconnect(channel->session);
+                    IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn,
+                                   "Failed to decrypt control message. id=%d, retransmit=%d, type=%s",
+                                   frame.header.packetId, frame.header.retransmitCount, ControlMessageTypeName(type));
                     break;
                 }
             }
@@ -242,7 +242,12 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             IHS_SessionChannelControlOnVideo(channel, type, payload, payloadLen, header);
             break;
         }
-        case k_EStreamControlSetQoS:
+        case k_EStreamControlSetQoS: {
+            CSetQoSMsg *message = cset_qo_smsg__unpack(NULL, payloadLen, payload);
+            OnSetQoS(channel, message);
+            cset_qo_smsg__free_unpacked(message, NULL);
+            break;
+        }
         case k_EStreamControlSetTargetBitrate:
             break;
         case k_EStreamControlShowCursor:
@@ -255,10 +260,8 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             break;
         }
         default: {
-            const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
-                                                                                   type);
             IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Unhandled control message: %s",
-                           value ? value->name : "unknown");
+                           ControlMessageTypeName(type));
             break;
         }
     }
@@ -283,6 +286,11 @@ static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorM
                    message->enabled);
 }
 
+static void OnSetQoS(IHS_SessionChannel *channel, const CSetQoSMsg *message) {
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set QoS config. use_qos=%u",
+                   message->use_qos);
+}
+
 static bool IsMessageEncrypted(EStreamControlMessage type) {
     switch (type) {
         case k_EStreamControlClientHandshake:
@@ -298,4 +306,10 @@ static bool IsMessageEncrypted(EStreamControlMessage type) {
 static size_t EncryptedMessageCapacity(size_t plainSize) {
     /* iv + pkcs7pad(sequence + plain) */
     return 16 + ((plainSize + sizeof(uint64_t)) / IHS_CRYPTO_AES_BLOCK_SIZE + 1) * IHS_CRYPTO_AES_BLOCK_SIZE;
+}
+
+static const char *ControlMessageTypeName(EStreamControlMessage type) {
+    const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
+                                                                           type);
+    return value ? value->name : "unknown";
 }
