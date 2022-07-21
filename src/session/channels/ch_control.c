@@ -80,7 +80,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     bool ret;
     const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
                                                                            type);
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Send control message: %s, id=%d", value->name, packetId);
+    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Send control message: %s, id=%d", value->name, packetId);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
         uint8_t *payload = malloc(1 + cipherSize);
@@ -259,6 +259,15 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             IHS_SessionChannelControlOnCursor(channel, type, payload, payloadLen, header);
             break;
         }
+        case k_EStreamControlSetKeymap: {
+            CSetKeymapMsg *message = cset_keymap_msg__unpack(NULL, payloadLen, payload);
+            cset_keymap_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetTitle:
+        case k_EStreamControlSetIcon:
+        case k_EStreamControlSetActivity:
+            break;
         default: {
             IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Unhandled control message: %s",
                            ControlMessageTypeName(type));

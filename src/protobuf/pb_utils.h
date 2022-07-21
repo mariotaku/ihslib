@@ -27,4 +27,4 @@
 
 #include <protobuf-c/protobuf-c.h>
 
-#define PROTOBUF_C_SET_VALUE(message, key, value) message.has_##key = true; message.key = (value)
+#define PROTOBUF_C_SET_VALUE(message, key, value) (message).has_##key = true; (message).key = (value)

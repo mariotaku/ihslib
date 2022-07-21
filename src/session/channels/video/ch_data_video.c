@@ -201,7 +201,6 @@ static uint64_t ReportVideoStats(void *data) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_MutexLock(videoCh->stateMutex);
 
-    IHS_SessionChannel *statsCh = IHS_SessionChannelFor(channel->session, IHS_SessionChannelIdStats);
     CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
     message.data_type = k_EStreamingVideoData;
     message.latest_frame_id = videoCh->lastFrameId;

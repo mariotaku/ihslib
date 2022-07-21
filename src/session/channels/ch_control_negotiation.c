@@ -63,7 +63,7 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
     for (int i = 0; i < message->n_supported_audio_codecs; i++) {
         EStreamAudioCodec codec = message->supported_audio_codecs[i];
-        if (codec == k_EStreamAudioCodecAAC) {
+        if (codec == k_EStreamAudioCodecOpus) {
             audioCodec = codec;
         }
     }
