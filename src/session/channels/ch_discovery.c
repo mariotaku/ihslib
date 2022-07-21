@@ -32,6 +32,7 @@
 
 #include "session/session_pri.h"
 #include "protobuf/remoteplay.pb-c.h"
+#include "protobuf/pb_utils.h"
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
@@ -109,10 +110,8 @@ static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *p
 static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *packet,
                           const CDiscoveryPingRequest *request) {
     CDiscoveryPingResponse response = CDISCOVERY_PING_RESPONSE__INIT;
-    response.has_sequence = true;
-    response.sequence = request->sequence;
-    response.has_packet_size_received = true;
-    response.packet_size_received = IHS_PACKET_HEADER_SIZE + packet->bodyLen;
+    PROTOBUF_C_SET_VALUE(response, sequence, request->sequence);
+    PROTOBUF_C_SET_VALUE(response, packet_size_received, IHS_PACKET_HEADER_SIZE + packet->bodyLen);
     size_t msgSize = cdiscovery_ping_response__get_packed_size(&response);
     uint8_t *body = malloc(sizeof(uint8_t) + sizeof(uint32_t) + msgSize);
     size_t bodyLen = 0;
@@ -120,7 +119,7 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
     bodyLen += IHS_WriteUInt32LE(&body[bodyLen], msgSize);
     bodyLen += cdiscovery_ping_response__pack(&response, &body[bodyLen]);
 
-    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeUnconnected, 0, 0, body, bodyLen,
+    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeUnconnected, 1, 0, body, bodyLen,
                                 request->packet_size_requested);
     free(body);
 }

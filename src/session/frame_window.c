@@ -70,6 +70,11 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
 
 void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
     IHS_MutexLock(window->mutex);
+    for (int i = 0, j = window->capacity; i < j; i++) {
+        if (window->data[i].used) {
+            free(window->data[i].body);
+        }
+    }
     free(window->data);
     IHS_MutexUnlock(window->mutex);
     IHS_MutexDestroy(window->mutex);

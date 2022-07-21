@@ -138,18 +138,21 @@ void IHS_SessionDestroy(IHS_Session *session) {
     free(session);
 }
 
-void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet) {
+void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId) {
     memset(packet, 0, sizeof(IHS_SessionPacket));
-    packet->header.srcConnectionId = session->state.connectionId;
-    packet->header.dstConnectionId = session->state.hostConnectionId;
+    if (sendConnId) {
+        packet->header.srcConnectionId = session->state.connectionId;
+        packet->header.dstConnectionId = session->state.hostConnectionId;
+    }
     packet->header.sendTimestamp = IHS_SessionPacketTimestamp(session);
 }
 
 uint32_t IHS_SessionPacketTimestamp(IHS_Session *session) {
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);
-    uint64_t now = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
-    return IHS_SESSION_PACKET_TIMESTAMP_FROM_MICROS(now);
+    uint64_t nsec = tp.tv_nsec * 65536 / 1000000000;
+    uint32_t sec = tp.tv_sec * 65536;
+    return sec + nsec;
 }
 
 bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {

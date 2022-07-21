@@ -206,11 +206,6 @@ static uint64_t ReportVideoStats(void *data) {
     message.data_type = k_EStreamingVideoData;
     message.latest_frame_id = videoCh->lastFrameId;
 
-    if (videoCh->frameCounter == 0) {
-        IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn, "No frames coming in, request keyframe");
-        IHS_SessionChannelDataLost(channel);
-        videoCh->waitingKeyFrame = true;
-    }
     IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Video %.2f FPS", videoCh->frameCounter / 1.0);
     videoCh->frameCounter = 0;
     IHS_MutexUnlock(videoCh->stateMutex);

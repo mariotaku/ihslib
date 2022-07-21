@@ -121,7 +121,7 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
                                  const uint8_t *body, size_t bodyLen, size_t padTo) {
     IHS_Session *session = channel->session;
     IHS_SessionPacket packet;
-    IHS_SessionPacketInitialize(session, &packet);
+    IHS_SessionPacketInitialize(session, &packet, type != IHS_SessionPacketTypeUnconnected);
     packet.header.hasCrc = hasCrc;
     packet.header.type = type;
     packet.header.channelId = channel->id;
