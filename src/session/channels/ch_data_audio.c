@@ -73,7 +73,7 @@ static void ChannelAudioInit(IHS_SessionChannel *channel, const void *config) {
         audioCh->config.codecData = malloc(message->codec_data.len);
         memcpy(audioCh->config.codecData, message->codec_data.data, message->codec_data.len);
     }
-    IHS_SessionChannelDataInit(channel);
+    IHS_SessionChannelDataInit(channel, 256);
 }
 
 static void ChannelAudioDeinit(IHS_SessionChannel *channel) {

@@ -64,7 +64,7 @@ IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataCla
                                                  const void *config);
 
 
-void IHS_SessionChannelDataInit(IHS_SessionChannel *channel);
+void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapacity);
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel);
 

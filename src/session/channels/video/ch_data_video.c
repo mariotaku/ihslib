@@ -88,7 +88,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
         memcpy(videoCh->config.codecData, message->codec_data.data, message->codec_data.len);
     }
     videoCh->stateMutex = IHS_MutexCreate();
-    IHS_SessionChannelDataInit(channel);
+    IHS_SessionChannelDataInit(channel, 2048);
 }
 
 static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
@@ -209,7 +209,5 @@ static uint64_t ReportVideoStats(void *data) {
     IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Video %.2f FPS", videoCh->frameCounter / 1.0);
     videoCh->frameCounter = 0;
     IHS_MutexUnlock(videoCh->stateMutex);
-//    IHS_SessionChannelStatsSend(statsCh, k_EStreamStatsFrameEvents, (const ProtobufCMessage *) &message,
-//                                IHS_PACKET_ID_NEXT);
     return 1000;
 }

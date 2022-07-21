@@ -85,14 +85,14 @@ elseif (OPENSSL_FOUND)
 endif ()
 
 # Don't include tools and samples if used as library
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+if (IHSLIB_SAMPLES OR CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     find_program(PROTOC_C protoc-c)
     find_program(PYTHON python3)
 
     add_custom_target(protoc-gen
             COMMAND ${PROTOC_C} --c_out=src ${PROTOBUF_FILES}
             COMMAND ${PYTHON} scripts/protobuf-src-fixup.py src/protobuf
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_subdirectory(samples)
 endif ()

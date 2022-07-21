@@ -45,10 +45,10 @@ IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataCla
     return IHS_SessionChannelCreate(&cls->base, session, type, id, config);
 }
 
-void IHS_SessionChannelDataInit(IHS_SessionChannel *channel) {
+void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapacity) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     dataCh->lock = IHS_MutexCreate();
-    dataCh->window = IHS_SessionPacketsWindowCreate(256);
+    dataCh->window = IHS_SessionPacketsWindowCreate(windowCapacity);
     dataCh->interrupted = false;
     dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker,
                                       DataChannelName(channel->type), dataCh);
@@ -110,7 +110,7 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
                    DataChannelName(channel->base.type));
     while (!channel->interrupted) {
         for (uint16_t discarded = IHS_SessionPacketsWindowDiscard(channel->window,
-                                                                  IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(10));
+                                                                  IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
              IHS_SessionPacketsWindowReleaseFrame(&frame)) {
             if (discarded > 0) {
