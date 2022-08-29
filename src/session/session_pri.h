@@ -70,5 +70,4 @@ uint32_t IHS_SessionPacketTimestamp(IHS_Session *session);
 
 bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
 
-bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type,
-                                   const ProtobufCMessage *message, int32_t packetId);
+bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message);

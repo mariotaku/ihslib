@@ -81,8 +81,6 @@ typedef struct IHS_SessionPacket {
 
 #define IHS_PACKET_HEADER_SIZE 13
 
-#define IHS_PACKET_ID_NEXT (-1)
-
 /**
  *
  * @param header Packet header

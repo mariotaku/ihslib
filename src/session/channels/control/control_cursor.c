@@ -45,8 +45,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
                 CGetCursorImageMsg request = CGET_CURSOR_IMAGE_MSG__INIT;
                 request.cursor_id = cursorId;
                 IHS_SessionSendControlMessage(session, k_EStreamControlGetCursorImage,
-                                              (const ProtobufCMessage *) &request,
-                                              IHS_PACKET_ID_NEXT);
+                                              (const ProtobufCMessage *) &request);
             }
             break;
         }

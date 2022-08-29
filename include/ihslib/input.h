@@ -26,6 +26,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef struct IHS_Session IHS_Session;
@@ -39,6 +40,21 @@ typedef struct IHS_StreamInputCursorImage {
     const uint8_t *image;
     size_t imageLen;
 } IHS_StreamInputCursorImage;
+
+typedef enum IHS_StreamInputMouseButton {
+    IHS_MOUSE_BUTTON_LEFT = 1,
+    IHS_MOUSE_BUTTON_RIGHT = 2,
+    IHS_MOUSE_BUTTON_MIDDLE = 16,
+    IHS_MOUSE_BUTTON_X1 = 32,
+    IHS_MOUSE_BUTTON_X2 = 64,
+} IHS_StreamInputMouseButton;
+
+typedef enum IHS_StreamInputMouseWheelDirection {
+    IHS_MOUSE_WHEEL_UP = 1,
+    IHS_MOUSE_WHEEL_DOWN,
+    IHS_MOUSE_WHEEL_LEFT,
+    IHS_MOUSE_WHEEL_RIGHT,
+} IHS_StreamInputMouseWheelDirection;
 
 typedef struct IHS_StreamInputCallbacks {
     /**
@@ -58,3 +74,13 @@ typedef struct IHS_StreamInputCallbacks {
 
     void (*hideCursor)(IHS_Session *session, void *context);
 } IHS_StreamInputCallbacks;
+
+bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y);
+
+bool IHS_SessionSendMouseMovement(IHS_Session *session, int dx, int dy);
+
+bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button);
+
+bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button);
+
+bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction);

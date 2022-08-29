@@ -162,10 +162,9 @@ bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet
     return IHS_BaseSend(&session->base, config->address, data, dataSize);
 }
 
-bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type,
-                                   const ProtobufCMessage *message, int32_t packetId) {
+bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message) {
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
-    return IHS_SessionChannelControlSend(channel, type, message, packetId);
+    return IHS_SessionChannelControlSend(channel, type, message, IHS_PACKET_ID_NEXT);
 }
 
 static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {

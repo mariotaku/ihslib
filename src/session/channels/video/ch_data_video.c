@@ -115,7 +115,7 @@ static bool DataStart(IHS_SessionChannel *channel) {
     videoCh->statsTimer = IHS_TimerStart(session->base.timers, ReportVideoStats, NULL, 1000, videoCh);
 
     return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
-                                         (const ProtobufCMessage *) &message, IHS_PACKET_ID_NEXT);
+                                         (const ProtobufCMessage *) &message);
 }
 
 static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrameHeader *header, const uint8_t *data,

@@ -264,7 +264,12 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cset_keymap_msg__free_unpacked(message, NULL);
             break;
         }
-        case k_EStreamControlSetTitle:
+        case k_EStreamControlSetTitle: {
+            CSetTitleMsg *message = cset_title_msg__unpack(NULL, payloadLen, payload);
+            IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Set title: %s", message->text);
+            cset_title_msg__free_unpacked(message, NULL);
+            break;
+        }
         case k_EStreamControlSetIcon:
         case k_EStreamControlSetActivity:
             break;
