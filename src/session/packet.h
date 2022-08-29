@@ -82,6 +82,11 @@ typedef struct IHS_SessionPacket {
 #define IHS_PACKET_HEADER_SIZE 13
 
 /**
+ * This is used for something like control messages. For ACK and CONNECT message, they will not use self-increasing ID
+ */
+#define IHS_PACKET_ID_NEXT (-1)
+
+/**
  *
  * @param header Packet header
  * @param src Source buffer
