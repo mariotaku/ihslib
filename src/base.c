@@ -99,7 +99,11 @@ void IHS_BaseRun(IHS_Base *base) {
 }
 
 void IHS_BaseStop(IHS_Base *base) {
+    if (base->interrupted) {
+        return;
+    }
     base->interrupted = true;
+    IHS_UDPSocketUnblock(base->socket);
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
@@ -153,6 +157,7 @@ bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data
     memcpy(item->send.buffer, data, dataLen);
 
     IHS_QueueAppend(base->queue, item);
+    IHS_UDPSocketUnblock(base->socket);
     return true;
 }
 
