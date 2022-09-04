@@ -27,10 +27,13 @@
 #include <SDL.h>
 #include <SDL_net.h>
 
+#include <stdlib.h>
+#include <time.h>
+
 struct IHS_UDPSocket {
     SDLNet_SocketSet sockets;
     UDPsocket socket;
-    UDPsocket interrupt;
+    UDPsocket unblock;
     Uint16 interrupt_port;
     UDPpacket *packet;
 };
@@ -48,24 +51,24 @@ IHS_UDPSocket *IHS_UDPSocketOpen() {
 
     socket->interrupt_port = 53000;
 
-    while (socket->interrupt == NULL && socket->interrupt_port < 65535) {
-        socket->interrupt = SDLNet_UDP_Open(socket->interrupt_port);
-        if (socket->interrupt == NULL) {
-            socket->interrupt_port++;
-        }
+    srand(time(NULL));
+
+    while (socket->unblock == NULL) {
+        socket->interrupt_port = 49152 + rand() / 262144;
+        socket->unblock = SDLNet_UDP_Open(socket->interrupt_port);
     }
-    SDL_assert_always(socket->interrupt != NULL);
+    SDL_assert_always(socket->unblock != NULL);
 
     SDLNet_UDP_AddSocket(socket->sockets, socket->socket);
-    SDLNet_UDP_AddSocket(socket->sockets, socket->interrupt);
+    SDLNet_UDP_AddSocket(socket->sockets, socket->unblock);
     return socket;
 }
 
 void IHS_UDPSocketClose(IHS_UDPSocket *socket) {
-    SDLNet_UDP_DelSocket(socket->sockets, socket->interrupt);
+    SDLNet_UDP_DelSocket(socket->sockets, socket->unblock);
     SDLNet_UDP_DelSocket(socket->sockets, socket->socket);
 
-    SDLNet_UDP_Close(socket->interrupt);
+    SDLNet_UDP_Close(socket->unblock);
     SDLNet_UDP_Close(socket->socket);
     SDLNet_FreePacket(socket->packet);
     SDLNet_FreeSocketSet(socket->sockets);
@@ -77,9 +80,9 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
     if ((ret = SDLNet_CheckSockets(socket->sockets, -1)) <= 0) {
         return ret;
     }
-    if (SDLNet_SocketReady(socket->interrupt)) {
+    if (SDLNet_SocketReady(socket->unblock)) {
         // Drain interrupt packets
-        while (SDLNet_UDP_Recv(socket->interrupt, socket->packet) > 0);
+        while (SDLNet_UDP_Recv(socket->unblock, socket->packet) > 0);
     }
     if (!SDLNet_SocketReady(socket->socket)) {
         return 0;
@@ -103,6 +106,7 @@ int IHS_UDPSocketSend(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
 }
 
 int IHS_UDPSocketUnblock(IHS_UDPSocket *socket) {
+    SDL_assert_always(socket != NULL);
     UDPpacket sdlPacket;
     SDL_memset(&sdlPacket, 0, sizeof(UDPpacket));
     sdlPacket.address.host = SDL_SwapBE32(INADDR_LOOPBACK);
@@ -110,7 +114,7 @@ int IHS_UDPSocketUnblock(IHS_UDPSocket *socket) {
     static Uint8 empty[1] = {0};
     sdlPacket.data = empty;
     sdlPacket.len = 1;
-    return SDLNet_UDP_Send(socket->socket, -1, &sdlPacket);
+    return SDLNet_UDP_Send(socket->unblock, -1, &sdlPacket);
 }
 
 static void AddressFromSDL(IHS_SocketAddress *ihs, const IPaddress *sdl) {

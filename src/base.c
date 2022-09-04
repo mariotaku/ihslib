@@ -90,7 +90,6 @@ void IHS_BaseRun(IHS_Base *base) {
         if (ret) {
             base->callbacks.received(base, &recv.address, recv.buffer, recv.length);
         }
-        usleep(1);
     }
     if (base->callbacks.run && base->callbacks.run->finalized) {
         base->callbacks.run->finalized(base, base->callbackContexts.run);
@@ -157,7 +156,9 @@ bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data
     memcpy(item->send.buffer, data, dataLen);
 
     IHS_QueueAppend(base->queue, item);
-    IHS_UDPSocketUnblock(base->socket);
+    if (base->socket != NULL) {
+        IHS_UDPSocketUnblock(base->socket);
+    }
     return true;
 }
 

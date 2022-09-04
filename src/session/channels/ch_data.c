@@ -109,13 +109,9 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started",
                    DataChannelName(channel->base.type));
     while (!channel->interrupted) {
-        for (uint16_t discarded = IHS_SessionPacketsWindowDiscard(channel->window,
-                                                                  IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
+        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
              IHS_SessionPacketsWindowReleaseFrame(&frame)) {
-            if (discarded > 0) {
-                IHS_SessionLog(channel->base.session, IHS_BaseLogLevelWarn, "%u frames discarded", discarded);
-            }
             ReceivedFrame(channel, &frame);
         }
     }

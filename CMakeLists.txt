@@ -8,7 +8,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SDL2 sdl2)
-pkg_check_modules(SDL2_NET SDL2_net)
 
 if (NOT PROTOBUF_C_FOUND)
     pkg_check_modules(PROTOBUF_C libprotobuf-c REQUIRED)
@@ -16,11 +15,11 @@ endif ()
 
 if (NOT MBEDTLS_FOUND)
     find_package(MbedTLS)
-endif()
+endif ()
 
 if (NOT MBEDTLS_FOUND)
     find_package(OpenSSL)
-endif()
+endif ()
 
 set(PROTOBUF_FILES protobuf/discovery.proto protobuf/remoteplay.proto)
 
@@ -71,7 +70,10 @@ if (SDL2_FOUND)
     target_link_libraries(ihslib PUBLIC ${SDL2_LIBRARIES})
 endif ()
 
-if (SDL2_NET_FOUND)
+if (UNIX)
+    target_sources(ihslib PRIVATE src/ihs_udp_posix.c)
+else ()
+    pkg_check_modules(SDL2_NET SDL2_net REQUIRED)
     target_sources(ihslib PRIVATE src/ihs_udp_sdl.c)
     target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_NET_INCLUDE_DIRS})
     target_link_libraries(ihslib PUBLIC ${SDL2_NET_LIBRARIES})

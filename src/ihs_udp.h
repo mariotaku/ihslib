@@ -39,8 +39,14 @@ IHS_UDPSocket *IHS_UDPSocketOpen();
 
 void IHS_UDPSocketClose(IHS_UDPSocket *socket);
 
-int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet);
+int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet);
 
-int IHS_UDPSocketSend(IHS_UDPSocket *socket, IHS_UDPPacket *packet);
+/**
+ *
+ * @param s
+ * @param packet
+ * @return 1 if sent
+ */
+int IHS_UDPSocketSend(IHS_UDPSocket *s, IHS_UDPPacket *packet);
 
-int IHS_UDPSocketUnblock(IHS_UDPSocket *socket);
+int IHS_UDPSocketUnblock(IHS_UDPSocket *s);
