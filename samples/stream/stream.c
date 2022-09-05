@@ -76,7 +76,9 @@ int main(int argc, char *argv[]) {
     ActiveSession = session;
     IHS_SessionRun(session);
     sessionExit:
+    ActiveSession = NULL;
     IHS_SessionDestroy(session);
+    return 0;
 }
 
 

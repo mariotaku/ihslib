@@ -31,6 +31,7 @@
 #include "crypto.h"
 #include "session_pri.h"
 
+
 struct IHS_SessionPacketsWindow {
     IHS_Mutex *mutex;
     IHS_SessionFramePacket *data;
@@ -52,7 +53,13 @@ struct IHS_SessionPacketsWindow {
     } tail;
 };
 
-#define IS_FRAME_HEAD(type) ((type) == IHS_SessionPacketTypeReliable || (type) == IHS_SessionPacketTypeUnreliable)
+static inline bool FrameItemIsHead(const IHS_SessionFramePacket *item);
+
+static inline bool FrameItemIsUsed(const IHS_SessionFramePacket *item);
+
+static inline void FrameItemCopy(IHS_SessionFramePacket *item, const IHS_SessionPacket *packet);
+
+static inline void FrameItemRecycle(IHS_SessionFramePacket *item);
 
 /**
  *
@@ -71,9 +78,10 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
 void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
     IHS_MutexLock(window->mutex);
     for (int i = 0, j = window->capacity; i < j; i++) {
-        if (window->data[i].used) {
-            free(window->data[i].body);
+        if (!FrameItemIsUsed(&window->data[i])) {
+            continue;
         }
+        FrameItemRecycle(&window->data[i]);
     }
     free(window->data);
     IHS_MutexUnlock(window->mutex);
@@ -113,15 +121,11 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
     const int writePos = (window->tail.pos + tailOffset + window->capacity) % window->capacity;
     IHS_SessionFramePacket *tailPkt = &window->data[writePos];
     /* Ignore if the slot is used */
-    if (tailPkt->used) {
+    if (FrameItemIsUsed(tailPkt)) {
         ret = true;
         goto unlock;
     }
-    tailPkt->used = true;
-    tailPkt->header = packet->header;
-    tailPkt->bodyLen = packet->bodyLen;
-    tailPkt->body = malloc(packet->bodyLen);
-    memcpy(tailPkt->body, packet->body, packet->bodyLen);
+    FrameItemCopy(tailPkt, packet);
 
     /* Only do incremental update */
     if (tailOffset > 0) {
@@ -142,12 +146,11 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         ret = false;
         goto unlock;
     }
-    IHS_SessionFramePacket *data = window->data;
     assert(window->head.pos >= 0);
-    IHS_SessionFramePacket *head = &data[window->head.pos % window->capacity];
+    IHS_SessionFramePacket *head = &window->data[window->head.pos % window->capacity];
 
     /* Must start from packet head */
-    if (!IS_FRAME_HEAD(head->header.type)) {
+    if (!FrameItemIsHead(head)) {
         ret = false;
         goto unlock;
     }
@@ -162,8 +165,8 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
     size_t frameBodyLen = 0;
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         /* The array is sparse, must collect all fragments */
-        const IHS_SessionFramePacket *item = &data[i % window->capacity];
-        if (!item->used) {
+        const IHS_SessionFramePacket *item = &window->data[i % window->capacity];
+        if (!FrameItemIsUsed(item)) {
             ret = false;
             goto unlock;
         }
@@ -177,13 +180,12 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
 
     size_t frameBodyOffset = 0;
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
-        IHS_SessionFramePacket *item = &data[i % window->capacity];
+        IHS_SessionFramePacket *item = &window->data[i % window->capacity];
         memcpy(&frameBody[frameBodyOffset], item->body, item->bodyLen);
         frameBodyOffset += item->bodyLen;
 
         /* This item is used, recycle it */
-        free(item->body);
-        memset(item, 0, sizeof(IHS_SessionFramePacket));
+        FrameItemRecycle(item);
     }
 
     window->head.pos = window->head.pos + packetsCount;
@@ -201,16 +203,15 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
     uint16_t size = IHS_SessionPacketsWindowSize(window);
     uint16_t discarded = 0;
     if (!size) goto unlock;
-    IHS_SessionFramePacket *data = window->data;
-    IHS_SessionFramePacket *tailPkt = &data[window->tail.pos];
+    IHS_SessionFramePacket *tailPkt = &window->data[window->tail.pos];
     if (tailPkt->header.sendTimestamp < diff) goto unlock;
     /* Should discard all frames older than discardBefore */
     uint32_t discardBefore = tailPkt->header.sendTimestamp - diff;
     /* Find first valid index after discardBefore */
     int firstValid = -1;
     for (int i = window->head.pos, j = window->head.pos + size; i < j; i++) {
-        const IHS_SessionFramePacket *item = &data[i % window->capacity];
-        if (!item->used || !IS_FRAME_HEAD(item->header.type)) {
+        const IHS_SessionFramePacket *item = &window->data[i % window->capacity];
+        if (!FrameItemIsUsed(item) || !FrameItemIsHead(item)) {
             continue;
         }
         if (item->header.sendTimestamp >= discardBefore) {
@@ -220,14 +221,13 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
     }
     if (firstValid < 0) goto unlock;
     for (int i = window->head.pos; i < firstValid; i++) {
-        IHS_SessionFramePacket *item = &data[i % window->capacity];
+        IHS_SessionFramePacket *item = &window->data[i % window->capacity];
         discarded++;
-        if (!item->used) {
+        if (!FrameItemIsUsed(item)) {
             continue;
         }
         /* This packet is used, recycle it */
-        free(item->body);
-        memset(item, 0, sizeof(IHS_SessionFramePacket));
+        FrameItemRecycle(item);
     }
     window->head.pos = firstValid;
     if (window->head.pos > window->capacity) {
@@ -275,4 +275,24 @@ uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window) {
          */
         return window->capacity - window->head.pos + window->tail.pos + 1;
     }
+}
+
+static inline bool FrameItemIsHead(const IHS_SessionFramePacket *item) {
+    return item->header.type == IHS_SessionPacketTypeReliable || item->header.type == IHS_SessionPacketTypeUnreliable;
+}
+
+static inline bool FrameItemIsUsed(const IHS_SessionFramePacket *item) {
+    return item->body != NULL;
+}
+
+static inline void FrameItemCopy(IHS_SessionFramePacket *item, const IHS_SessionPacket *packet) {
+    item->header = packet->header;
+    item->bodyLen = packet->bodyLen;
+    item->body = malloc(packet->bodyLen);
+    memcpy(item->body, packet->body, packet->bodyLen);
+}
+
+static inline void FrameItemRecycle(IHS_SessionFramePacket *item) {
+    free(item->body);
+    memset(item, 0, sizeof(IHS_SessionFramePacket));
 }

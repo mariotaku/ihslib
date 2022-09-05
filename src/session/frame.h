@@ -30,7 +30,6 @@
 #include "session_pri.h"
 
 typedef struct IHS_SessionFramePacket {
-    bool used;
     IHS_SessionPacketHeader header;
     uint8_t *body;
     size_t bodyLen;

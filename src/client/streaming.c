@@ -131,7 +131,7 @@ static uint64_t StreamingRequestTimer(void *context) {
 
     message.has_pin = true;
     message.pin.len = strnlen(request.pin, sizeof(request.pin));
-    message.pin.data = request.pin;
+    message.pin.data = (uint8_t *) request.pin;
 
     message.has_maximum_resolution_x = request.maxResolution.x > 0;
     message.maximum_resolution_x = request.maxResolution.x;
