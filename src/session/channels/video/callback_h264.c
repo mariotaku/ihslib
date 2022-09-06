@@ -91,6 +91,10 @@ static void SubmitSliced(IHS_Session *session, const uint8_t *data, size_t len, 
                          IHS_StreamVideoFrameFlag flags) {
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
     void *context = session->callbackContexts.video;
+    if (!callbacks->config.sliced) {
+        callbacks->submit(session, data, len, sequence, 0, flags, context);
+        return;
+    }
 
     const uint8_t *cur = data, *next = NULL;
     uint16_t slice = 0;

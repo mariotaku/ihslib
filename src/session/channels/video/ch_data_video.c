@@ -151,7 +151,9 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     }
     videoCh->lastFrameId = header->id;
     videoCh->expectedSequence++;
-    videoCh->frameCounter++;
+    if (vhead.flags & VideoFrameFlagFrameFinish) {
+        videoCh->frameCounter++;
+    }
     if (vhead.flags & VideoFrameFlagEncrypted) {
         const IHS_SessionConfig *config = &channel->session->config;
         uint8_t *decrypted = malloc(len);
