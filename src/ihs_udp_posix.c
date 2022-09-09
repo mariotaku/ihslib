@@ -24,13 +24,15 @@
  */
 #include "ihs_udp.h"
 
-#include <SDL.h>
-
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+
+#include <assert.h>
 
 struct IHS_UDPSocket {
     int fd;
@@ -43,15 +45,14 @@ static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage
 static size_t AddressToSys(const IHS_SocketAddress *ihs, struct sockaddr_storage *sys);
 
 IHS_UDPSocket *IHS_UDPSocketOpen() {
-    IHS_UDPSocket *s = SDL_malloc(sizeof(IHS_UDPSocket));
-    SDL_zerop(s);
+    IHS_UDPSocket *s = calloc(1, sizeof(IHS_UDPSocket));
 
     s->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    SDL_assert_always(s->fd >= 0);
+    assert(s->fd >= 0);
     uint32_t broadcast = 1;
     setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, (char *) &broadcast, sizeof(broadcast));
 
-    SDL_assert_always(pipe(s->pipe) == 0);
+    assert(pipe(s->pipe) == 0);
     fcntl(s->pipe[0], F_SETFL, O_NONBLOCK);
     fcntl(s->pipe[1], F_SETFL, O_NONBLOCK);
     return s;
@@ -61,7 +62,7 @@ void IHS_UDPSocketClose(IHS_UDPSocket *s) {
     close(s->pipe[1]);
     close(s->pipe[0]);
     close(s->fd);
-    SDL_free(s);
+    free(s);
 }
 
 int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
@@ -70,7 +71,7 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     FD_SET(s->fd, &fds);
     FD_SET(s->pipe[0], &fds);
 
-    if (select(SDL_max(s->fd, s->pipe[0]) + 1, &fds, NULL, NULL, NULL) <= 0) {
+    if (select((s->fd > s->pipe[0] ? s->fd : s->pipe[0]) + 1, &fds, NULL, NULL, NULL) <= 0) {
         return 0;
     }
 
@@ -103,8 +104,8 @@ int IHS_UDPSocketSend(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
 }
 
 int IHS_UDPSocketUnblock(IHS_UDPSocket *s) {
-    SDL_assert_always(s != NULL);
-    const static Uint8 empty[1] = {0};
+    assert(s != NULL);
+    const static uint8_t empty[1] = {0};
     return write(s->pipe[1], empty, 1) == 1;
 }
 
@@ -113,19 +114,19 @@ static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage
         case AF_INET: {
             ihs->ip.family = IHS_IPAddressFamilyIPv4;
             const struct sockaddr_in *addr = (const struct sockaddr_in *) sys;
-            SDL_memcpy(&ihs->ip.v4.data, &addr->sin_addr, 4);
+            memcpy(&ihs->ip.v4.data, &addr->sin_addr, 4);
             ihs->port = ntohs(addr->sin_port);
             break;
         }
         case AF_INET6: {
             ihs->ip.family = IHS_IPAddressFamilyIPv6;
             const struct sockaddr_in6 *addr = (const struct sockaddr_in6 *) sys;
-            SDL_memcpy(&ihs->ip.v6.data, &addr->sin6_addr, 16);
+            memcpy(&ihs->ip.v6.data, &addr->sin6_addr, 16);
             ihs->port = ntohs(addr->sin6_port);
             break;
         }
         default: {
-            SDL_assert(sys->ss_family == AF_INET || sys->ss_family == AF_INET6);
+            assert(sys->ss_family == AF_INET || sys->ss_family == AF_INET6);
             break;
         }
     }
@@ -135,22 +136,22 @@ static size_t AddressToSys(const IHS_SocketAddress *ihs, struct sockaddr_storage
     switch (ihs->ip.family) {
         case IHS_IPAddressFamilyIPv4: {
             struct sockaddr_in *addr = (struct sockaddr_in *) sys;
-            SDL_zerop(addr);
+            memset(addr, 0, sizeof(struct sockaddr_in));
             addr->sin_family = AF_INET;
             addr->sin_port = htons(ihs->port);
-            SDL_memcpy(&addr->sin_addr, ihs->ip.v4.data, 4);
+            memcpy(&addr->sin_addr, ihs->ip.v4.data, 4);
             return sizeof(*addr);
         }
         case IHS_IPAddressFamilyIPv6: {
             struct sockaddr_in6 *addr = (struct sockaddr_in6 *) sys;
-            SDL_zerop(addr);
+            memset(addr, 0, sizeof(struct sockaddr_in6));
             addr->sin6_family = AF_INET6;
             addr->sin6_port = htons(ihs->port);
-            SDL_memcpy(&addr->sin6_addr, ihs->ip.v6.data, 16);
+            memcpy(&addr->sin6_addr, ihs->ip.v6.data, 16);
             return sizeof(*addr);
         }
         default: {
-            SDL_assert(ihs->ip.family == IHS_IPAddressFamilyIPv4 || ihs->ip.family == IHS_IPAddressFamilyIPv6);
+            assert(ihs->ip.family == IHS_IPAddressFamilyIPv4 || ihs->ip.family == IHS_IPAddressFamilyIPv6);
             return -1;
         }
     }

@@ -36,6 +36,7 @@ add_library(ihslib
         src/ihs_udp.c
         src/ihs_thread.c
         src/ihs_queue.c
+        src/ihs_buffer.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
@@ -55,6 +56,7 @@ add_library(ihslib
         src/session/channels/ch_data.c
         src/session/channels/ch_data_audio.c
         src/session/channels/video/callback_h264.c
+        src/session/channels/video/partial_frames.c
         src/session/channels/video/ch_data_video.c
         src/session/channels/control/control_cursor.c
         src/session/channels/control/control_input.c

@@ -56,14 +56,17 @@ typedef struct IHS_StreamVideoConfig {
 typedef struct IHS_StreamVideoCallbacks {
     int (*start)(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context);
 
-    int (*submit)(IHS_Session *session, const uint8_t *data, size_t dataLen, uint16_t sequence, uint16_t slice,
-                  IHS_StreamVideoFrameFlag flags, void *context);
+    int (*submit)(IHS_Session *session, const uint8_t *data, size_t dataLen, IHS_StreamVideoFrameFlag flags,
+                  void *context);
 
     void (*stop)(IHS_Session *session, void *context);
 
     int (*setCaptureSize)(IHS_Session *session, int width, int height, void *context);
 
     struct {
-        bool sliced;
+        /**
+         * If true, multiple partial frames will be combined into one
+         */
+        bool full;
     } config;
 } IHS_StreamVideoCallbacks;

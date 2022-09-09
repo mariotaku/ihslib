@@ -27,6 +27,8 @@
 #include <string.h>
 #include <signal.h>
 
+#include <gst/gst.h>
+
 #include "ihslib.h"
 #include "stream.h"
 #include "common.h"
@@ -51,6 +53,7 @@ static IHS_StreamInputCallbacks InputCallbacks = {
 
 
 int main(int argc, char *argv[]) {
+    gst_init(&argc, &argv);
     signal(SIGINT, InterruptHandler);
 
     IHS_SessionConfig sessionConfig;

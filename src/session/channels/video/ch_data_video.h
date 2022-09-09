@@ -28,6 +28,7 @@
 #include "session/channels/channel.h"
 #include "session/channels/ch_data.h"
 #include "protobuf/remoteplay.pb-c.h"
+#include "ihs_buffer.h"
 
 typedef struct IHS_SessionVideoFrameHeader {
     uint16_t sequence;
@@ -44,17 +45,5 @@ enum {
     VideoFrameFlagKeyFrame = 0x10,
     VideoFrameFlagEncrypted = 0x20,
 };
-
-typedef struct IHS_SessionChannelVideo {
-    IHS_SessionChannelData base;
-    IHS_StreamVideoConfig config;
-    uint16_t expectedSequence;
-    uint16_t lastFrameId;
-    uint16_t frameCounter;
-    bool waitingKeyFrame;
-    bool finishedFrame;
-    IHS_Timer *statsTimer;
-    IHS_Mutex *stateMutex;
-} IHS_SessionChannelVideo;
 
 IHS_SessionChannel *IHS_SessionChannelDataVideoCreate(IHS_Session *session, const CStartVideoDataMsg *message);
