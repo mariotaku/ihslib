@@ -35,15 +35,15 @@
 
 
 void IHS_SessionChannelControlOnAudio(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                      const uint8_t *payload, size_t payloadLen,
-                                      const IHS_SessionPacketHeader *header) {
+                                      IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     IHS_UNUSED(header);
     IHS_Session *session = channel->session;
     switch (type) {
         case k_EStreamControlStartAudioData: {
             IHS_SessionChannel *audio = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataAudio);
             if (audio) break;
-            CStartAudioDataMsg *message = cstart_audio_data_msg__unpack(NULL, payloadLen, payload);
+            CStartAudioDataMsg *message = cstart_audio_data_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
             audio = IHS_SessionChannelDataAudioCreate(session, message);
             IHS_SessionChannelAdd(session, audio);
             cstart_audio_data_msg__free_unpacked(message, NULL);

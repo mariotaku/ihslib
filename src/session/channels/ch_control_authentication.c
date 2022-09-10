@@ -53,11 +53,11 @@ void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel)
 }
 
 void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                               const uint8_t *payload, size_t payloadLen,
-                                               const IHS_SessionPacketHeader *header) {
+                                               IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     IHS_UNUSED(header);
     assert(type == k_EStreamControlAuthenticationResponse);
-    CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payloadLen, payload);
+    CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
     OnAuthenticationResponse(channel, message);
     cauthentication_response_msg__free_unpacked(message, NULL);
 }

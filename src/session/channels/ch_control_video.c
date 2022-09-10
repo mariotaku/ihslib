@@ -34,15 +34,15 @@
 
 
 void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                      const uint8_t *payload, size_t payloadLen,
-                                      const IHS_SessionPacketHeader *header) {
+                                      IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     IHS_UNUSED(header);
     IHS_Session *session = channel->session;
     switch (type) {
         case k_EStreamControlStartVideoData: {
             IHS_SessionChannel *video = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataVideo);
             if (video) break;
-            CStartVideoDataMsg *message = cstart_video_data_msg__unpack(NULL, payloadLen, payload);
+            CStartVideoDataMsg *message = cstart_video_data_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
             video = IHS_SessionChannelDataVideoCreate(session, message);
             IHS_SessionChannelAdd(session, video);
             cstart_video_data_msg__free_unpacked(message, NULL);
@@ -55,13 +55,15 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
             break;
         }
         case k_EStreamControlVideoEncoderInfo: {
-            CVideoEncoderInfoMsg *message = cvideo_encoder_info_msg__unpack(NULL, payloadLen, payload);
+            CVideoEncoderInfoMsg *message = cvideo_encoder_info_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
             IHS_SessionLog(session, IHS_BaseLogLevelDebug, "VideoEncoderInfo(%s)", message->info);
             cvideo_encoder_info_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetCaptureSize: {
-            CSetCaptureSizeMsg *message = cset_capture_size_msg__unpack(NULL, payloadLen, payload);
+            CSetCaptureSizeMsg *message = cset_capture_size_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
             IHS_SessionLog(session, IHS_BaseLogLevelDebug, "SetCaptureSize(width=%d, height=%d)",
                            message->width, message->height);
             const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
@@ -72,7 +74,8 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
             break;
         }
         case k_EStreamControlSetTargetFramerate: {
-            CSetTargetFramerateMsg *message = cset_target_framerate_msg__unpack(NULL, payloadLen, payload);
+            CSetTargetFramerateMsg *message = cset_target_framerate_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
             if (message->has_framerate_numerator && message->has_framerate_denominator) {
                 IHS_SessionLog(session, IHS_BaseLogLevelDebug, "SetTargetFramerate(fps=%.02f)",
                                (float) message->framerate_numerator / (float) message->framerate_denominator);

@@ -29,43 +29,77 @@
 #include <assert.h>
 #include <string.h>
 
-void IHS_BaseBufferEnsureCapacity(IHS_BaseBuffer *buffer, size_t newSize) {
-    // We set a 32MB hard limit
-    assert(newSize < 32 * 1024 * 1024);
-    size_t newCapacity = buffer->capacity;
-    if (newCapacity == 0) {
-        newCapacity = 1024 * 1024;
+void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity) {
+    memset(buffer, 0, sizeof(IHS_Buffer));
+    buffer->initialCapacity = initialCapacity;
+    buffer->maxCapacity = maxCapacity;
+}
+
+void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity) {
+    if (buffer->maxCapacity > 0) {
+        assert(wantedCapacity <= buffer->maxCapacity);
     }
-    while (newCapacity < newSize) {
-        newCapacity *= 2;
+    if (wantedCapacity <= buffer->capacity) {
+        return;
     }
-    buffer->data = realloc(buffer->data, newCapacity);
-    buffer->capacity = newCapacity;
+    buffer->data = realloc(buffer->data, wantedCapacity);
+    buffer->capacity = wantedCapacity;
     assert(buffer->data != NULL);
 }
 
-void IHS_BaseBufferClear(IHS_BaseBuffer *buffer, bool freeData) {
+void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
+    size_t newCapacity = buffer->capacity;
+    if (newCapacity == 0) {
+        newCapacity = buffer->initialCapacity;
+    }
+    if (newCapacity == 0) {
+        newCapacity = 1024;
+    }
+    while (newCapacity < wantedCapacity) {
+        newCapacity *= 2;
+    }
+    IHS_BufferEnsureCapacityExact(buffer, newCapacity);
+}
+
+void IHS_BufferClear(IHS_Buffer *buffer, bool freeData) {
     buffer->capacity = 0;
     buffer->size = 0;
+    buffer->offset = 0;
     if (freeData && buffer->data != NULL) {
         free(buffer->data);
         buffer->data = NULL;
     }
 }
 
-uint8_t *IHS_BaseBufferDataOffsetAt(IHS_BaseBuffer *buffer, size_t position) {
-    assert(position >= 0 && position < buffer->capacity);
-    return &buffer->data[position];
+void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset) {
+    assert(offset <= buffer->size);
+    buffer->offset += offset;
+    buffer->size -= offset;
 }
 
-uint8_t *IHS_BaseBufferPointerForAppend(IHS_BaseBuffer *buffer, size_t appendSize) {
+uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer) {
+    return IHS_BufferPointerAt(buffer, 0);
+}
+
+uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position) {
+    assert(position >= 0 && position < (buffer->capacity - buffer->offset));
+    return &buffer->data[buffer->offset + position];
+}
+
+uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     size_t newSize = buffer->size + appendSize;
-    IHS_BaseBufferEnsureCapacity(buffer, newSize);
-    return IHS_BaseBufferDataOffsetAt(buffer, buffer->size);
+    IHS_BufferEnsureCapacity(buffer, buffer->offset + newSize);
+    return IHS_BufferPointerAt(buffer, buffer->size);
 }
 
-void IHS_BaseBufferAppend(IHS_BaseBuffer *buffer, const uint8_t *data, size_t dataLen) {
-    uint8_t *dst = IHS_BaseBufferPointerForAppend(buffer, dataLen);
+void IHS_BufferAppend(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
+    uint8_t *dst = IHS_BufferPointerForAppend(buffer, dataLen);
     memcpy(dst, data, dataLen);
     buffer->size += dataLen;
+}
+
+void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from) {
+    *to = *from;
+    from->data = NULL;
+    IHS_BufferClear(from, false);
 }

@@ -35,7 +35,7 @@ typedef struct IHS_SessionVideoFrameHeader {
     uint8_t flags;
     uint16_t reserved1;
     uint16_t reserved2;
-} IHS_SessionVideoFrameHeader;
+} IHS_VideoFrameHeader;
 
 enum {
     VideoFrameFlagNeedStartSequence = 0x01,

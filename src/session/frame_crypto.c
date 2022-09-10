@@ -62,35 +62,36 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
     return ret;
 }
 
-IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const uint8_t *in, size_t inLen,
-                                                      uint8_t *out, size_t *outLen, uint64_t expectedSequence) {
-    const uint8_t *iv = in;
-
+IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const IHS_Buffer *in, IHS_Buffer *out,
+                                                      uint64_t expectedSequence) {
     const uint8_t *key = session->config.sessionKey;
     const size_t keyLen = session->config.sessionKeyLen;
     IHS_SessionFrameDecryptResult result = IHS_SessionFrameDecryptFailed;
-    if (IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen) != 0) {
+    IHS_BufferEnsureCapacityExact(out, in->size);
+    out->size = out->capacity;
+    if (IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointerAt(in, 16), in->size - 16,
+                                         IHS_BufferPointerAt(in, 0), 16, key, keyLen,
+                                         IHS_BufferPointerAt(out, 0), &out->size) != 0) {
         goto exit;
     }
 
     const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_MD5);
     uint8_t hash[16];
     int hmacRet;
-    if ((hmacRet = mbedtls_md_hmac(md, key, keyLen, out, *outLen, hash)) != 0) {
+    if ((hmacRet = mbedtls_md_hmac(md, key, keyLen, IHS_BufferPointerAt(out, 0), out->size, hash)) != 0) {
         result = IHS_SessionFrameDecryptFailed;
         fprintf(stderr, "HMAC failed: %x\n", -hmacRet);
         goto exit;
     }
-    if (memcmp(hash, iv, 16) != 0) {
+    if (memcmp(hash, IHS_BufferPointerAt(in, 0), 16) != 0) {
         result = IHS_SessionFrameDecryptHashMismatch;
         fprintf(stderr, "HMAC mismatch\n");
         goto exit;
     }
 
-    *outLen -= 8;
     uint64_t actualSequence;
-    IHS_ReadUInt64LE(out, &actualSequence);
-    memmove(out, &out[8], *outLen);
+    IHS_ReadUInt64LE(IHS_BufferPointerAt(out, 0), &actualSequence);
+    IHS_BufferOffsetBy(out, 8);
     // Sequence may smaller than expected, in that case we just ignore the frame
     if (actualSequence != expectedSequence) {
         result = actualSequence < expectedSequence ? IHS_SessionFrameDecryptOldSequence :

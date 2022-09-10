@@ -37,17 +37,16 @@ static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiati
                                    uint16_t packetId);
 
 void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                            const uint8_t *payload, size_t payloadLen,
-                                            const IHS_SessionPacketHeader *header) {
+                                            IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     switch (type) {
         case k_EStreamControlNegotiationInit: {
-            CNegotiationInitMsg *message = cnegotiation_init_msg__unpack(NULL, payloadLen, payload);
+            CNegotiationInitMsg *message = IHS_UNPACK_BUFFER(cnegotiation_init_msg__unpack, payload);
             OnNegotiationInit(channel, message, header->packetId);
             cnegotiation_init_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlNegotiationSetConfig: {
-            CNegotiationSetConfigMsg *message = cnegotiation_set_config_msg__unpack(NULL, payloadLen, payload);
+            CNegotiationSetConfigMsg *message = IHS_UNPACK_BUFFER(cnegotiation_set_config_msg__unpack, payload);
             OnNegotiationSetConfig(channel, message, header->packetId);
             cnegotiation_set_config_msg__free_unpacked(message, NULL);
             break;

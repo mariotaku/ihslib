@@ -24,16 +24,16 @@
  */
 #include "session/channels/ch_control.h"
 #include "client/client_pri.h"
+#include "protobuf/pb_utils.h"
 
 void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                       const uint8_t *payload, size_t payloadLen,
-                                       const IHS_SessionPacketHeader *header) {
+                                       IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     IHS_UNUSED(header);
     IHS_Session *session = channel->session;
     switch (type) {
         case k_EStreamControlSetCursor: {
             uint64_t cursorId;
-            CSetCursorMsg *message = cset_cursor_msg__unpack(NULL, payloadLen, payload);
+            CSetCursorMsg *message = IHS_UNPACK_BUFFER(cset_cursor_msg__unpack, payload);
             cursorId = message->cursor_id;
             cset_cursor_msg__free_unpacked(message, NULL);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
@@ -50,7 +50,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
             break;
         }
         case k_EStreamControlShowCursor: {
-            CShowCursorMsg *message = cshow_cursor_msg__unpack(NULL, payloadLen, payload);
+            CShowCursorMsg *message = IHS_UNPACK_BUFFER(cshow_cursor_msg__unpack, payload);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->showCursor) {
                 cb->showCursor(session, message->x_normalized, message->y_normalized, session->callbackContexts.input);
@@ -59,7 +59,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
             break;
         }
         case k_EStreamControlHideCursor: {
-            CHideCursorMsg *message = chide_cursor_msg__unpack(NULL, payloadLen, payload);
+            CHideCursorMsg *message = IHS_UNPACK_BUFFER(chide_cursor_msg__unpack, payload);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->hideCursor) {
                 cb->hideCursor(session, session->callbackContexts.input);
@@ -68,7 +68,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
             break;
         }
         case k_EStreamControlDeleteCursor: {
-            CDeleteCursorMsg *message = cdelete_cursor_msg__unpack(NULL, payloadLen, payload);
+            CDeleteCursorMsg *message = IHS_UNPACK_BUFFER(cdelete_cursor_msg__unpack, payload);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->deleteCursor) {
                 cb->deleteCursor(session, message->cursor_id, session->callbackContexts.input);
@@ -77,7 +77,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
             break;
         }
         case k_EStreamControlSetCursorImage: {
-            CSetCursorImageMsg *message = cset_cursor_image_msg__unpack(NULL, payloadLen, payload);
+            CSetCursorImageMsg *message = IHS_UNPACK_BUFFER(cset_cursor_image_msg__unpack, payload);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             const IHS_StreamInputCursorImage image = {
                     .cursorId = message->cursor_id,

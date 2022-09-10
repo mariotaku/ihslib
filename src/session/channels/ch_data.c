@@ -34,7 +34,7 @@ static void DataThreadWorker(IHS_SessionChannelData *channel);
 
 static void DataThreadInterrupt(IHS_SessionChannelData *channel);
 
-static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame);
+static void ReceivedFrame(IHS_SessionChannelData *channel, IHS_SessionFrame *frame);
 
 static const char *DataChannelName(IHS_SessionChannelType type);
 
@@ -99,6 +99,7 @@ size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header
 static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
+    IHS_BufferInit(&frame.body, 1024, 1024 * 1024);
     IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "Starting %s channel",
                    DataChannelName(channel->base.type));
     if (!cls->start((IHS_SessionChannel *) channel)) {
@@ -115,6 +116,7 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
             ReceivedFrame(channel, &frame);
         }
     }
+    IHS_BufferClear(&frame.body, true);
     cls->stop((IHS_SessionChannel *) channel);
 }
 
@@ -124,22 +126,22 @@ static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
     IHS_MutexUnlock(channel->lock);
 }
 
-static void ReceivedFrame(IHS_SessionChannelData *channel, const IHS_SessionFrame *frame) {
+static void ReceivedFrame(IHS_SessionChannelData *channel, IHS_SessionFrame *frame) {
     assert(frame->header.type == IHS_SessionPacketTypeUnreliable);
-    size_t bodyOffset = 0;
-    EStreamDataMessage type = frame->body[bodyOffset++];
+    EStreamDataMessage type = *IHS_BufferPointer(&frame->body);
+    IHS_BufferOffsetBy(&frame->body, 1);
     if (type != k_EStreamDataPacket) {
         return;
     }
     IHS_SessionDataFrameHeader header;
     bool hasHeader = false;
-    if (frame->bodyLen - bodyOffset > IHS_SESSION_DATA_FRAME_HEADER_SIZE) {
+    if (frame->body.size > IHS_SESSION_DATA_FRAME_HEADER_SIZE) {
         hasHeader = true;
-        bodyOffset += IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body[bodyOffset]);
+        size_t offset = IHS_SessionChannelDataFrameHeaderParse(&header, IHS_BufferPointer(&frame->body));
+        IHS_BufferOffsetBy(&frame->body, (int) offset);
     }
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
-    cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body[bodyOffset],
-                   frame->bodyLen - bodyOffset);
+    cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body);
 }
 
 static const char *DataChannelName(IHS_SessionChannelType type) {

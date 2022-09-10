@@ -25,34 +25,9 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
 
-#include "buffer.h"
+#include "session/channels/channel.h"
+#include "ch_data_video.h"
 
-typedef struct IHS_Session IHS_Session;
-
-typedef enum IHS_StreamAudioCodec {
-    IHS_StreamAudioCodecNone = 0,
-    IHS_StreamAudioCodecRaw = 1,
-    IHS_StreamAudioCodecVorbis = 2,
-    IHS_StreamAudioCodecOpus = 3,
-    IHS_StreamAudioCodecMP3 = 4,
-    IHS_StreamAudioCodecAAC = 5,
-} IHS_StreamAudioCodec;
-
-typedef struct IHS_StreamAudioConfig {
-    uint32_t channels;
-    uint32_t frequency;
-    IHS_StreamAudioCodec codec;
-    uint8_t *codecData;
-    size_t codecDataLen;
-} IHS_StreamAudioConfig;
-
-typedef struct IHS_StreamAudioCallbacks {
-    int (*start)(IHS_Session *session, const IHS_StreamAudioConfig *config, void *context);
-
-    int (*submit)(IHS_Session *session, IHS_Buffer *data, void *context);
-
-    void (*stop)(IHS_Session *session, void *context);
-} IHS_StreamAudioCallbacks;
+void IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, size_t len,
+                                     const IHS_VideoFrameHeader *header);

@@ -28,3 +28,5 @@
 #include <protobuf-c/protobuf-c.h>
 
 #define PROTOBUF_C_SET_VALUE(message, key, value) (message).has_##key = true; (message).key = (value)
+
+#define IHS_UNPACK_BUFFER(unpack_fn, buffer) unpack_fn(NULL, (buffer)->size, IHS_BufferPointer((buffer)))

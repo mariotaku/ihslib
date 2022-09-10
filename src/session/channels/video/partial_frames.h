@@ -6,9 +6,8 @@
 #include <stdint.h>
 
 typedef struct IHS_SessionVideoPartialFrame {
-    IHS_SessionVideoFrameHeader header;
-    uint8_t *data;
-    size_t dataLen;
+    IHS_VideoFrameHeader header;
+    IHS_Buffer data;
     struct IHS_SessionVideoPartialFrame *prev;
     struct IHS_SessionVideoPartialFrame *next;
 } IHS_SessionVideoPartialFrame;

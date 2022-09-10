@@ -172,21 +172,17 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         }
         frameBodyLen += item->bodyLen;
     }
-    uint8_t *frameBody = malloc(frameBodyLen);
-
     frame->header = head->header;
-    frame->body = frameBody;
-    frame->bodyLen = frameBodyLen;
+    IHS_BufferEnsureCapacity(&frame->body, frameBodyLen);
 
-    size_t frameBodyOffset = 0;
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         IHS_SessionFramePacket *item = &window->data[i % window->capacity];
-        memcpy(&frameBody[frameBodyOffset], item->body, item->bodyLen);
-        frameBodyOffset += item->bodyLen;
+        IHS_BufferAppend(&frame->body, item->body, item->bodyLen);
 
         /* This item is used, recycle it */
         FrameItemRecycle(item);
     }
+    assert(frame->body.size == frameBodyLen);
 
     window->head.pos = window->head.pos + packetsCount;
     if (window->head.pos > window->capacity) {
@@ -239,7 +235,7 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
 }
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame) {
-    free(frame->body);
+    IHS_BufferClear(&frame->body, false);
 }
 
 uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window) {

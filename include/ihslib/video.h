@@ -28,6 +28,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "buffer.h"
+
 typedef struct IHS_Session IHS_Session;
 
 typedef enum IHS_StreamVideoCodec {
@@ -56,8 +58,7 @@ typedef struct IHS_StreamVideoConfig {
 typedef struct IHS_StreamVideoCallbacks {
     int (*start)(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context);
 
-    int (*submit)(IHS_Session *session, const uint8_t *data, size_t dataLen, IHS_StreamVideoFrameFlag flags,
-                  void *context);
+    int (*submit)(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags, void *context);
 
     void (*stop)(IHS_Session *session, void *context);
 

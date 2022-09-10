@@ -29,18 +29,24 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef struct IHS_BaseBuffer {
-    uint8_t *data;
-    size_t capacity;
-    size_t size;
-} IHS_BaseBuffer;
+#include "ihslib/buffer.h"
 
-void IHS_BaseBufferEnsureCapacity(IHS_BaseBuffer *buffer, size_t newSize);
+void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity);
 
-void IHS_BaseBufferClear(IHS_BaseBuffer *buffer, bool freeData);
+void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity);
 
-uint8_t *IHS_BaseBufferDataOffsetAt(IHS_BaseBuffer *buffer, size_t position);
+void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity);
 
-void IHS_BaseBufferAppend(IHS_BaseBuffer *buffer, const uint8_t *data, size_t dataLen);
+void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
 
-uint8_t *IHS_BaseBufferPointerForAppend(IHS_BaseBuffer *buffer, size_t appendSize);
+void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
+
+uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer);
+
+uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position);
+
+uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
+
+void IHS_BufferAppend(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
+
+void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from);

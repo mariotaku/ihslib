@@ -23,34 +23,28 @@
  *
  */
 
-#include <malloc.h>
-#include <memory.h>
-
-#include "callback_h264.h"
+#include "frame_h264.h"
 #include "ch_data_video.h"
 
-#include "memmem.h"
 #include "session/session_pri.h"
 
 const static uint8_t startSeq[] = {0x00, 0x00, 0x00, 0x01};
 
 static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
 
-static void Callback(IHS_Session *session, const uint8_t *data, size_t len, IHS_StreamVideoFrameFlag flags);
-
-void IHS_SessionVideoFrameAppendH264(IHS_BaseBuffer *buffer, const uint8_t *data, size_t len,
-                                     const IHS_SessionVideoFrameHeader *header) {
+void IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, size_t len,
+                                     const IHS_VideoFrameHeader *header) {
 
     if (header->flags & VideoFrameFlagNeedEscape) {
         size_t escapedCap = (len * 3) / 2 + 1;
         if (header->flags & VideoFrameFlagNeedStartSequence) {
             assert(len >= 1);
-            IHS_BaseBufferAppend(buffer, startSeq, sizeof(startSeq));
+            IHS_BufferAppend(buffer, startSeq, sizeof(startSeq));
         }
-        size_t escapedLen = EscapeNAL(IHS_BaseBufferPointerForAppend(buffer, escapedCap), data, len);
+        size_t escapedLen = EscapeNAL(IHS_BufferPointerForAppend(buffer, escapedCap), data, len);
         buffer->size += escapedLen;
     } else {
-        IHS_BaseBufferAppend(buffer, data, len);
+        IHS_BufferAppend(buffer, data, len);
     }
 }
 
@@ -65,10 +59,4 @@ static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen) {
         *dst++ = *src++;
     }
     return dst - out;
-}
-
-static void Callback(IHS_Session *session, const uint8_t *data, size_t len, IHS_StreamVideoFrameFlag flags) {
-    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
-    void *context = session->callbackContexts.video;
-    callbacks->submit(session, data, len, flags, context);
 }

@@ -47,8 +47,8 @@ static void OnControlDeinit(IHS_SessionChannel *channel);
 
 static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
-static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, const uint8_t *payload,
-                                     size_t payloadLen, const IHS_SessionPacketHeader *header);
+static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, IHS_Buffer *payload,
+                                     const IHS_SessionPacketHeader *header);
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message);
 
@@ -158,16 +158,18 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
             break;
     }
     IHS_SessionFrame frame;
+    IHS_BufferInit(&frame.body, 1024, 1024 * 1024);
+
     for (; IHS_SessionPacketsWindowPoll(window, &frame); IHS_SessionPacketsWindowReleaseFrame(&frame)) {
-        EStreamControlMessage type = frame.body[0];
-        size_t messageLen = frame.bodyLen - 1;
+        EStreamControlMessage type = *IHS_BufferPointer(&frame.body);
+        IHS_BufferOffsetBy(&frame.body, 1);
         if (IsMessageEncrypted(type)) {
-            uint8_t *plain = malloc(messageLen);
+            IHS_Buffer plain;
+            IHS_BufferInit(&plain, 1024, 1024 * 1024);
             uint64_t expectedSequence = control->recvEncryptSequence++;
-            switch (IHS_SessionFrameDecrypt(channel->session, &frame.body[1], messageLen, plain, &messageLen,
-                                            expectedSequence)) {
+            switch (IHS_SessionFrameDecrypt(channel->session, &frame.body, &plain, expectedSequence)) {
                 case IHS_SessionPacketResultOK: {
-                    OnControlMessageReceived(channel, type, plain, messageLen, &frame.header);
+                    OnControlMessageReceived(channel, type, &plain, &frame.header);
                     break;
                 }
                 case IHS_SessionFrameDecryptHashMismatch:
@@ -188,50 +190,48 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
                     break;
                 }
             }
-            // There is no way that this is a dangling pointer
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "DanglingPointer"
-            free(plain);
-#pragma clang diagnostic pop
+            IHS_BufferClear(&plain, true);
         } else {
-            OnControlMessageReceived(channel, type, &frame.body[1], messageLen, &frame.header);
+            OnControlMessageReceived(channel, type, &frame.body, &frame.header);
         }
     }
+
+    IHS_BufferClear(&frame.body, true);
 }
 
-static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, const uint8_t *payload,
-                                     size_t payloadLen, const IHS_SessionPacketHeader *header) {
+static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, IHS_Buffer *payload,
+                                     const IHS_SessionPacketHeader *header) {
     switch (type) {
         case k_EStreamControlServerHandshake: {
-            CServerHandshakeMsg *message = cserver_handshake_msg__unpack(NULL, payloadLen, payload);
+            CServerHandshakeMsg *message = IHS_UNPACK_BUFFER(cserver_handshake_msg__unpack, payload);
             OnServerHandshake(channel, message);
             cserver_handshake_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlAuthenticationResponse: {
-            IHS_SessionChannelControlOnAuthentication(channel, type, payload, payloadLen, header);
+            IHS_SessionChannelControlOnAuthentication(channel, type, payload, header);
             break;
         }
         case k_EStreamControlNegotiationInit:
         case k_EStreamControlNegotiationSetConfig: {
-            IHS_SessionChannelControlOnNegotiation(channel, type, payload, payloadLen, header);
+            IHS_SessionChannelControlOnNegotiation(channel, type, payload, header);
             break;
         }
         case k_EStreamControlSetStreamingClientConfig: {
-            CSetStreamingClientConfig *message = cset_streaming_client_config__unpack(NULL, payloadLen, payload);
+            CSetStreamingClientConfig *message = IHS_UNPACK_BUFFER(cset_streaming_client_config__unpack, payload);
             OnSetClientConfig(channel, message);
             cset_streaming_client_config__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetSpectatorMode: {
-            CSetSpectatorModeMsg *message = cset_spectator_mode_msg__unpack(NULL, payloadLen, payload);
+            CSetSpectatorModeMsg *message = IHS_UNPACK_BUFFER(cset_spectator_mode_msg__unpack, payload);
             OnSetSpectatorMode(channel, message);
             cset_spectator_mode_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlStartAudioData:
         case k_EStreamControlStopAudioData: {
-            IHS_SessionChannelControlOnAudio(channel, type, payload, payloadLen, header);
+            IHS_SessionChannelControlOnAudio(channel, type, payload, header);
             break;
         }
         case k_EStreamControlStartVideoData:
@@ -239,11 +239,11 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlVideoEncoderInfo:
         case k_EStreamControlSetCaptureSize:
         case k_EStreamControlSetTargetFramerate: {
-            IHS_SessionChannelControlOnVideo(channel, type, payload, payloadLen, header);
+            IHS_SessionChannelControlOnVideo(channel, type, payload, header);
             break;
         }
         case k_EStreamControlSetQoS: {
-            CSetQoSMsg *message = cset_qo_smsg__unpack(NULL, payloadLen, payload);
+            CSetQoSMsg *message = IHS_UNPACK_BUFFER(cset_qo_smsg__unpack, payload);
             OnSetQoS(channel, message);
             cset_qo_smsg__free_unpacked(message, NULL);
             break;
@@ -256,16 +256,16 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlGetCursorImage:
         case k_EStreamControlSetCursorImage:
         case k_EStreamControlDeleteCursor: {
-            IHS_SessionChannelControlOnCursor(channel, type, payload, payloadLen, header);
+            IHS_SessionChannelControlOnCursor(channel, type, payload, header);
             break;
         }
         case k_EStreamControlSetKeymap: {
-            CSetKeymapMsg *message = cset_keymap_msg__unpack(NULL, payloadLen, payload);
+            CSetKeymapMsg *message = IHS_UNPACK_BUFFER(cset_keymap_msg__unpack, payload);
             cset_keymap_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetTitle: {
-            CSetTitleMsg *message = cset_title_msg__unpack(NULL, payloadLen, payload);
+            CSetTitleMsg *message = IHS_UNPACK_BUFFER(cset_title_msg__unpack, payload);
             IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Set title: %s", message->text);
             cset_title_msg__free_unpacked(message, NULL);
             break;

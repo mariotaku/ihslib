@@ -4,7 +4,7 @@ int Start(IHS_Session *session, const IHS_StreamAudioConfig *config, void *conte
     return 0;
 }
 
-int Submit(IHS_Session *session, const uint8_t *data, size_t dataLen, void *context) {
+int Submit(IHS_Session *session, IHS_Buffer *data, void *context) {
     return 0;
 }
 

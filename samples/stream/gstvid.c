@@ -26,11 +26,11 @@ static void Stop(IHS_Session *session, void *context) {
     gst_object_unref(pipeline);
 }
 
-static int Submit(IHS_Session *session, const uint8_t *data, size_t dataLen, IHS_StreamVideoFrameFlag flags,
-                  void *context) {
-    g_assert(dataLen > 0);
-    gpointer udata = g_memdup(data, dataLen);
-    GstBuffer *buf = gst_buffer_new_wrapped(udata, dataLen);
+static int Submit(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags, void *context) {
+    g_assert(data->data != NULL);
+    GstBuffer *buf = gst_buffer_new_wrapped_full(0, data->data, data->capacity, data->offset,
+                                                 data->size, data->data, g_free);
+    data->data = NULL;
     GstFlowReturn ret = gst_app_src_push_buffer(source, buf);
     g_assert(ret == GST_FLOW_OK);
     return 0;

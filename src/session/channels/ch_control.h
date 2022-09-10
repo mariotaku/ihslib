@@ -51,25 +51,20 @@ void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel)
 
 
 void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                               const uint8_t *payload, size_t payloadLen,
-                                               const IHS_SessionPacketHeader *header);
+                                               IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
 
 void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                            const uint8_t *payload, size_t payloadLen,
-                                            const IHS_SessionPacketHeader *header);
+                                            IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
 void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                      const uint8_t *payload, size_t payloadLen,
-                                      const IHS_SessionPacketHeader *header);
+                                      IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
 void IHS_SessionChannelControlOnAudio(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                      const uint8_t *payload, size_t payloadLen,
-                                      const IHS_SessionPacketHeader *header);
+                                      IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
 void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamControlMessage type,
-                                       const uint8_t *payload, size_t payloadLen,
-                                       const IHS_SessionPacketHeader *header);
+                                       IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel);
 
