@@ -177,7 +177,7 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
 
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         IHS_SessionFramePacket *item = &window->data[i % window->capacity];
-        IHS_BufferAppend(&frame->body, item->body, item->bodyLen);
+        IHS_BufferAppendMem(&frame->body, item->body, item->bodyLen);
 
         /* This item is used, recycle it */
         FrameItemRecycle(item);

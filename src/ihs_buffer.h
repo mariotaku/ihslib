@@ -41,12 +41,8 @@ void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
 
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
 
-uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer);
-
-uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position);
-
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
-void IHS_BufferAppend(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
+void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
 
 void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from);

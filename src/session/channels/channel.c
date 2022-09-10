@@ -140,7 +140,7 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok) {
     uint8_t body[4];
-    IHS_WriteUInt32LE(body, IHS_SessionPacketTimestamp(channel->session));
+    IHS_WriteUInt32LE(body, IHS_SessionPacketTimestamp());
     IHS_SessionChannelSendBytes(channel, ok ? IHS_SessionPacketTypeACK : IHS_SessionPacketTypeNACK, true, packetId,
                                 body, 4, 0);
 }

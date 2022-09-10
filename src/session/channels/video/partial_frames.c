@@ -2,45 +2,51 @@
 
 #include <stdlib.h>
 
-IHS_SessionVideoPartialFrame *IHS_SessionVideoPartialFramesInsertBefore(IHS_SessionVideoPartialFrames *frames,
-                                                                        IHS_SessionVideoPartialFrame *node) {
+static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+
+static void FreeNode(IHS_VideoPartialFrame *node);
+
+void IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
+                                        const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     assert (frames != NULL);
-    assert (node != NULL);
-    IHS_SessionVideoPartialFrame *inserted = calloc(1, sizeof(IHS_SessionVideoPartialFrame));
-    IHS_SessionVideoPartialFrame *prev = node->prev;
+    assert (before != NULL);
+    IHS_VideoPartialFrame *inserted = NewNode(header, data);
+
+    IHS_VideoPartialFrame *prev = before->prev;
     if (prev == NULL) {
-        assert(frames->head == node);
+        // Inserting to the start of the linked list
+        assert(frames->head == before);
         frames->head = inserted;
     } else {
         prev->next = inserted;
     }
-    node->prev = inserted;
+    before->prev = inserted;
 
     inserted->prev = prev;
-    inserted->next = node;
-    return inserted;
+    inserted->next = before;
 }
 
-IHS_SessionVideoPartialFrame *IHS_SessionVideoPartialFramesAppend(IHS_SessionVideoPartialFrames *frames) {
+void IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
+                                  IHS_Buffer *data) {
     assert (frames != NULL);
-    IHS_SessionVideoPartialFrame *inserted = calloc(1, sizeof(IHS_SessionVideoPartialFrame));
-    IHS_SessionVideoPartialFrame *oldHead = frames->head, *oldTail = frames->tail;
+    IHS_VideoPartialFrame *inserted = NewNode(header, data);
+
+    IHS_VideoPartialFrame *oldHead = frames->head, *oldTail = frames->tail;
     if (oldHead == NULL) {
+        // The frames must be empty
+        assert(oldTail == NULL);
         frames->head = inserted;
-    } else {
-        oldHead->next = inserted;
     }
     if (oldTail != NULL) {
         oldTail->next = inserted;
         inserted->prev = oldTail;
     }
     frames->tail = inserted;
-    return inserted;
 }
 
-void IHS_SessionVideoPartialFramesRemove(IHS_SessionVideoPartialFrames *frames, IHS_SessionVideoPartialFrame *node) {
-    IHS_SessionVideoPartialFrame *prev = node->prev;
-    IHS_SessionVideoPartialFrame *next = node->next;
+void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *node) {
+    IHS_VideoPartialFrame *prev = node->prev;
+    IHS_VideoPartialFrame *next = node->next;
     if (prev != NULL) {
         prev->next = next;
     } else {
@@ -51,5 +57,39 @@ void IHS_SessionVideoPartialFramesRemove(IHS_SessionVideoPartialFrames *frames, 
     } else {
         frames->tail = prev;
     }
+    free(node);
+}
+
+size_t IHS_VideoPartialFramesCount(const IHS_VideoPartialFrames *frames) {
+    size_t count = 0;
+    IHS_VideoPartialFrame *cur;
+    IHS_VideoPartialFramesForEach(cur, frames) {
+        count++;
+    }
+    return count;
+}
+
+void IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames) {
+    for (IHS_VideoPartialFrame *cur = frames->head; cur != NULL;) {
+        IHS_VideoPartialFrame *next = cur->next;
+        FreeNode(cur);
+        cur = next;
+    }
+    frames->head = NULL;
+    frames->tail = NULL;
+}
+
+static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
+    assert(header != NULL);
+    assert(data != NULL && data->data != NULL);
+    IHS_VideoPartialFrame *node = calloc(1, sizeof(IHS_VideoPartialFrame));
+    node->header = *header;
+    IHS_BufferTakeOwnership(&node->data, data);
+    return node;
+}
+
+static void FreeNode(IHS_VideoPartialFrame *node) {
+    assert(node != NULL);
+    IHS_BufferClear(&node->data, true);
     free(node);
 }

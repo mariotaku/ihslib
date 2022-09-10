@@ -144,10 +144,10 @@ void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet
         packet->header.srcConnectionId = session->state.connectionId;
         packet->header.dstConnectionId = session->state.hostConnectionId;
     }
-    packet->header.sendTimestamp = IHS_SessionPacketTimestamp(session);
+    packet->header.sendTimestamp = IHS_SessionPacketTimestamp();
 }
 
-uint32_t IHS_SessionPacketTimestamp(IHS_Session *session) {
+uint32_t IHS_SessionPacketTimestamp() {
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);
     uint64_t nsec = tp.tv_nsec * 65536 / 1000000000;

@@ -39,12 +39,12 @@ void IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, si
         size_t escapedCap = (len * 3) / 2 + 1;
         if (header->flags & VideoFrameFlagNeedStartSequence) {
             assert(len >= 1);
-            IHS_BufferAppend(buffer, startSeq, sizeof(startSeq));
+            IHS_BufferAppendMem(buffer, startSeq, sizeof(startSeq));
         }
         size_t escapedLen = EscapeNAL(IHS_BufferPointerForAppend(buffer, escapedCap), data, len);
         buffer->size += escapedLen;
     } else {
-        IHS_BufferAppend(buffer, data, len);
+        IHS_BufferAppendMem(buffer, data, len);
     }
 }
 

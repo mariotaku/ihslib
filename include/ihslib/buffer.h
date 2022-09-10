@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct IHS_Buffer {
@@ -36,3 +37,9 @@ typedef struct IHS_Buffer {
     size_t initialCapacity;
     size_t maxCapacity;
 } IHS_Buffer;
+
+uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer);
+
+uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position);
+
+void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len);

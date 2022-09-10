@@ -66,7 +66,7 @@ struct IHS_Session {
 
 void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId);
 
-uint32_t IHS_SessionPacketTimestamp(IHS_Session *session);
+uint32_t IHS_SessionPacketTimestamp();
 
 bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
 

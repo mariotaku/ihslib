@@ -92,10 +92,15 @@ uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     return IHS_BufferPointerAt(buffer, buffer->size);
 }
 
-void IHS_BufferAppend(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
+void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
     uint8_t *dst = IHS_BufferPointerForAppend(buffer, dataLen);
     memcpy(dst, data, dataLen);
     buffer->size += dataLen;
+}
+
+void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len) {
+    assert(len <= buffer->size);
+    memcpy(dest, buffer->data + buffer->offset, len);
 }
 
 void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from) {

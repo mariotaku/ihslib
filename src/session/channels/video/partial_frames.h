@@ -5,23 +5,28 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct IHS_SessionVideoPartialFrame {
+typedef struct IHS_VideoPartialFrame {
     IHS_VideoFrameHeader header;
     IHS_Buffer data;
-    struct IHS_SessionVideoPartialFrame *prev;
-    struct IHS_SessionVideoPartialFrame *next;
-} IHS_SessionVideoPartialFrame;
+    struct IHS_VideoPartialFrame *prev;
+    struct IHS_VideoPartialFrame *next;
+} IHS_VideoPartialFrame;
 
 typedef struct IHS_SessionVideoPartialFrames {
-    IHS_SessionVideoPartialFrame *head;
-    IHS_SessionVideoPartialFrame *tail;
-} IHS_SessionVideoPartialFrames;
+    IHS_VideoPartialFrame *head;
+    IHS_VideoPartialFrame *tail;
+} IHS_VideoPartialFrames;
 
-IHS_SessionVideoPartialFrame *IHS_SessionVideoPartialFramesInsertBefore(IHS_SessionVideoPartialFrames *frames,
-                                                                        IHS_SessionVideoPartialFrame *node);
+void IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
+                                        const IHS_VideoFrameHeader *header, IHS_Buffer *data);
 
-IHS_SessionVideoPartialFrame *IHS_SessionVideoPartialFramesAppend(IHS_SessionVideoPartialFrames *frames);
+void IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
+                                  IHS_Buffer *data);
 
-void IHS_SessionVideoPartialFramesRemove(IHS_SessionVideoPartialFrames *frames, IHS_SessionVideoPartialFrame *node);
+void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *node);
 
-#define IHS_SessionVideoPartialFramesForEach(a, b) for((a) = (b)->head; (a) != NULL; (a) = (a)->next)
+size_t IHS_VideoPartialFramesCount(const IHS_VideoPartialFrames *frames);
+
+void IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames);
+
+#define IHS_VideoPartialFramesForEach(a, b) for((a) = (b)->head; (a) != NULL; (a) = (a)->next)
