@@ -87,12 +87,12 @@ void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
                                 body, bodyLen, 0);
 }
 
-size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data) {
+size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const IHS_Buffer *data) {
     size_t offset = 0;
-    offset += IHS_ReadUInt16LE(&data[offset], &header->id);
-    offset += IHS_ReadUInt32LE(&data[offset], &header->timestamp);
-    offset += IHS_ReadUInt16LE(&data[offset], &header->inputMark);
-    offset += IHS_ReadUInt32LE(&data[offset], &header->inputRecvTimestamp);
+    offset += IHS_ReadUInt16LE(IHS_BufferPointerAt(data, offset), &header->id);
+    offset += IHS_ReadUInt32LE(IHS_BufferPointerAt(data, offset), &header->timestamp);
+    offset += IHS_ReadUInt16LE(IHS_BufferPointerAt(data, offset), &header->inputMark);
+    offset += IHS_ReadUInt32LE(IHS_BufferPointerAt(data, offset), &header->inputRecvTimestamp);
     return offset;
 }
 
@@ -137,7 +137,7 @@ static void ReceivedFrame(IHS_SessionChannelData *channel, IHS_SessionFrame *fra
     bool hasHeader = false;
     if (frame->body.size > IHS_SESSION_DATA_FRAME_HEADER_SIZE) {
         hasHeader = true;
-        size_t offset = IHS_SessionChannelDataFrameHeaderParse(&header, IHS_BufferPointer(&frame->body));
+        size_t offset = IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body);
         IHS_BufferOffsetBy(&frame->body, (int) offset);
     }
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;

@@ -242,7 +242,7 @@ static void PreprocessAndSubmit(IHS_SessionChannel *channel, IHS_Buffer *data, c
                     videoCh->frameBuffer.flags = 0;
                     videoCh->frameFinished = false;
                 }
-                return;
+                break;
             }
             if (partial->header.flags & VideoFrameFlagReserved1Increment) {
                 if (partial->header.flags & VideoFrameFlagFrameFinish) {

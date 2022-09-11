@@ -71,4 +71,4 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_Sessi
 
 void IHS_SessionChannelDataLost(IHS_SessionChannel *channel);
 
-size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const uint8_t *data);
+size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const IHS_Buffer *data);

@@ -83,8 +83,8 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     config.selected_video_codec = videoCodec;
 
     CStreamVideoMode availableVideoMode = CSTREAM_VIDEO_MODE__INIT;
-    availableVideoMode.width = 1280;
-    availableVideoMode.height = 720;
+    availableVideoMode.width = 1920;
+    availableVideoMode.height = 1080;
     PROTOBUF_C_SET_VALUE(availableVideoMode, refresh_rate_numerator, 5994);
     PROTOBUF_C_SET_VALUE(availableVideoMode, refresh_rate_denominator, 100);
 
