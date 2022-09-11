@@ -78,7 +78,7 @@ void IHS_BaseRun(IHS_Base *base) {
                     IHS_UDPSocketSend(base->socket, &item->send);
                     break;
                 default:
-                    IHS_BaseLog(base, IHS_BaseLogLevelFatal, "Unrecognized queue item %d", item->type);
+                    IHS_BaseLog(base, IHS_LogLevelFatal, "Queue", "Unrecognized queue item %d", item->type);
                     abort();
             }
         }
@@ -118,13 +118,13 @@ void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbac
     IHS_BaseUnlock(base);
 }
 
-void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *fmt, ...) {
+void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char *fmt, ...) {
     if (!base->callbacks.log) return;
     char buf[4096];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, 4095, fmt, args);
-    base->callbacks.log(level, buf);
+    base->callbacks.log(level, tag, buf);
     va_end(args);
 }
 

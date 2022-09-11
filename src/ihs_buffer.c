@@ -103,8 +103,12 @@ void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len) {
     memcpy(dest, buffer->data + buffer->offset, len);
 }
 
-void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from) {
-    *to = *from;
-    from->data = NULL;
-    IHS_BufferClear(from, false);
+void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
+    buffer->data = NULL;
+    IHS_BufferClear(buffer, false);
+}
+
+void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to) {
+    *to = *buffer;
+    IHS_BufferReleaseOwnership(buffer);
 }

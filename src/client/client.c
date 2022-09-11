@@ -145,7 +145,7 @@ bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
 
 static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {
     if (memcmp(data, PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
-        IHS_BaseLog(base, IHS_BaseLogLevelDebug, "Unrecognized packet!");
+        IHS_BaseLog(base, IHS_LogLevelDebug, "Client", "Unrecognized packet!");
         return;
     }
     size_t offset = sizeof(PACKET_MAGIC);

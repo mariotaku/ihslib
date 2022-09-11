@@ -57,15 +57,15 @@ void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStr
     IHS_UNUSED(header);
     assert(type == k_EStreamControlAuthenticationResponse);
     CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payload->size,
-                                                                            IHS_BufferPointer(payload));
+                                                                               IHS_BufferPointer(payload));
     OnAuthenticationResponse(channel, message);
     cauthentication_response_msg__free_unpacked(message, NULL);
 }
 
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message) {
     if (!message->has_result || message->result != CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED) {
-        IHS_BaseLog(&channel->session->base, IHS_BaseLogLevelError, "Failed to authenticate");
+        IHS_SessionLog(channel->session, IHS_LogLevelError, "Session", "Failed to authenticate");
         return;
     }
-    IHS_BaseLog(&channel->session->base, IHS_BaseLogLevelInfo, "Authenticated");
+    IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Session", "Authenticated");
 }

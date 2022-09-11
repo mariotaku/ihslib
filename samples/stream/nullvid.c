@@ -13,8 +13,7 @@ static int Start(IHS_Session *session, const IHS_StreamVideoConfig *config, void
 static void Stop(IHS_Session *session, void *context) {
 }
 
-static int Submit(IHS_Session *session, const uint8_t *data, size_t dataLen, IHS_StreamVideoFrameFlag flags,
-                  void *context) {
+static int Submit(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags, void *context) {
 
     return 0;
 }
@@ -25,3 +24,9 @@ const IHS_StreamVideoCallbacks VideoCallbacks = {
         .submit = Submit,
         .stop = Stop,
 };
+
+void VideoInit(int argc, char *argv[]) {
+}
+
+void VideoDeinit() {
+}

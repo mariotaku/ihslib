@@ -30,7 +30,7 @@ static int Submit(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFl
     g_assert(data->data != NULL);
     GstBuffer *buf = gst_buffer_new_wrapped_full(0, data->data, data->capacity, data->offset,
                                                  data->size, data->data, g_free);
-    data->data = NULL;
+    IHS_BufferReleaseOwnership(data);
     GstFlowReturn ret = gst_app_src_push_buffer(source, buf);
     g_assert(ret == GST_FLOW_OK);
     return 0;
@@ -42,3 +42,11 @@ const IHS_StreamVideoCallbacks VideoCallbacks = {
         .submit = Submit,
         .stop = Stop,
 };
+
+void VideoInit(int argc, char *argv[]) {
+    gst_init(&argc, &argv);
+}
+
+void VideoDeinit() {
+    gst_deinit();
+}

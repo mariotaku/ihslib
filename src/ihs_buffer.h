@@ -45,4 +45,4 @@ uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
 void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
 
-void IHS_BufferTakeOwnership(IHS_Buffer *to, IHS_Buffer *from);
+void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);

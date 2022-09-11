@@ -27,8 +27,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include <gst/gst.h>
-
 #include "ihslib.h"
 #include "stream.h"
 #include "common.h"
@@ -36,7 +34,7 @@
 
 static void InterruptHandler(int sig);
 
-static void LogPrint(IHS_LogLevel level, const char *message);
+static void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
 
 static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
 
@@ -53,15 +51,15 @@ static IHS_StreamInputCallbacks InputCallbacks = {
 
 
 int main(int argc, char *argv[]) {
-    gst_init(&argc, &argv);
     signal(SIGINT, InterruptHandler);
+    VideoInit(argc, argv);
 
     IHS_SessionConfig sessionConfig;
     if (!RequestStream(&sessionConfig)) {
         return -1;
     }
 
-    printf("Start Streaming, sessionKey[%u]=\"", sessionConfig.sessionKeyLen);
+    printf("Start Streaming, sessionKey[%zu]=\"", sessionConfig.sessionKeyLen);
     for (int i = 0; i < sessionConfig.sessionKeyLen; i++) {
         printf("%02x", sessionConfig.sessionKey[i]);
     }
@@ -81,6 +79,8 @@ int main(int argc, char *argv[]) {
     sessionExit:
     ActiveSession = NULL;
     IHS_SessionDestroy(session);
+
+    VideoDeinit();
     return 0;
 }
 
@@ -94,11 +94,23 @@ static void InterruptHandler(int sig) {
     IHS_SessionDisconnect(ActiveSession);
 }
 
-static void LogPrint(IHS_LogLevel level, const char *message) {
-    if (level >= IHS_BaseLogLevelWarn) {
-        fprintf(stderr, "%s\n", message);
-    } else {
-        fprintf(stdout, "%s\n", message);
+static void LogPrint(IHS_LogLevel level, const char *tag, const char *message) {
+    switch (level) {
+        case IHS_LogLevelInfo:
+            fprintf(stderr, "[IHS.%s]\x1b[36m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelWarn:
+            fprintf(stderr, "[IHS.%s]\x1b[33m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelError:
+            fprintf(stderr, "[IHS.%s]\x1b[31m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelFatal:
+            fprintf(stderr, "[IHS.%s]\x1b[41m %s\x1b[0m\n", tag, message);
+            break;
+        default:
+            fprintf(stderr, "[IHS.%s] %s\n", tag, message);
+            break;
     }
 }
 

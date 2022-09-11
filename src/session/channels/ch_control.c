@@ -31,7 +31,6 @@
 #include "crypto.h"
 #include "session/frame.h"
 #include "ch_discovery.h"
-#include "ch_data.h"
 
 #include "protobuf/discovery.pb-c.h"
 #include "client/client_pri.h"
@@ -80,7 +79,8 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     bool ret;
     const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
                                                                            type);
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Send control message: %s, id=%d", value->name, packetId);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Send control message: %s, id=%d", value->name,
+                   packetId);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
         uint8_t *payload = malloc(1 + cipherSize);
@@ -91,7 +91,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
                                     control->sendEncryptSequence++) != 0) {
             free(serialized);
             free(payload);
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Failed to encrypt payload\n");
+            IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Failed to encrypt payload\n");
             IHS_SessionDisconnect(channel->session);
             return false;
         }
@@ -141,7 +141,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
         case IHS_SessionPacketTypeReliable:
         case IHS_SessionPacketTypeReliableFrag:
             if (!IHS_SessionPacketsWindowAdd(window, packet)) {
-                IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Control frames window overflow");
+                IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Frames window overflow");
                 IHS_SessionDisconnect(channel->session);
             }
             IHS_SessionChannelPacketAck(channel, packet->header.packetId, true);
@@ -152,7 +152,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
             break;
         default:
             // Other packets should not come here
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "Unrecognized packet %u in Control Channel\n",
+            IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Unrecognized packet %u\n",
                            packet->header.type);
             IHS_SessionDisconnect(channel->session);
             break;
@@ -178,13 +178,13 @@ static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPack
                     break;
                 }
                 case IHS_SessionFrameDecryptSequenceMismatch: {
-                    IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn,
-                                   "Mismatched control message sequence. id=%d, retransmit=%d, type=%s",
+                    IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control",
+                                   "Mismatched message sequence. id=%d, retransmit=%d, type=%s",
                                    frame.header.packetId, frame.header.retransmitCount, ControlMessageTypeName(type));
                     break;
                 }
                 case IHS_SessionFrameDecryptFailed: {
-                    IHS_SessionLog(channel->session, IHS_BaseLogLevelWarn,
+                    IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control",
                                    "Failed to decrypt control message. id=%d, retransmit=%d, type=%s",
                                    frame.header.packetId, frame.header.retransmitCount, ControlMessageTypeName(type));
                     break;
@@ -266,7 +266,7 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
         case k_EStreamControlSetTitle: {
             CSetTitleMsg *message = IHS_UNPACK_BUFFER(cset_title_msg__unpack, payload);
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Set title: %s", message->text);
+            IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control", "Set title: %s", message->text);
             cset_title_msg__free_unpacked(message, NULL);
             break;
         }
@@ -274,7 +274,7 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlSetActivity:
             break;
         default: {
-            IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Unhandled control message: %s",
+            IHS_SessionLog(channel->session, IHS_LogLevelInfo,"Control", "Unhandled control message: %s",
                            ControlMessageTypeName(type));
             break;
         }
@@ -291,17 +291,17 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
 }
 
 static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message) {
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set client config. enable_video_hevc=%u",
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Set client config. enable_video_hevc=%u",
                    message->config->enable_video_hevc);
 }
 
 static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message) {
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set client config. spectator_mode=%u",
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Set client config. spectator_mode=%u",
                    message->enabled);
 }
 
 static void OnSetQoS(IHS_SessionChannel *channel, const CSetQoSMsg *message) {
-    IHS_SessionLog(channel->session, IHS_BaseLogLevelDebug, "Set QoS config. use_qos=%u",
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Set QoS config. use_qos=%u",
                    message->use_qos);
 }
 

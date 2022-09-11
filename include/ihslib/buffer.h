@@ -43,3 +43,9 @@ uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer);
 uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position);
 
 void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len);
+
+/**
+ * Set internal data pointer to NULL, so it will not be freed or accessed anymore
+ * @param buffer Buffer to release ownership
+ */
+void IHS_BufferReleaseOwnership(IHS_Buffer *buffer);

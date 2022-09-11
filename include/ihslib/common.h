@@ -73,22 +73,22 @@ typedef struct IHS_HostInfo {
 } IHS_HostInfo;
 
 typedef enum IHS_LogLevel {
-    IHS_BaseLogLevelDebug,
-    IHS_BaseLogLevelInfo,
+    IHS_LogLevelDebug,
+    IHS_LogLevelInfo,
     /**
      * Problem that can be self recovered
      */
-    IHS_BaseLogLevelWarn,
+    IHS_LogLevelWarn,
     /**
      * Error that should stop session
      */
-    IHS_BaseLogLevelError,
+    IHS_LogLevelError,
     /**
      * Irrecoverable error, and the process should be aborted
      */
-    IHS_BaseLogLevelFatal,
+    IHS_LogLevelFatal,
 } IHS_LogLevel;
 
-typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *message);
+typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *tag, const char *message);
 
 char *IHS_IPAddressToString(const IHS_IPAddress *address);

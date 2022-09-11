@@ -69,7 +69,7 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_Sessi
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     assert(dataCh->window != NULL);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-        IHS_SessionLog(channel->session, IHS_BaseLogLevelError, "%s channel packets overflow! Available: %u",
+        IHS_SessionLog(channel->session, IHS_LogLevelError, "Data", "%s channel packets overflow! Available: %u",
                        DataChannelName(channel->type), IHS_SessionPacketsWindowAvailable(dataCh->window));
         abort();
     }
@@ -100,14 +100,15 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
     IHS_BufferInit(&frame.body, 1024, 1024 * 1024);
-    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "Starting %s channel",
+    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "Starting %s channel",
                    DataChannelName(channel->base.type));
     if (!cls->start((IHS_SessionChannel *) channel)) {
-        IHS_SessionLog(channel->base.session, IHS_BaseLogLevelError, "Failed to start %s channel");
+        IHS_SessionLog(channel->base.session, IHS_LogLevelError, "Data", "Failed to start %s channel",
+                       DataChannelName(channel->base.type));
         IHS_SessionDisconnect(channel->base.session);
         return;
     }
-    IHS_SessionLog(channel->base.session, IHS_BaseLogLevelInfo, "%s channel started",
+    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "%s channel started",
                    DataChannelName(channel->base.type));
     while (!channel->interrupted) {
         for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));

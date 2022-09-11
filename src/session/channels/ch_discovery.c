@@ -97,11 +97,12 @@ static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *
 }
 
 static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+    (void) packet;
     IHS_Session *session = channel->session;
     if (session->callbacks.session && session->callbacks.session->disconnected) {
         session->callbacks.session->disconnected(session, session->callbackContexts.session);
     }
-    IHS_SessionLog(session, IHS_BaseLogLevelInfo, "Session disconnected");
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session disconnected");
     IHS_SessionChannel *control = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
     IHS_SessionChannelControlStopHeartbeat(control);
     IHS_SessionStop(session);

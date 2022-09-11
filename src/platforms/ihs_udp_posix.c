@@ -86,7 +86,7 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     }
 
     struct sockaddr_storage sender;
-    uint32_t senderlen = sizeof(sender);
+    socklen_t senderlen = sizeof(sender);
     ssize_t len;
     if ((len = recvfrom(s->fd, s->buf, 2048, 0, (struct sockaddr *) &sender, &senderlen)) <= 0) {
         return -1;
