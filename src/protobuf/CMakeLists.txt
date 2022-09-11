@@ -4,7 +4,6 @@ add_library(ihs-protobuf STATIC
         remoteplay.pb-c.c)
 target_include_directories(ihs-protobuf PRIVATE ../ PUBLIC SYSTEM ${PROTOBUF_C_INCLUDE_DIRS})
 target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_C_LIBRARIES})
-message(${PROTOBUF_C_INCLUDE_DIRS})
 
 # Don't include tools and samples if used as library
 if (IHSLIB_CODEGEN)

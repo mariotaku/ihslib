@@ -21,8 +21,6 @@ if (NOT MBEDTLS_FOUND)
     find_package(OpenSSL)
 endif ()
 
-add_subdirectory(src/protobuf)
-
 add_library(ihslib
         src/base.c
         src/crc32c.c
@@ -59,21 +57,17 @@ add_library(ihslib
         )
 
 target_include_directories(ihslib PUBLIC include PRIVATE src)
+
+add_subdirectory(src/protobuf)
 target_link_libraries(ihslib PRIVATE ihs-protobuf)
+
+add_subdirectory(src/platforms)
+target_link_libraries(ihslib PRIVATE ihs-platforms)
 
 if (SDL2_FOUND)
     target_sources(ihslib PRIVATE src/ihs_thread_sdl.c)
     target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_INCLUDE_DIRS})
     target_link_libraries(ihslib PUBLIC ${SDL2_LIBRARIES})
-endif ()
-
-if (UNIX)
-    target_sources(ihslib PRIVATE src/ihs_udp_posix.c)
-else ()
-    pkg_check_modules(SDL2_NET SDL2_net REQUIRED)
-    target_sources(ihslib PRIVATE src/ihs_udp_sdl.c)
-    target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_NET_INCLUDE_DIRS})
-    target_link_libraries(ihslib PUBLIC ${SDL2_NET_LIBRARIES})
 endif ()
 
 if (MBEDTLS_FOUND)

@@ -1,0 +1,11 @@
+add_library(ihs-platforms STATIC)
+target_include_directories(ihs-platforms PRIVATE ../ ../../include)
+
+if (UNIX)
+    target_sources(ihs-platforms PRIVATE ihs_udp_posix.c)
+else ()
+    pkg_check_modules(SDL2_NET SDL2_net REQUIRED)
+    target_sources(ihs-platforms PRIVATE ihs_udp_sdl.c)
+    target_include_directories(ihslib-platforms PRIVATE SYSTEM ${SDL2_NET_INCLUDE_DIRS})
+    target_link_libraries(ihslib-platforms PUBLIC ${SDL2_NET_LIBRARIES})
+endif ()

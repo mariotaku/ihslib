@@ -43,13 +43,15 @@ typedef struct IHS_SessionChannelVideo {
     uint16_t lastFrameId;
     uint16_t frameCounter;
     bool waitingKeyFrame;
-    bool frameFinished;
+    struct {
+        bool frameFinished;
+    } states;
     uint16_t partialReserved1;
     IHS_VideoPartialFrames partialFrames;
     struct {
-        IHS_Buffer data;
+        IHS_Buffer buffer;
         IHS_StreamVideoFrameFlag flags;
-    } frameBuffer;
+    } frame;
     IHS_Timer *statsTimer;
     IHS_Mutex *stateMutex;
 } IHS_SessionChannelVideo;
@@ -67,17 +69,33 @@ static void DataStop(IHS_SessionChannel *channel);
 
 static size_t VideoFrameHeaderParse(IHS_VideoFrameHeader *header, const uint8_t *data);
 
-static void PreprocessAndSubmit(IHS_SessionChannel *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header);
+/**
+ * Assemble one frame in the partial frames list
+ * @param channel Channel instance
+ * @return true if the frame is ready
+ */
+static bool AssembleFrame(IHS_SessionChannel *channel);
+
+static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
+                                const IHS_VideoFrameHeader *header);
+
+static void SubmitFrame(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags);
 
 static uint64_t ReportVideoStats(void *data);
 
-static void FlushPending(IHS_SessionChannelVideo *videoCh);
-
-static void AppendFrame(IHS_SessionChannelVideo *videoCh, IHS_Buffer *data, const IHS_VideoFrameHeader *header);
-
-static void Callback(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags);
-
+/**
+ * Append one data frame into partial video frames list
+ * @param channel Channel instance
+ * @param data Data frame body
+ * @param header Data frame header
+ */
 static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header);
+
+/**
+ * Clear partial video frames and not yet assembled frame data
+ * @param channel
+ */
+static void DiscardPending(IHS_SessionChannelVideo *channel);
 
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
@@ -123,7 +141,7 @@ static void ChannelVideoDeinit(IHS_SessionChannel *channel) {
     if (videoCh->config.codecData) {
         free(videoCh->config.codecData);
     }
-    IHS_BufferClear(&videoCh->frameBuffer.data, true);
+    IHS_BufferClear(&videoCh->frame.buffer, true);
     IHS_VideoPartialFramesClear(&videoCh->partialFrames);
 }
 
@@ -153,7 +171,7 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     IHS_MutexLock(videoCh->stateMutex);
 
     if (vhead.flags & VideoFrameFlagKeyFrame) {
-        FlushPending(videoCh);
+        DiscardPending(videoCh);
         videoCh->waitingKeyFrame = false;
         videoCh->expectedSequence = vhead.sequence;
         IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "Coming keyframe");
@@ -173,25 +191,31 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     }
     videoCh->expectedSequence += 1;
     videoCh->lastFrameId = header->id;
-    if (!videoCh->waitingKeyFrame) {
-        if (vhead.flags & VideoFrameFlagEncrypted) {
-            const IHS_SessionConfig *config = &channel->session->config;
-            IHS_Buffer plain;
-            IHS_BufferInit(&plain, 0, 0);
-            IHS_BufferEnsureCapacityExact(&plain, body->size);
-            size_t outLen = body->size;
-            IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size, EmptyIV, sizeof(EmptyIV),
-                                             config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),
-                                             &outLen);
-            plain.size = outLen;
-            PreprocessAndSubmit(channel, &plain, &vhead);
-            IHS_BufferClear(&plain, true);
-        } else {
-            PreprocessAndSubmit(channel, body, &vhead);
-        }
-        if (vhead.flags & VideoFrameFlagFrameFinish) {
-            videoCh->frameCounter++;
-        }
+    if (videoCh->waitingKeyFrame) {
+        goto unlock;
+    }
+    if (vhead.flags & VideoFrameFlagEncrypted) {
+        const IHS_SessionConfig *config = &channel->session->config;
+        IHS_Buffer plain;
+        IHS_BufferInit(&plain, 0, 0);
+        IHS_BufferEnsureCapacityExact(&plain, body->size);
+        size_t outLen = body->size;
+        IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size, EmptyIV, sizeof(EmptyIV),
+                                         config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),
+                                         &outLen);
+        plain.size = outLen;
+        AddPartialFrame(videoCh, &plain, &vhead);
+        IHS_BufferClear(&plain, true);
+    } else {
+        AddPartialFrame(videoCh, body, &vhead);
+    }
+
+    if (AssembleFrame(channel)) {
+        SubmitFrame(channel->session, &videoCh->frame.buffer, videoCh->frame.flags);
+        IHS_BufferClear(&videoCh->frame.buffer, false);
+        videoCh->frame.flags = 0;
+        videoCh->states.frameFinished = false;
+        videoCh->frameCounter++;
     }
     unlock:
     IHS_MutexUnlock(videoCh->stateMutex);
@@ -218,30 +242,14 @@ static size_t VideoFrameHeaderParse(IHS_VideoFrameHeader *header, const uint8_t 
     return offset;
 }
 
-
-static void PreprocessAndSubmit(IHS_SessionChannel *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header) {
+static bool AssembleFrame(IHS_SessionChannel *channel) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
-    AddPartialFrame(videoCh, data, header);
 
     IHS_VideoPartialFrame *partial = videoCh->partialFrames.head;
-    do {
-        bool middleOfFrame = false;
-        if (partial != NULL && !videoCh->frameFinished) {
-            middleOfFrame = true;
-        }
-        if (!middleOfFrame) {
-            goto DealWithFrameHead;
-        }
+    while (partial != NULL && !videoCh->states.frameFinished) {
         IHS_VideoPartialFrame *next = partial->next;
         if (partial->header.reserved2 != 0) {
             if (partial->header.reserved1 != videoCh->partialReserved1) {
-                DealWithFrameHead:
-                if (videoCh->frameFinished) {
-                    Callback(channel->session, &videoCh->frameBuffer.data, videoCh->frameBuffer.flags);
-                    IHS_BufferClear(&videoCh->frameBuffer.data, false);
-                    videoCh->frameBuffer.flags = 0;
-                    videoCh->frameFinished = false;
-                }
                 break;
             }
             if (partial->header.flags & VideoFrameFlagReserved1Increment) {
@@ -249,20 +257,19 @@ static void PreprocessAndSubmit(IHS_SessionChannel *channel, IHS_Buffer *data, c
                     videoCh->partialReserved1 = 0;
                 } else {
                     videoCh->partialReserved1 = partial->header.reserved2 + 1;
-                    IHS_SessionLog(channel->session, IHS_BaseLogLevelInfo, "partialReserved1 incremented from %u to %u",
-                                   partial->header.reserved2, videoCh->partialReserved1);
                 }
             }
         }
         // append buffer
-        AppendFrame(videoCh, &partial->data, &partial->header);
+        AppendToFrameBuffer(videoCh, &partial->data, &partial->header);
         if (partial->header.flags & VideoFrameFlagFrameFinish) {
-            videoCh->frameFinished = true;
+            videoCh->states.frameFinished = true;
         }
         IHS_BufferClear(&partial->data, true);
         IHS_VideoPartialFramesRemove(&videoCh->partialFrames, partial);
         partial = next;
-    } while (true);
+    }
+    return videoCh->states.frameFinished;
 }
 
 static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header) {
@@ -280,6 +287,31 @@ static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, 
     }
 }
 
+static void DiscardPending(IHS_SessionChannelVideo *channel) {
+    IHS_BufferClear(&channel->frame.buffer, 0);
+    channel->frame.flags = 0;
+    IHS_VideoPartialFramesClear(&channel->partialFrames);
+    channel->partialReserved1 = 0;
+}
+
+static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
+                                const IHS_VideoFrameHeader *header) {
+    assert (channel->config.codec == IHS_StreamVideoCodecH264);
+    IHS_SessionVideoFrameAppendH264(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+    if (header->flags & VideoFrameFlagKeyFrame) {
+        channel->frame.flags |= IHS_StreamVideoFrameKeyFrame;
+    }
+}
+
+static void SubmitFrame(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags) {
+    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+    if (callbacks == NULL || callbacks->submit == NULL) {
+        return;
+    }
+    void *context = session->callbackContexts.video;
+    callbacks->submit(session, data, flags, context);
+}
+
 static uint64_t ReportVideoStats(void *data) {
     IHS_SessionChannel *channel = data;
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
@@ -293,25 +325,4 @@ static uint64_t ReportVideoStats(void *data) {
     videoCh->frameCounter = 0;
     IHS_MutexUnlock(videoCh->stateMutex);
     return 1000;
-}
-
-static void FlushPending(IHS_SessionChannelVideo *videoCh) {
-    IHS_BufferClear(&videoCh->frameBuffer.data, 0);
-    videoCh->frameBuffer.flags = 0;
-    IHS_VideoPartialFramesClear(&videoCh->partialFrames);
-    videoCh->partialReserved1 = 0;
-}
-
-static void AppendFrame(IHS_SessionChannelVideo *videoCh, IHS_Buffer *data, const IHS_VideoFrameHeader *header) {
-    assert (videoCh->config.codec == IHS_StreamVideoCodecH264);
-    IHS_SessionVideoFrameAppendH264(&videoCh->frameBuffer.data, IHS_BufferPointer(data), data->size, header);
-    if (header->flags & VideoFrameFlagKeyFrame) {
-        videoCh->frameBuffer.flags |= IHS_StreamVideoFrameKeyFrame;
-    }
-}
-
-static void Callback(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags) {
-    const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
-    void *context = session->callbackContexts.video;
-    callbacks->submit(session, data, flags, context);
 }
