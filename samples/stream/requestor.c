@@ -46,7 +46,7 @@ static void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, co
 
 static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result, void *context);
 
-bool RequestStream(IHS_SessionConfig *config) {
+bool RequestStream(IHS_SessionInfo *info) {
     IHS_Client *client = IHS_ClientCreate(&clientConfig);
     IHS_ClientDiscoveryCallbacks discoveryCallbacks = {
             .discovered = OnHostStatus,
@@ -72,11 +72,11 @@ bool RequestStream(IHS_SessionConfig *config) {
         ret = false;
         goto exit;
     }
-    config->address = context.address;
-    config->sessionKeyLen = context.sessionKeyLen;
-    memcpy(config->sessionKey, context.sessionKey, context.sessionKeyLen);
-    config->steamId = 0;
-//    config->steamId = steamId;
+    info->address = context.address;
+    info->sessionKeyLen = context.sessionKeyLen;
+    memcpy(info->sessionKey, context.sessionKey, context.sessionKeyLen);
+    info->steamId = 0;
+//    info->steamId = steamId;
     ret = true;
 
     exit:

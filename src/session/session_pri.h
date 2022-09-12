@@ -40,7 +40,7 @@ typedef struct IHS_SessionState {
 
 struct IHS_Session {
     IHS_Base base;
-    IHS_SessionConfig config;
+    IHS_SessionInfo info;
     IHS_SessionState state;
     uint8_t numChannels;
     IHS_SessionChannel *channels[16];

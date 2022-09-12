@@ -36,7 +36,7 @@ static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthent
 void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel) {
     CAuthenticationRequestMsg request = CAUTHENTICATION_REQUEST_MSG__INIT;
     PROTOBUF_C_SET_VALUE(request, version, k_EStreamVersionCurrent);
-    PROTOBUF_C_SET_VALUE(request, steamid, channel->session->config.steamId);
+    PROTOBUF_C_SET_VALUE(request, steamid, channel->session->info.steamId);
     request.has_token = true;
     static const unsigned char plain[] = {'S', 't', 'e', 'a', 'm', ' ', 'I', 'n',
                                           '-', 'H', 'o', 'm', 'e', ' ', 'S', 't',

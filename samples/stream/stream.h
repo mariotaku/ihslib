@@ -35,7 +35,7 @@ extern const IHS_StreamVideoCallbacks VideoCallbacks;
 
 extern IHS_Session *ActiveSession;
 
-bool RequestStream(IHS_SessionConfig *config);
+bool RequestStream(IHS_SessionInfo *info);
 
 void VideoInit(int argc, char *argv[]);
 

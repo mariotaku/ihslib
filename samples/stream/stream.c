@@ -40,7 +40,7 @@ static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
 
 static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context);
 
-static void Negotiating(IHS_Session *session, IHS_NegotiationConfig *config, void *context);
+static void Configuring(IHS_Session *session, IHS_SessionConfig *config, void *context);
 
 static bool Running = true;
 
@@ -52,14 +52,14 @@ static IHS_StreamInputCallbacks InputCallbacks = {
 };
 
 static IHS_StreamSessionCallbacks SessionCallbacks = {
-        .negotiating = Negotiating,
+        .configuring = Configuring,
 };
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
     VideoInit(argc, argv);
 
-    IHS_SessionConfig sessionConfig;
+    IHS_SessionInfo sessionConfig;
     if (!RequestStream(&sessionConfig)) {
         return -1;
     }
@@ -128,6 +128,6 @@ static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *
     printf("Set cursor image: %d * %d\n", image->width, image->height);
 }
 
-static void Negotiating(IHS_Session *session, IHS_NegotiationConfig *config, void *context) {
+static void Configuring(IHS_Session *session, IHS_SessionConfig *config, void *context) {
     config->enableHevc = true;
 }

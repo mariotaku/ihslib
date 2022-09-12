@@ -45,8 +45,8 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
     uint8_t *iv = out;
     unsigned char ivLen = mbedtls_md_get_size(md);
 
-    const uint8_t *key = session->config.sessionKey;
-    const size_t keyLen = session->config.sessionKeyLen;
+    const uint8_t *key = session->info.sessionKey;
+    const size_t keyLen = session->info.sessionKeyLen;
 
     if ((ret = mbedtls_md_hmac(md, key, keyLen, plain, plainLen, iv)) != 0) {
         goto exit;
@@ -65,8 +65,8 @@ int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLe
 
 IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, const IHS_Buffer *in, IHS_Buffer *out,
                                                       uint64_t expectedSequence) {
-    const uint8_t *key = session->config.sessionKey;
-    const size_t keyLen = session->config.sessionKeyLen;
+    const uint8_t *key = session->info.sessionKey;
+    const size_t keyLen = session->info.sessionKeyLen;
     IHS_SessionFrameDecryptResult result = IHS_SessionFrameDecryptFailed;
     IHS_BufferEnsureMaxSizeExact(out, in->size);
     size_t outLen = IHS_BufferMaxSize(out);
@@ -111,8 +111,8 @@ int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t i
     if (*outLen < mdSize) {
         return MBEDTLS_ERR_MD_BAD_INPUT_DATA;
     }
-    const uint8_t *key = session->config.sessionKey;
-    const size_t keyLen = session->config.sessionKeyLen;
+    const uint8_t *key = session->info.sessionKey;
+    const size_t keyLen = session->info.sessionKeyLen;
     int ret;
     if ((ret = mbedtls_md_hmac(md, key, keyLen, in, inLen, out)) != 0) {
         return ret;

@@ -205,7 +205,7 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         goto unlock;
     }
     if (vhead.flags & VideoFrameFlagEncrypted) {
-        const IHS_SessionConfig *config = &channel->session->config;
+        const IHS_SessionInfo *config = &channel->session->info;
         IHS_Buffer plain;
         IHS_BufferInit(&plain, 0, 0);
         IHS_BufferEnsureMaxSizeExact(&plain, body->size);

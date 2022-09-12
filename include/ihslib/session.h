@@ -32,23 +32,23 @@
 
 typedef struct IHS_Session IHS_Session;
 
-typedef struct IHS_SessionConfig {
+typedef struct IHS_SessionInfo {
     IHS_SocketAddress address;
     uint8_t sessionKey[32];
     size_t sessionKeyLen;
     uint64_t steamId;
-} IHS_SessionConfig;
+} IHS_SessionInfo;
 
-typedef struct IHS_NegotiationConfig {
+typedef struct IHS_SessionConfig {
     bool enableHevc;
-} IHS_NegotiationConfig;
+} IHS_SessionConfig;
 
 typedef struct IHS_StreamSessionCallbacks {
     void (*initialized)(IHS_Session *session, void *context);
 
     void (*connecting)(IHS_Session *session, void *context);
 
-    void (*negotiating)(IHS_Session *session, IHS_NegotiationConfig *config, void *context);
+    void (*configuring)(IHS_Session *session, IHS_SessionConfig *config, void *context);
 
     void (*connected)(IHS_Session *session, void *context);
 
@@ -57,7 +57,7 @@ typedef struct IHS_StreamSessionCallbacks {
     void (*finalized)(IHS_Session *session, void *context);
 } IHS_StreamSessionCallbacks;
 
-IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig);
+IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionInfo *sessionInfo);
 
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 

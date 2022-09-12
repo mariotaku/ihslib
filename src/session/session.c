@@ -49,11 +49,11 @@ static const IHS_BaseRunCallbacks SessionRunCallbacks = {
         .finalized = SessionFinalized,
 };
 
-IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionConfig *sessionConfig) {
+IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionInfo *sessionInfo) {
     IHS_Session *session = calloc(1, sizeof(IHS_Session));
     IHS_BaseInit(&session->base, clientConfig, SessionRecvCallback, 0);
     IHS_BaseSetRunCallbacks(&session->base, &SessionRunCallbacks, session);
-    session->config = *sessionConfig;
+    session->info = *sessionInfo;
     session->numChannels = 3;
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
     session->channels[IHS_SessionChannelIdControl] = IHS_SessionChannelControlCreate(session);
@@ -152,7 +152,7 @@ uint32_t IHS_SessionPacketTimestamp() {
 }
 
 bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
-    const IHS_SessionConfig *config = &session->config;
+    const IHS_SessionInfo *config = &session->info;
     IHS_Buffer serialized;
     IHS_BufferInit(&serialized, 2048, 2048);
     IHS_SessionPacketSerialize(packet, &serialized);

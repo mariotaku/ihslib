@@ -60,13 +60,13 @@ void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStream
 }
 
 static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationInitMsg *message, uint16_t packetId) {
-    IHS_NegotiationConfig ihsConf = {
+    IHS_SessionConfig ihsConf = {
             .enableHevc = false
     };
 
     IHS_Session *session = channel->session;
-    if (session->callbacks.session && session->callbacks.session->negotiating) {
-        session->callbacks.session->negotiating(session, &ihsConf, session->callbackContexts.session);
+    if (session->callbacks.session && session->callbacks.session->configuring) {
+        session->callbacks.session->configuring(session, &ihsConf, session->callbackContexts.session);
     }
 
     EStreamAudioCodec audioCodec = k_EStreamAudioCodecNone;
