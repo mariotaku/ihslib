@@ -81,34 +81,29 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
                                                                            type);
     IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Send control message: %s, id=%d", value->name,
                    packetId);
+    IHS_SessionPacket packet;
+    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_BufferAppendUInt8(&packet.body, type);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
-        uint8_t *payload = malloc(1 + cipherSize);
-        payload[0] = type;
         uint8_t *serialized = calloc(1, messageCapacity);
         size_t serializedLen = protobuf_c_message_pack(message, serialized);
-        if (IHS_SessionFrameEncrypt(channel->session, serialized, serializedLen, &payload[1], &cipherSize,
+        uint8_t *cipher = IHS_BufferPointerForAppend(&packet.body, cipherSize);
+        if (IHS_SessionFrameEncrypt(channel->session, serialized, serializedLen, cipher, &cipherSize,
                                     control->sendEncryptSequence++) != 0) {
             free(serialized);
-            free(payload);
+            IHS_SessionPacketClear(&packet, true);
             IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Failed to encrypt payload\n");
             IHS_SessionDisconnect(channel->session);
             return false;
         }
         free(serialized);
-
-        size_t payloadSize = 1 + cipherSize;
-        ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
-                                          payload, payloadSize, 0);
-        free(payload);
+        packet.body.size += cipherSize;
     } else {
-        uint8_t *payload = malloc(1 + messageCapacity);
-        payload[0] = type;
-        size_t payloadSize = 1 + protobuf_c_message_pack(message, &payload[1]);
-        ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
-                                          payload, payloadSize, 0);
-        free(payload);
+        IHS_BufferAppendMessage(&packet.body, message);
     }
+    ret = IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionPacketClear(&packet, true);
     return ret;
 }
 

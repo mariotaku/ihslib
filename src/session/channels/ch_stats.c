@@ -25,6 +25,7 @@
 
 #include <malloc.h>
 #include "ch_stats.h"
+#include "ihs_buffer.h"
 
 
 static const IHS_SessionChannelClass ChannelClass = {
@@ -39,12 +40,11 @@ IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session) {
 
 bool IHS_SessionChannelStatsSend(IHS_SessionChannel *channel, EStreamStatsMessage type,
                                  const ProtobufCMessage *message, int32_t packetId) {
-    size_t messageCapacity = protobuf_c_message_get_packed_size(message);
-    uint8_t *payload = malloc(1 + messageCapacity);
-    payload[0] = type;
-    size_t payloadSize = 1 + protobuf_c_message_pack(message, &payload[1]);
-    bool ret = IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeReliable, true, packetId,
-                                           payload, payloadSize, 0);
-    free(payload);
+    IHS_SessionPacket packet;
+    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_BufferAppendUInt8(&packet.body, type);
+    IHS_BufferAppendMessage(&packet.body, message);
+    bool ret = IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionPacketClear(&packet, true);
     return ret;
 }

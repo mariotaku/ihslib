@@ -80,6 +80,8 @@ uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
 bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
                                         IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
+bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
+
 bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
                                  const uint8_t *body, size_t bodyLen, size_t padTo);
 

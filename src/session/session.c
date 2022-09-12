@@ -103,10 +103,15 @@ bool IHS_SessionConnect(IHS_Session *session) {
     IHS_BaseUnlock(&session->base);
 
     /* crc32c(b'Connect') */
-    uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
+    const static uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
 
     IHS_SessionChannel *discovery = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
-    return IHS_SessionChannelSendBytes(discovery, IHS_SessionPacketTypeConnect, false, 0, body, sizeof(body), 0);
+    IHS_SessionPacket packet;
+    IHS_SessionChannelPacketInitialize(discovery, &packet, IHS_SessionPacketTypeConnect, true, 0);
+    IHS_BufferAppendMem(&packet.body, body, sizeof(body));
+    bool ret = IHS_SessionSendPacket(session, &packet);
+    IHS_SessionPacketClear(&packet, true);
+    return ret;
 }
 
 void IHS_SessionDisconnect(IHS_Session *session) {

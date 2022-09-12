@@ -29,6 +29,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <protobuf-c/protobuf-c.h>
+
 #include "ihslib/buffer.h"
 #include "endianness.h"
 
@@ -84,8 +86,21 @@ inline static size_t IHS_BufferAppendUInt8(IHS_Buffer *buf, uint8_t value) {
     return 1;
 }
 
+inline static size_t IHS_BufferAppendUInt16LE(IHS_Buffer *buf, uint32_t value) {
+    IHS_WriteUInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
+    buf->size += 2;
+    return 2;
+}
+
 inline static size_t IHS_BufferAppendUInt32LE(IHS_Buffer *buf, uint32_t value) {
     IHS_WriteUInt32LE(IHS_BufferPointerForAppend(buf, 4), value);
     buf->size += 4;
-    return sizeof(uint32_t);
+    return 4;
+}
+
+inline static size_t IHS_BufferAppendMessage(IHS_Buffer *buf, const ProtobufCMessage *message) {
+    size_t size = protobuf_c_message_get_packed_size(message);
+    protobuf_c_message_pack(message, IHS_BufferPointerForAppend(buf, size));
+    buf->size += size;
+    return size;
 }

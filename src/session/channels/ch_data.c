@@ -78,13 +78,12 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPack
 
 void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
     CStreamDataLostMsg message = CSTREAM_DATA_LOST_MSG__INIT;
-    uint8_t body[128];
-    assert(1 + cstream_data_lost_msg__get_packed_size(&message) <= sizeof(body));
-    size_t bodyLen = 0;
-    body[bodyLen++] = k_EStreamDataLost;
-    bodyLen += cstream_data_lost_msg__pack(&message, &body[bodyLen]);
-    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT,
-                                body, bodyLen, 0);
+    IHS_SessionPacket packet;
+    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT);
+    IHS_BufferAppendUInt8(&packet.body, k_EStreamDataLost);
+    IHS_BufferAppendMessage(&packet.body, (const ProtobufCMessage *) &message);
+    IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionPacketClear(&packet, true);
 }
 
 size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const IHS_Buffer *data) {

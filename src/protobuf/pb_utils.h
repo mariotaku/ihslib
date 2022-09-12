@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include "ihs_buffer.h"
-
 #include <protobuf-c/protobuf-c.h>
 
 #define PROTOBUF_C_SET_VALUE(message, key, value) (message).has_##key = true; (message).key = (value)
@@ -35,9 +33,3 @@
 
 #define IHS_UNPACK_BUFFER_SIZE(unpack_fn, buffer, size) unpack_fn(NULL, (size), IHS_BufferPointer((buffer)))
 
-inline static size_t IHS_BufferAppendMessage(IHS_Buffer *buf, const ProtobufCMessage *message) {
-    size_t size = protobuf_c_message_get_packed_size(message);
-    protobuf_c_message_pack(message, IHS_BufferPointerForAppend(buf, size));
-    buf->size += size;
-    return size;
-}

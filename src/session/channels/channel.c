@@ -140,6 +140,10 @@ bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_Session
     return true;
 }
 
+bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
+    return IHS_SessionSendPacket(channel->session, packet);
+}
+
 bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
                                  const uint8_t *body, size_t bodyLen, size_t padTo) {
     IHS_Session *session = channel->session;
@@ -155,8 +159,10 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
 }
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok) {
-    uint8_t body[4];
-    IHS_WriteUInt32LE(body, IHS_SessionPacketTimestamp());
-    IHS_SessionChannelSendBytes(channel, ok ? IHS_SessionPacketTypeACK : IHS_SessionPacketTypeNACK, true, packetId,
-                                body, 4, 0);
+    IHS_SessionPacket packet;
+    IHS_SessionPacketType type = ok ? IHS_SessionPacketTypeACK : IHS_SessionPacketTypeNACK;
+    IHS_SessionChannelPacketInitialize(channel, &packet, type, true, packetId);
+    IHS_BufferAppendUInt32LE(&packet.body, IHS_SessionPacketTimestamp());
+    IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionPacketClear(&packet, true);
 }
