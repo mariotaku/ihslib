@@ -28,7 +28,7 @@
 #include "ch_control.h"
 
 #include "session/frame.h"
-#include "client/client_pri.h"
+#include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message);

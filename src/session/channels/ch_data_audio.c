@@ -29,6 +29,8 @@
 #include "ch_data_audio.h"
 #include "ch_data.h"
 
+#include "session/session_pri.h"
+
 typedef struct ChannelAudio {
     IHS_SessionChannelData base;
     IHS_StreamAudioConfig config;

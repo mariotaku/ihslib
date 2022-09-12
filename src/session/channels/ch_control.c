@@ -32,8 +32,7 @@
 #include "session/frame.h"
 #include "ch_discovery.h"
 
-#include "protobuf/discovery.pb-c.h"
-#include "client/client_pri.h"
+#include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
 static bool IsMessageEncrypted(EStreamControlMessage type);
@@ -81,29 +80,29 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
                                                                            type);
     IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Send control message: %s, id=%d", value->name,
                    packetId);
-    IHS_SessionPacket packet;
-    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
-    IHS_BufferAppendUInt8(&packet.body, type);
+    IHS_SessionFrame frame;
+    IHS_SessionChannelFrameInitialize(channel, &frame, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_BufferAppendUInt8(&frame.body, type);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);
         uint8_t *serialized = calloc(1, messageCapacity);
         size_t serializedLen = protobuf_c_message_pack(message, serialized);
-        uint8_t *cipher = IHS_BufferPointerForAppend(&packet.body, cipherSize);
+        uint8_t *cipher = IHS_BufferPointerForAppend(&frame.body, cipherSize);
         if (IHS_SessionFrameEncrypt(channel->session, serialized, serializedLen, cipher, &cipherSize,
                                     control->sendEncryptSequence++) != 0) {
             free(serialized);
-            IHS_SessionPacketClear(&packet, true);
+            IHS_SessionFrameClear(&frame, true);
             IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Failed to encrypt payload\n");
             IHS_SessionDisconnect(channel->session);
             return false;
         }
         free(serialized);
-        packet.body.size += cipherSize;
+        frame.body.size += cipherSize;
     } else {
-        IHS_BufferAppendMessage(&packet.body, message);
+        IHS_BufferAppendMessage(&frame.body, message);
     }
-    ret = IHS_SessionChannelSendPacket(channel, &packet);
-    IHS_SessionPacketClear(&packet, true);
+    ret = IHS_SessionChannelSendFrame(channel, &frame);
+    IHS_SessionFrameClear(&frame, true);
     return ret;
 }
 

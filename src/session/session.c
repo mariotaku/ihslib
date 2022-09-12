@@ -143,16 +143,6 @@ void IHS_SessionDestroy(IHS_Session *session) {
     free(session);
 }
 
-void IHS_SessionOutboundPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId) {
-    memset(packet, 0, sizeof(IHS_SessionPacket));
-    IHS_BufferInit(&packet->body, 2048, 2048);
-    if (sendConnId) {
-        packet->header.srcConnectionId = session->state.connectionId;
-        packet->header.dstConnectionId = session->state.hostConnectionId;
-    }
-    packet->header.sendTimestamp = IHS_SessionPacketTimestamp();
-}
-
 uint32_t IHS_SessionPacketTimestamp() {
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);

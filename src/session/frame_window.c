@@ -235,7 +235,7 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
 }
 
 void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame) {
-    IHS_BufferClear(&frame->body, false);
+    IHS_SessionFrameClear(frame, false);
 }
 
 uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window) {

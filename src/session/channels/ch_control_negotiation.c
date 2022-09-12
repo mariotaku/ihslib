@@ -28,6 +28,8 @@
 
 #include "ch_control.h"
 
+#include "session/session_pri.h"
+
 #include "protobuf/pb_utils.h"
 #include "protobuf/discovery.pb-c.h"
 

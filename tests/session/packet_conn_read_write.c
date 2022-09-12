@@ -19,8 +19,6 @@ int main(int argc, char *argv[]) {
     assert(packet.header.srcConnectionId == session.state.connectionId);
     assert(packet.header.dstConnectionId == session.state.hostConnectionId);
 
-    packet.header.sendTimestamp = IHS_SessionPacketTimestamp();
-
     uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
     IHS_BufferAppendMem(&packet.body, body, 4);
 

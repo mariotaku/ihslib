@@ -23,11 +23,12 @@
  *
  */
 
-#include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "protobuf/remoteplay.pb-c.h"
 #include "protobuf/pb_utils.h"
+
+#include "session/session_pri.h"
 
 #include "ch_discovery.h"
 #include "ch_control.h"

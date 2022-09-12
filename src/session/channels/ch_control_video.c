@@ -27,11 +27,9 @@
 #include <stdio.h>
 
 #include "ch_control.h"
-#include "client/client_pri.h"
 
-#include "protobuf/discovery.pb-c.h"
 #include "video/ch_data_video.h"
-
+#include "session/session_pri.h"
 
 void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamControlMessage type,
                                       IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {

@@ -27,8 +27,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "session_pri.h"
+
+#include "packet.h"
 #include "ihs_buffer.h"
+
+typedef struct IHS_Session IHS_Session;
 
 typedef struct IHS_SessionFramePacket {
     IHS_SessionPacketHeader header;
@@ -79,3 +82,5 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
                                                       uint64_t expectedSequence);
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen);
+
+void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData) ;

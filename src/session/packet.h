@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "ihslib/buffer.h"
+#include "ihs_buffer.h"
 
 typedef enum IHS_SessionPacketResult {
     IHS_SessionPacketResultOK = 0,
@@ -104,5 +104,7 @@ IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Bu
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo);
 
 size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest);
+
+size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet);
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData);

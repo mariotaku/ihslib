@@ -23,13 +23,14 @@
  *
  */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <mbedtls/md.h>
 
 #include "frame.h"
 #include "endianness.h"
 #include "crypto.h"
 
+#include "session_pri.h"
 
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence) {
@@ -81,12 +82,12 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
     int hmacRet;
     if ((hmacRet = mbedtls_md_hmac(md, key, keyLen, IHS_BufferPointerAt(out, 0), out->size, hash)) != 0) {
         result = IHS_SessionFrameDecryptFailed;
-        fprintf(stderr, "HMAC failed: %x\n", -hmacRet);
+        IHS_SessionLog(session, IHS_LogLevelWarn, "Crypto", "HMAC failed: %x\n", -hmacRet);
         goto exit;
     }
     if (memcmp(hash, IHS_BufferPointerAt(in, 0), 16) != 0) {
         result = IHS_SessionFrameDecryptHashMismatch;
-        fprintf(stderr, "HMAC mismatch\n");
+        IHS_SessionLog(session, IHS_LogLevelWarn, "Crypto", "HMAC mismatch\n");
         goto exit;
     }
 
@@ -118,4 +119,8 @@ int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t i
     }
     *outLen = mdSize;
     return ret;
+}
+
+void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData) {
+    IHS_BufferClear(&frame->body, freeData);
 }

@@ -27,7 +27,6 @@
 #include "ch_control.h"
 #include "base.h"
 #include "session/session_pri.h"
-#include "client/client_pri.h"
 
 static uint64_t SendKeepAlive(void *data);
 

@@ -29,6 +29,7 @@
 #include "ch_data.h"
 #include "client/client_pri.h"
 #include "endianness.h"
+#include "session/session_pri.h"
 
 static void DataThreadWorker(IHS_SessionChannelData *channel);
 

@@ -23,15 +23,17 @@
  *
  */
 
-#include <malloc.h>
-#include <memory.h>
+#include <stdlib.h>
 
 #include "session/channels/ch_data.h"
 #include "ch_data_video.h"
 #include "partial_frames.h"
 
+#include "ihs_timer.h"
+
 #include "crypto.h"
 #include "endianness.h"
+#include "session/session_pri.h"
 #include "session/channels/video/frame_h264.h"
 #include "session/channels/ch_stats.h"
 #include "protobuf/pb_utils.h"

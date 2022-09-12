@@ -26,11 +26,13 @@
 #include <malloc.h>
 #include <memory.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "channel.h"
 #include "session/session_pri.h"
 #include "endianness.h"
 #include "ihs_buffer.h"
+#include "session/frame.h"
 
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
@@ -120,28 +122,75 @@ uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {
     return channel->nextPacketId++;
 }
 
+bool IHS_SessionChannelPacketHeaderInitialize(IHS_SessionChannel *channel, IHS_SessionPacketHeader *header,
+                                              IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
+    memset(header, 0, sizeof(IHS_SessionPacketHeader));
+    const IHS_Session *session = channel->session;
+    if (type != IHS_SessionPacketTypeUnconnected) {
+        header->srcConnectionId = session->state.connectionId;
+        header->dstConnectionId = session->state.hostConnectionId;
+    }
+    header->sendTimestamp = IHS_SessionPacketTimestamp();
+    header->hasCrc = hasCrc;
+    header->type = type;
+
+    header->channelId = channel->id;
+    if (packetId == IHS_PACKET_ID_NEXT) {
+        header->packetId = IHS_SessionChannelNextPacketId(channel);
+    } else {
+        header->packetId = packetId;
+    }
+    return true;
+}
+
 bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
                                         IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
-    IHS_SessionOutboundPacketInitialize(channel->session, packet, type != IHS_SessionPacketTypeUnconnected);
-    packet->header.hasCrc = hasCrc;
-    packet->header.type = type;
+    IHS_SessionChannelPacketHeaderInitialize(channel, &packet->header, type, hasCrc, packetId);
+    IHS_BufferInit(&packet->body, 2048, 2048);
+
     // Reserve space for serialized header
     IHS_BufferFillMem(&packet->body, 0, 0, IHS_PACKET_HEADER_SIZE);
     IHS_BufferOffsetBy(&packet->body, IHS_PACKET_HEADER_SIZE);
 
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
+    return true;
+}
 
-    packet->header.channelId = channel->id;
-    if (packetId == IHS_PACKET_ID_NEXT) {
-        packet->header.packetId = IHS_SessionChannelNextPacketId(channel);
-    } else {
-        packet->header.packetId = packetId;
-    }
+bool IHS_SessionChannelFrameInitialize(IHS_SessionChannel *channel, IHS_SessionFrame *frame,
+                                       IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
+    IHS_SessionChannelPacketHeaderInitialize(channel, &frame->header, type, hasCrc, packetId);
+    IHS_BufferInit(&frame->body, 2048, 1024 * 1024);
+
+    // Reserve space for serialized header
+    IHS_BufferFillMem(&frame->body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(&frame->body, IHS_PACKET_HEADER_SIZE);
+
+    assert(frame->body.offset == IHS_PACKET_HEADER_SIZE);
     return true;
 }
 
 bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
     return IHS_SessionSendPacket(channel->session, packet);
+}
+
+bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame) {
+    size_t singlePacketSize = IHS_PACKET_HEADER_SIZE + frame->body.size;
+    if (frame->header.hasCrc) {
+        singlePacketSize += 4;
+    }
+    if (channel->session->state.mtu > 0 && singlePacketSize > channel->session->state.mtu) {
+        IHS_SessionLog(channel->session, IHS_LogLevelFatal, "Session", "Can't send packet larger than MTU");
+        abort();
+    } else if (singlePacketSize > 1536) {
+        IHS_SessionLog(channel->session, IHS_LogLevelFatal, "Session", "Can't send large packet before MTU known");
+        abort();
+    }
+    IHS_SessionPacket packet;
+    packet.header = frame->header;
+    IHS_BufferTransferOwnership(&frame->body, &packet.body);
+    bool ret = IHS_SessionSendPacket(channel->session, &packet);
+    IHS_SessionPacketClear(&packet, true);
+    return ret;
 }
 
 bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,

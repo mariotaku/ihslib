@@ -97,6 +97,10 @@ size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
     return dest->size;
 }
 
+size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
+    return IHS_PACKET_HEADER_SIZE + packet->body.size + (packet->header.hasCrc ? 4 : 0);
+}
+
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData) {
     IHS_BufferClear(&packet->body, freeData);
 }

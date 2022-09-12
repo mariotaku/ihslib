@@ -28,6 +28,7 @@
 #include "channel.h"
 #include "protobuf/remoteplay.pb-c.h"
 #include "session/frame.h"
+#include "ihs_thread.h"
 
 typedef struct IHS_SessionDataFrameHeader {
     uint16_t id;
