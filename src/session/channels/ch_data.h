@@ -67,7 +67,7 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapa
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel);
 
-void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
 void IHS_SessionChannelDataLost(IHS_SessionChannel *channel);
 

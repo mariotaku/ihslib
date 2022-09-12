@@ -73,10 +73,3 @@ inline static size_t IHS_ReadUInt64LE(const uint8_t *in, uint64_t *out) {
     memcpy(out, in, sizeof(uint64_t));
     return sizeof(uint64_t);
 }
-
-inline static size_t IHS_AppendUInt32LEToBuffer(ProtobufCBufferSimple *buf, uint32_t value) {
-    unsigned char bytes[4];
-    *((uint32_t *) bytes) = value;
-    protobuf_c_buffer_simple_append((ProtobufCBuffer *) buf, sizeof(uint32_t), bytes);
-    return sizeof(uint32_t);
-}

@@ -65,7 +65,7 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
     IHS_MutexDestroy(dataCh->lock);
 }
 
-void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     assert(dataCh->window != NULL);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {

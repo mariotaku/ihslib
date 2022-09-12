@@ -30,8 +30,25 @@
 #include <stdbool.h>
 
 #include "ihslib/buffer.h"
+#include "endianness.h"
 
 void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity);
+
+/*
+ * Read functions
+ */
+
+static inline size_t IHS_BufferMaxSize(const IHS_Buffer *buffer) {
+    return buffer->capacity - buffer->offset;
+}
+
+static inline bool IHS_BufferIsNull(const IHS_Buffer *buffer) {
+    return buffer->data == NULL;
+}
+
+/*
+ * Check functions
+ */
 
 void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity);
 
@@ -41,18 +58,28 @@ void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize);
 
 void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
 
+/*
+ * Write functions: Enough write space will be ensured
+ */
+
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
 
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
 
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
+void IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data);
+
 void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
 
 void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen);
 
+void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen);
+
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);
 
-static inline size_t IHS_BufferMaxSize(const IHS_Buffer *buffer) {
-    return buffer->capacity - buffer->offset;
+inline static size_t IHS_BufferAppendUInt32LE(IHS_Buffer *buf, uint32_t value) {
+    IHS_WriteUInt32LE(IHS_BufferPointerForAppend(buf, 4), value);
+    buf->size += 4;
+    return sizeof(uint32_t);
 }

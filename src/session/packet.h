@@ -72,12 +72,7 @@ typedef struct IHS_SessionPacketHeader {
 
 typedef struct IHS_SessionPacket {
     IHS_SessionPacketHeader header;
-    const uint8_t *body;
-    size_t bodyLen;
-    /**
-     * Padding between body and CRC
-     */
-    size_t bodyPad;
+    IHS_Buffer body;
     uint32_t crc;
 } IHS_SessionPacket;
 
@@ -108,6 +103,6 @@ IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Bu
 
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo);
 
-size_t IHS_SessionPacketSerialize(const IHS_SessionPacket *packet, uint8_t *dest);
+size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest);
 
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet);

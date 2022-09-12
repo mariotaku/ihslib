@@ -29,11 +29,38 @@
 #include <assert.h>
 #include <string.h>
 
+/*
+ * Setup functions
+ */
+
 void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity) {
     memset(buffer, 0, sizeof(IHS_Buffer));
     buffer->initialCapacity = initialCapacity;
     buffer->maxCapacity = maxCapacity;
 }
+
+/*
+ * Read functions
+ */
+
+uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer) {
+    return IHS_BufferPointerAt(buffer, 0);
+}
+
+uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position) {
+    assert(buffer->data != NULL);
+    assert(position >= 0 && position < IHS_BufferMaxSize(buffer));
+    return &buffer->data[buffer->offset + position];
+}
+
+void IHS_BufferReadMem(const IHS_Buffer *buffer, size_t position, uint8_t *dest, size_t len) {
+    assert(len <= buffer->size);
+    memcpy(dest, IHS_BufferPointerAt(buffer, position), len);
+}
+
+/*
+ * Check functions
+ */
 
 void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity) {
     if (buffer->maxCapacity > 0) {
@@ -69,6 +96,10 @@ void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
     IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize);
 }
 
+/*
+ * Write functions: Enough write space will be ensured
+ */
+
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData) {
     buffer->size = 0;
     buffer->offset = 0;
@@ -82,24 +113,23 @@ void IHS_BufferClear(IHS_Buffer *buffer, bool freeData) {
 }
 
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset) {
-    assert(offset <= buffer->size);
+    if (offset < 0) {
+        assert(-offset <= buffer->offset);
+    } else {
+        assert(offset <= buffer->size);
+    }
     buffer->offset += offset;
     buffer->size -= offset;
-}
-
-uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer) {
-    return IHS_BufferPointerAt(buffer, 0);
-}
-
-uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position) {
-    assert(position >= 0 && position < IHS_BufferMaxSize(buffer));
-    return &buffer->data[buffer->offset + position];
 }
 
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     size_t newSize = buffer->size + appendSize;
     IHS_BufferEnsureMaxSize(buffer, newSize);
     return IHS_BufferPointerAt(buffer, buffer->size);
+}
+
+void IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data) {
+    IHS_BufferAppendMem(buffer, IHS_BufferPointer(data), data->size);
 }
 
 void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
@@ -109,14 +139,17 @@ void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen
 }
 
 void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
+    IHS_BufferEnsureMaxSize(buffer, position + srcLen);
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
     memcpy(dst, src, srcLen);
     buffer->size = position + srcLen;
 }
 
-void IHS_BufferReadMem(const IHS_Buffer *buffer, size_t position, uint8_t *dest, size_t len) {
-    assert(len <= buffer->size);
-    memcpy(dest, IHS_BufferPointerAt(buffer, position), len);
+void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen) {
+    IHS_BufferEnsureMaxSize(buffer, position + fillLen);
+    uint8_t *dst = IHS_BufferPointerAt(buffer, position);
+    memset(dst, fill, fillLen);
+    buffer->size = position + fillLen;
 }
 
 void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {

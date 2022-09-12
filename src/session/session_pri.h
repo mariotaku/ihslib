@@ -64,10 +64,10 @@ struct IHS_Session {
 
 #define IHS_SessionLog(session, level, tag, ...) IHS_BaseLog((IHS_Base*) (session), (level), (tag), __VA_ARGS__)
 
-void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId);
+void IHS_SessionOutboundPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId);
 
 uint32_t IHS_SessionPacketTimestamp();
 
-bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet);
+bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
 
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message);

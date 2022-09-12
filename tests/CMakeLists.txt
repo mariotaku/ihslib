@@ -1,0 +1,10 @@
+function(ihs_add_test NAME SOURCES)
+    set(TEST_EXE "ihstest_${NAME}")
+    add_executable(${TEST_EXE} ${SOURCES})
+    add_test(${NAME} ${TEST_EXE})
+    target_include_directories(${TEST_EXE} PRIVATE ../include ../src)
+    target_link_libraries(${TEST_EXE} PRIVATE ihslib)
+    add_sanitizers(${TEST_EXE})
+endfunction()
+
+add_subdirectory(session)

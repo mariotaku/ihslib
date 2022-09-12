@@ -30,6 +30,7 @@
 #include "channel.h"
 #include "session/session_pri.h"
 #include "endianness.h"
+#include "ihs_buffer.h"
 
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
@@ -106,11 +107,13 @@ void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channel
     }
 }
 
-void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
     channel->cls->received(channel, packet);
 }
 
-void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
+    IHS_UNUSED(channel);
+    IHS_UNUSED(packet);
 }
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {
@@ -121,7 +124,7 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
                                  const uint8_t *body, size_t bodyLen, size_t padTo) {
     IHS_Session *session = channel->session;
     IHS_SessionPacket packet;
-    IHS_SessionPacketInitialize(session, &packet, type != IHS_SessionPacketTypeUnconnected);
+    IHS_SessionOutboundPacketInitialize(session, &packet, type != IHS_SessionPacketTypeUnconnected);
     packet.header.hasCrc = hasCrc;
     packet.header.type = type;
     packet.header.channelId = channel->id;
@@ -130,8 +133,10 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
     } else {
         packet.header.packetId = packetId;
     }
-    packet.body = body;
-    packet.bodyLen = bodyLen;
+    // Reserve space for serialized header
+    IHS_BufferFillMem(&packet.body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(&packet.body, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferAppendMem(&packet.body, body, bodyLen);
     if (padTo) {
         IHS_SessionPacketPadTo(&packet, padTo);
     }

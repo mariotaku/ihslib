@@ -27,6 +27,7 @@
 #include "packet.h"
 #include "endianness.h"
 #include "crc32c.h"
+#include "ihs_buffer.h"
 
 size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8_t *src) {
     size_t offset = 0;
@@ -60,45 +61,37 @@ size_t IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, u
 }
 
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src) {
-    size_t offset = 0;
-    offset += IHS_SessionPacketHeaderParse(&packet->header, IHS_BufferPointerAt(src, offset));
-    if (!offset) return IHS_SessionPacketResultBadHeader;
-    packet->bodyLen = src->size - offset;
+    memset(packet, 0, sizeof(IHS_SessionPacket));
+    size_t headLen = IHS_SessionPacketHeaderParse(&packet->header, IHS_BufferPointer(src));
+    if (!headLen) return IHS_SessionPacketResultBadHeader;
+    size_t bodyLen = src->size - headLen;
     if (packet->header.hasCrc) {
-        packet->bodyLen -= sizeof(uint32_t);
-        packet->body = IHS_BufferPointerAt(src, offset);
-    }
-    offset += packet->bodyLen;
-    if (packet->header.hasCrc) {
-        IHS_ReadUInt32LE(IHS_BufferPointerAt(src, offset), &packet->crc);
-        if (IHS_CRC32C(IHS_BufferPointerAt(src, 0), src->size - sizeof(uint32_t)) != packet->crc) {
+        bodyLen -= 4;
+        IHS_ReadUInt32LE(IHS_BufferPointerAt(src, headLen + bodyLen), &packet->crc);
+        if (IHS_CRC32C(IHS_BufferPointerAt(src, 0), headLen + bodyLen) != packet->crc) {
             return IHS_SessionPacketResultBadChecksum;
         }
     }
+    IHS_BufferOffsetBy(src, (int) headLen);
+    src->size = bodyLen;
+    IHS_BufferTransferOwnership(src, &packet->body);
     return IHS_SessionPacketResultOK;
 }
 
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo) {
-    size_t curSize = IHS_PACKET_HEADER_SIZE + packet->bodyLen;
+    size_t curSize = IHS_PACKET_HEADER_SIZE + packet->body.size;
     if (padTo <= curSize) return;
-    packet->bodyPad = padTo - curSize;
+    IHS_BufferFillMem(&packet->body, curSize, 0xFE, padTo - curSize);
 }
 
-size_t IHS_SessionPacketSerialize(const IHS_SessionPacket *packet, uint8_t *dest) {
-    size_t offset = 0;
-    offset += IHS_SessionPacketHeaderSerialize(&packet->header, &dest[offset]);
-    if (packet->bodyLen) {
-        memcpy(&dest[offset], packet->body, packet->bodyLen);
-        offset += packet->bodyLen;
-    }
-    memset(&dest[offset], 0xFE, packet->bodyPad);
-    offset += packet->bodyPad;
+size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
+    IHS_BufferTransferOwnership(&packet->body, dest);
+    IHS_BufferOffsetBy(dest, -IHS_PACKET_HEADER_SIZE);
+    assert(dest->offset == 0);
+    IHS_SessionPacketHeaderSerialize(&packet->header, IHS_BufferPointer(dest));
     if (packet->header.hasCrc) {
-        offset += IHS_WriteUInt32LE(&dest[offset], IHS_CRC32C(dest, offset));
+        uint32_t crc = IHS_CRC32C(IHS_BufferPointer(dest), dest->size);
+        IHS_WriteUInt32LE(IHS_BufferPointerForAppend(dest, 4), crc);
     }
-    return offset;
-}
-
-size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
-    return IHS_PACKET_HEADER_SIZE + packet->bodyLen + packet->bodyPad + (packet->header.hasCrc ? 4 : 0);
+    return dest->size;
 }

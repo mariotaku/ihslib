@@ -44,7 +44,7 @@ static void OnControlInit(IHS_SessionChannel *channel, const void *data);
 
 static void OnControlDeinit(IHS_SessionChannel *channel);
 
-static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
 static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, IHS_Buffer *payload,
                                      const IHS_SessionPacketHeader *header);
@@ -134,7 +134,7 @@ static void OnControlDeinit(IHS_SessionChannel *channel) {
     IHS_SessionPacketsWindowDestroy(control->framePacketWindow);
 }
 
-static void OnControlReceived(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     IHS_SessionPacketsWindow *window = control->framePacketWindow;
     switch (packet->header.type) {
@@ -274,7 +274,7 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlSetActivity:
             break;
         default: {
-            IHS_SessionLog(channel->session, IHS_LogLevelInfo,"Control", "Unhandled control message: %s",
+            IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control", "Unhandled control message: %s",
                            ControlMessageTypeName(type));
             break;
         }

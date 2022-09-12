@@ -151,12 +151,11 @@ void IHS_BaseFree(IHS_Base *base) {
     IHS_MutexDestroy(base->lock);
 }
 
-bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data, size_t dataLen) {
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, IHS_Buffer *data) {
     IHS_QueueItem *item = IHS_QueueItemObtain(base->queue);
     item->type = IHS_BaseQueueSend;
     item->send.address = address;
-    IHS_BufferEnsureMaxSize(&item->send.buffer, dataLen);
-    IHS_BufferWriteMem(&item->send.buffer, 0, data, dataLen);
+    IHS_BufferTransferOwnership(data, &item->send.buffer);
 
     IHS_QueueAppend(base->queue, item);
     if (base->socket != NULL) {

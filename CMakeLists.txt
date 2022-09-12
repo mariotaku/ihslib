@@ -81,3 +81,9 @@ endif ()
 if (IHSLIB_SAMPLES OR CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     add_subdirectory(samples)
 endif ()
+
+# Don't include tests by default if used as library
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    enable_testing()
+    add_subdirectory(tests)
+endif ()

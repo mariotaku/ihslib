@@ -69,6 +69,8 @@ struct IHS_Base {
     bool interrupted;
 };
 
+#define IHS_UNUSED(x) (void) (x)
+
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast);
 
 void IHS_BaseRun(IHS_Base *base);
@@ -87,7 +89,7 @@ void IHS_BaseThreadedJoin(IHS_Base *base);
 
 void IHS_BaseFree(IHS_Base *base);
 
-bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data, size_t dataLen);
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, IHS_Buffer *data);
 
 void IHS_BaseLock(IHS_Base *base);
 

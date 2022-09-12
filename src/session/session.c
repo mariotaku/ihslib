@@ -138,8 +138,9 @@ void IHS_SessionDestroy(IHS_Session *session) {
     free(session);
 }
 
-void IHS_SessionPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId) {
+void IHS_SessionOutboundPacketInitialize(IHS_Session *session, IHS_SessionPacket *packet, bool sendConnId) {
     memset(packet, 0, sizeof(IHS_SessionPacket));
+    IHS_BufferInit(&packet->body, 2048, 2048);
     if (sendConnId) {
         packet->header.srcConnectionId = session->state.connectionId;
         packet->header.dstConnectionId = session->state.hostConnectionId;
@@ -155,11 +156,12 @@ uint32_t IHS_SessionPacketTimestamp() {
     return sec + nsec;
 }
 
-bool IHS_SessionSendPacket(IHS_Session *session, const IHS_SessionPacket *packet) {
+bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
     const IHS_SessionConfig *config = &session->config;
-    uint8_t *data = alloca(IHS_SessionPacketSize(packet));
-    size_t dataSize = IHS_SessionPacketSerialize(packet, data);
-    return IHS_BaseSend(&session->base, config->address, data, dataSize);
+    IHS_Buffer serialized;
+    IHS_BufferInit(&serialized, 2048, 2048);
+    IHS_SessionPacketSerialize(packet, &serialized);
+    return IHS_BaseSend(&session->base, config->address, &serialized);
 }
 
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message) {

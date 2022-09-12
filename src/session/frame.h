@@ -32,8 +32,7 @@
 
 typedef struct IHS_SessionFramePacket {
     IHS_SessionPacketHeader header;
-    uint8_t *body;
-    size_t bodyLen;
+    IHS_Buffer body;
 } IHS_SessionFramePacket;
 
 typedef struct IHS_SessionPacketsWindow IHS_SessionPacketsWindow;
@@ -56,7 +55,7 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity);
 
 void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window);
 
-bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_SessionPacket *packet);
+bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPacket *packet);
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame);
 

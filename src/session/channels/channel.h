@@ -45,7 +45,7 @@ typedef struct IHS_SessionChannelClass {
 
     void (*deinit)(IHS_SessionChannel *channel);
 
-    void (*received)(struct IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+    void (*received)(struct IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
     size_t instanceSize;
 } IHS_SessionChannelClass;
@@ -71,9 +71,9 @@ void IHS_SessionChannelAdd(IHS_Session *session, IHS_SessionChannel *channel);
 
 void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channelId);
 
-void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+void IHS_SessionChannelReceivedPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
-void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
 

@@ -124,19 +124,23 @@ bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClient
     header.has_msg_type = 1;
     header.msg_type = type;
     size_t header_size = cmsg_remote_client_broadcast_header__get_packed_size(&header);
-    size_t payload_size = message ? protobuf_c_message_get_packed_size(message) : 0;
 
-    uint8_t pkt_data[1024];
-    ProtobufCBufferSimple buf = PROTOBUF_C_BUFFER_SIMPLE_INIT(pkt_data);
-    protobuf_c_buffer_simple_append((ProtobufCBuffer *) &buf, sizeof(PACKET_MAGIC), PACKET_MAGIC);
-    IHS_AppendUInt32LEToBuffer(&buf, header_size);
-    cmsg_remote_client_broadcast_header__pack_to_buffer(&header, (ProtobufCBuffer *) &buf);
-    IHS_AppendUInt32LEToBuffer(&buf, payload_size);
-    if (message) {
-        protobuf_c_message_pack_to_buffer(message, (ProtobufCBuffer *) &buf);
+    IHS_Buffer buf;
+    IHS_BufferInit(&buf, 1024, 2048);
+    IHS_BufferAppendMem(&buf, PACKET_MAGIC, sizeof(PACKET_MAGIC));
+    IHS_BufferAppendUInt32LE(&buf, header_size);
+    cmsg_remote_client_broadcast_header__pack(&header, IHS_BufferPointerForAppend(&buf, header_size));
+    buf.size += header_size;
+    if (message != NULL) {
+        size_t payload_size = protobuf_c_message_get_packed_size(message);
+        IHS_BufferAppendUInt32LE(&buf, payload_size);
+        protobuf_c_message_pack(message, IHS_BufferPointerForAppend(&buf, payload_size));
+        buf.size += payload_size;
+    } else {
+        IHS_BufferAppendUInt32LE(&buf, 0);
     }
 
-    return IHS_BaseSend(&client->base, address, buf.data, buf.len);
+    return IHS_BaseSend(&client->base, address, &buf);
 }
 
 bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,

@@ -57,7 +57,7 @@ static inline bool FrameItemIsHead(const IHS_SessionFramePacket *item);
 
 static inline bool FrameItemIsUsed(const IHS_SessionFramePacket *item);
 
-static inline void FrameItemCopy(IHS_SessionFramePacket *item, const IHS_SessionPacket *packet);
+static inline void FrameItemUsePacket(IHS_SessionFramePacket *item, IHS_SessionPacket *packet);
 
 static inline void FrameItemRecycle(IHS_SessionFramePacket *item);
 
@@ -89,7 +89,7 @@ void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
     free(window);
 }
 
-bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_SessionPacket *packet) {
+bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPacket *packet) {
     IHS_MutexLock(window->mutex);
     /* Calculate distance of 2 packets */
     int tailOffset = window->tail.pos < 0 ? 1 : ((int) packet->header.packetId) - window->tail.id;
@@ -125,7 +125,7 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, const IHS_Ses
         ret = true;
         goto unlock;
     }
-    FrameItemCopy(tailPkt, packet);
+    FrameItemUsePacket(tailPkt, packet);
 
     /* Only do incremental update */
     if (tailOffset > 0) {
@@ -170,14 +170,14 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
             ret = false;
             goto unlock;
         }
-        frameBodyLen += item->bodyLen;
+        frameBodyLen += item->body.size;
     }
     frame->header = head->header;
     IHS_BufferEnsureMaxSize(&frame->body, frameBodyLen);
 
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         IHS_SessionFramePacket *item = &window->data[i % window->capacity];
-        IHS_BufferAppendMem(&frame->body, item->body, item->bodyLen);
+        IHS_BufferAppend(&frame->body, &item->body);
 
         /* This item is used, recycle it */
         FrameItemRecycle(item);
@@ -278,17 +278,15 @@ static inline bool FrameItemIsHead(const IHS_SessionFramePacket *item) {
 }
 
 static inline bool FrameItemIsUsed(const IHS_SessionFramePacket *item) {
-    return item->body != NULL;
+    return !IHS_BufferIsNull(&item->body);
 }
 
-static inline void FrameItemCopy(IHS_SessionFramePacket *item, const IHS_SessionPacket *packet) {
+static inline void FrameItemUsePacket(IHS_SessionFramePacket *item, IHS_SessionPacket *packet) {
     item->header = packet->header;
-    item->bodyLen = packet->bodyLen;
-    item->body = malloc(packet->bodyLen);
-    memcpy(item->body, packet->body, packet->bodyLen);
+    IHS_BufferTransferOwnership(&packet->body, &item->body);
 }
 
 static inline void FrameItemRecycle(IHS_SessionFramePacket *item) {
-    free(item->body);
+    IHS_BufferClear(&item->body, true);
     memset(item, 0, sizeof(IHS_SessionFramePacket));
 }

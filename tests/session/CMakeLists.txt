@@ -1,0 +1,1 @@
+ihs_add_test(packet_serialization packet_serialization.c)
