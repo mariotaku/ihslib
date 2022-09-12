@@ -115,13 +115,14 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
     PROTOBUF_C_SET_VALUE(response, sequence, request->sequence);
     PROTOBUF_C_SET_VALUE(response, packet_size_received, IHS_PACKET_HEADER_SIZE + packet->body.size);
     size_t msgSize = cdiscovery_ping_response__get_packed_size(&response);
-    uint8_t *body = malloc(sizeof(uint8_t) + sizeof(uint32_t) + msgSize);
-    size_t bodyLen = 0;
-    body[bodyLen++] = k_EStreamDiscoveryPingResponse;
-    bodyLen += IHS_WriteUInt32LE(&body[bodyLen], msgSize);
-    bodyLen += cdiscovery_ping_response__pack(&response, &body[bodyLen]);
 
-    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeUnconnected, 1, 0, body, bodyLen,
-                                request->packet_size_requested);
-    free(body);
+    IHS_SessionPacket outPacket;
+    IHS_SessionChannelPacketInitialize(channel, &outPacket, IHS_SessionPacketTypeUnconnected, true, 0);
+    IHS_BufferAppendUInt8(&outPacket.body, k_EStreamDiscoveryPingResponse);
+    IHS_BufferAppendUInt32LE(&outPacket.body, msgSize);
+    IHS_BufferAppendMessage(&outPacket.body, (const ProtobufCMessage *) &response);
+
+    IHS_SessionPacketPadTo(&outPacket, request->packet_size_requested);
+    IHS_SessionSendPacket(channel->session, &outPacket);
+    IHS_SessionPacketClear(&outPacket, true);
 }

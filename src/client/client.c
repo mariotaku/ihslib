@@ -140,6 +140,7 @@ bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClient
         IHS_BufferAppendUInt32LE(&buf, 0);
     }
 
+    // buf.data WILL be owned in IHS_BaseSend, so no need to clear it
     return IHS_BaseSend(&client->base, address, &buf);
 }
 

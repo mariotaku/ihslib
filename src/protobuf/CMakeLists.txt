@@ -2,7 +2,7 @@ add_library(ihs-protobuf STATIC
         pb_utils.c
         discovery.pb-c.c
         remoteplay.pb-c.c)
-target_include_directories(ihs-protobuf PRIVATE ../ PUBLIC SYSTEM ${PROTOBUF_C_INCLUDE_DIRS})
+target_include_directories(ihs-protobuf PRIVATE ../ ../../include PUBLIC SYSTEM ${PROTOBUF_C_INCLUDE_DIRS})
 target_link_libraries(ihs-protobuf PUBLIC ${PROTOBUF_C_LIBRARIES})
 
 # Don't include tools and samples if used as library

@@ -5,6 +5,14 @@ project(ihslib C)
 set(CMAKE_C_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    option(IHSLIB_SAMPLES "Build Samples" ON)
+else ()
+    option(IHSLIB_SAMPLES "Build Samples" OFF)
+endif ()
+
+option(IHSLIB_SANITIZE_ADDRESS "Link Address Sanitizer" OFF)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SDL2 sdl2)
@@ -77,8 +85,14 @@ elseif (OPENSSL_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_openssl.c)
 endif ()
 
-# Don't include samples by default if used as library
-if (IHSLIB_SAMPLES OR CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+if (IHSLIB_SANITIZE_ADDRESS)
+    add_compile_definitions(IHSLIB_SANITIZE_ADDRESS)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+    link_libraries(asan)
+endif()
+
+if (IHSLIB_SAMPLES)
     add_subdirectory(samples)
 endif ()
 

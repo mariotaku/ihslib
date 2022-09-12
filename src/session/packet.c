@@ -81,7 +81,7 @@ IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Bu
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo) {
     size_t curSize = IHS_PACKET_HEADER_SIZE + packet->body.size;
     if (padTo <= curSize) return;
-    IHS_BufferFillMem(&packet->body, curSize, 0xFE, padTo - curSize);
+    IHS_BufferFillMem(&packet->body, packet->body.size, 0xFE, padTo - curSize);
 }
 
 size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
@@ -89,9 +89,14 @@ size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
     IHS_BufferOffsetBy(dest, -IHS_PACKET_HEADER_SIZE);
     assert(dest->offset == 0);
     IHS_SessionPacketHeaderSerialize(&packet->header, IHS_BufferPointer(dest));
+
     if (packet->header.hasCrc) {
         uint32_t crc = IHS_CRC32C(IHS_BufferPointer(dest), dest->size);
-        IHS_WriteUInt32LE(IHS_BufferPointerForAppend(dest, 4), crc);
+        IHS_BufferAppendUInt32LE(dest, crc);
     }
     return dest->size;
+}
+
+void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData) {
+    IHS_BufferClear(&packet->body, freeData);
 }

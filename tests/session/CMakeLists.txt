@@ -1,1 +1,2 @@
-ihs_add_test(packet_serialization packet_serialization.c)
+ihs_add_test(packet_conn_read_write packet_conn_read_write.c)
+ihs_add_test(packet_ping_resp packet_ping_resp.c)

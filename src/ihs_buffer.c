@@ -159,6 +159,13 @@ void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
 }
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to) {
+#ifndef IHSLIB_SANITIZE_ADDRESS
     *to = *buffer;
+#else
+    *to = *buffer;
+    to->data = malloc(buffer->capacity);
+    memcpy(to->data, buffer->data, buffer->capacity);
+    free(buffer->data);
+#endif
     IHS_BufferReleaseOwnership(buffer);
 }

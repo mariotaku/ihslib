@@ -78,6 +78,12 @@ void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);
 
+inline static size_t IHS_BufferAppendUInt8(IHS_Buffer *buf, uint8_t value) {
+    *IHS_BufferPointerForAppend(buf, 1) = value;
+    buf->size += 1;
+    return 1;
+}
+
 inline static size_t IHS_BufferAppendUInt32LE(IHS_Buffer *buf, uint32_t value) {
     IHS_WriteUInt32LE(IHS_BufferPointerForAppend(buf, 4), value);
     buf->size += 4;

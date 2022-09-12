@@ -161,6 +161,7 @@ bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
     IHS_Buffer serialized;
     IHS_BufferInit(&serialized, 2048, 2048);
     IHS_SessionPacketSerialize(packet, &serialized);
+    // serialized.data WILL be owned in IHS_BaseSend, so no need to clear it
     return IHS_BaseSend(&session->base, config->address, &serialized);
 }
 
@@ -182,6 +183,7 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
         return;
     }
     IHS_SessionChannelReceivedPacket(channel, &packet);
+    IHS_SessionPacketClear(&packet, true);
 }
 
 static void SessionInitialized(IHS_Base *base, void *context) {

@@ -120,27 +120,38 @@ uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel) {
     return channel->nextPacketId++;
 }
 
+bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
+                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
+    IHS_SessionOutboundPacketInitialize(channel->session, packet, type != IHS_SessionPacketTypeUnconnected);
+    packet->header.hasCrc = hasCrc;
+    packet->header.type = type;
+    // Reserve space for serialized header
+    IHS_BufferFillMem(&packet->body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(&packet->body, IHS_PACKET_HEADER_SIZE);
+
+    assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
+
+    packet->header.channelId = channel->id;
+    if (packetId == IHS_PACKET_ID_NEXT) {
+        packet->header.packetId = IHS_SessionChannelNextPacketId(channel);
+    } else {
+        packet->header.packetId = packetId;
+    }
+    return true;
+}
+
 bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
                                  const uint8_t *body, size_t bodyLen, size_t padTo) {
     IHS_Session *session = channel->session;
     IHS_SessionPacket packet;
-    IHS_SessionOutboundPacketInitialize(session, &packet, type != IHS_SessionPacketTypeUnconnected);
-    packet.header.hasCrc = hasCrc;
-    packet.header.type = type;
-    packet.header.channelId = channel->id;
-    if (packetId == IHS_PACKET_ID_NEXT) {
-        packet.header.packetId = IHS_SessionChannelNextPacketId(channel);
-    } else {
-        packet.header.packetId = packetId;
-    }
-    // Reserve space for serialized header
-    IHS_BufferFillMem(&packet.body, 0, 0, IHS_PACKET_HEADER_SIZE);
-    IHS_BufferOffsetBy(&packet.body, IHS_PACKET_HEADER_SIZE);
+    IHS_SessionChannelPacketInitialize(channel, &packet, type, hasCrc, packetId);
     IHS_BufferAppendMem(&packet.body, body, bodyLen);
     if (padTo) {
         IHS_SessionPacketPadTo(&packet, padTo);
     }
-    return IHS_SessionSendPacket(session, &packet);
+    bool ret = IHS_SessionSendPacket(session, &packet);
+    IHS_SessionPacketClear(&packet, true);
+    return ret;
 }
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok) {
