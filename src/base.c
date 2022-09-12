@@ -34,6 +34,7 @@
 #include "endianness.h"
 #include "crypto.h"
 #include "ihs_queue.h"
+#include "ihs_buffer.h"
 
 struct IHS_QueueItem {
     enum {
@@ -70,6 +71,8 @@ void IHS_BaseRun(IHS_Base *base) {
     if (base->callbacks.run && base->callbacks.run->initialized) {
         base->callbacks.run->initialized(base, base->callbackContexts.run);
     }
+    IHS_UDPPacket recv;
+    IHS_BufferInit(&recv.buffer, 2048, 2048);
     while (!base->interrupted) {
         IHS_TimersTick(base->timers);
         for (IHS_QueueItem *item; (item = IHS_QueuePoll(base->queue)) != NULL; IHS_QueueItemFree(base->queue, item)) {
@@ -82,15 +85,16 @@ void IHS_BaseRun(IHS_Base *base) {
                     abort();
             }
         }
-        IHS_UDPPacket recv;
         int ret;
         if ((ret = IHS_UDPSocketReceive(base->socket, &recv)) < 0) {
             break;
         }
         if (ret) {
-            base->callbacks.received(base, &recv.address, recv.buffer, recv.length);
+            base->callbacks.received(base, &recv.address, &recv.buffer);
         }
+        IHS_BufferClear(&recv.buffer, false);
     }
+    IHS_BufferClear(&recv.buffer, true);
     if (base->callbacks.run && base->callbacks.run->finalized) {
         base->callbacks.run->finalized(base, base->callbackContexts.run);
     }
@@ -151,9 +155,8 @@ bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const uint8_t *data
     IHS_QueueItem *item = IHS_QueueItemObtain(base->queue);
     item->type = IHS_BaseQueueSend;
     item->send.address = address;
-    item->send.length = dataLen;
-    item->send.buffer = malloc(dataLen);
-    memcpy(item->send.buffer, data, dataLen);
+    IHS_BufferEnsureMaxSize(&item->send.buffer, dataLen);
+    IHS_BufferWriteMem(&item->send.buffer, 0, data, dataLen);
 
     IHS_QueueAppend(base->queue, item);
     if (base->socket != NULL) {
@@ -173,7 +176,7 @@ void IHS_BaseUnlock(IHS_Base *base) {
 static void QueueItemDestroy(IHS_QueueItem *item) {
     switch (item->type) {
         case IHS_BaseQueueSend:
-            free(item->send.buffer);
+            IHS_BufferClear(&item->send.buffer, true);
             break;
     }
 }

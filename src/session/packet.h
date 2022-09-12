@@ -29,6 +29,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "ihslib/buffer.h"
+
 typedef enum IHS_SessionPacketResult {
     IHS_SessionPacketResultOK = 0,
     IHS_SessionPacketResultBadHeader = -1,
@@ -102,7 +104,7 @@ size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8
  */
 size_t IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, uint8_t *dest);
 
-IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, const uint8_t *src, size_t srcLen);
+IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src);
 
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo);
 

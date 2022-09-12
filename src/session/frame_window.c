@@ -173,7 +173,7 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         frameBodyLen += item->bodyLen;
     }
     frame->header = head->header;
-    IHS_BufferEnsureCapacity(&frame->body, frameBodyLen);
+    IHS_BufferEnsureMaxSize(&frame->body, frameBodyLen);
 
     for (int i = window->head.pos, j = window->head.pos + packetsCount; i < j; i++) {
         IHS_SessionFramePacket *item = &window->data[i % window->capacity];

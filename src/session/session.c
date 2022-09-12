@@ -38,7 +38,7 @@
 #include "session/channels/ch_stats.h"
 #include "crypto.h"
 
-static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len);
+static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data);
 
 static void SessionInitialized(IHS_Base *base, void *context);
 
@@ -167,10 +167,11 @@ bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage t
     return IHS_SessionChannelControlSend(channel, type, message, IHS_PACKET_ID_NEXT);
 }
 
-static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {
+static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data) {
+    (void) address;
     IHS_Session *session = (IHS_Session *) base;
     IHS_SessionPacket packet;
-    IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, data, len);
+    IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, data);
     if (ret != IHS_SessionPacketResultOK) {
         return;
     }

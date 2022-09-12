@@ -204,7 +204,7 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         const IHS_SessionConfig *config = &channel->session->config;
         IHS_Buffer plain;
         IHS_BufferInit(&plain, 0, 0);
-        IHS_BufferEnsureCapacityExact(&plain, body->size);
+        IHS_BufferEnsureMaxSizeExact(&plain, body->size);
         size_t outLen = body->size;
         IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size, EmptyIV, sizeof(EmptyIV),
                                          config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),

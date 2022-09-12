@@ -36,8 +36,7 @@
 
 typedef struct IHS_Base IHS_Base;
 
-typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data,
-                                        size_t len);
+typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *buffer);
 
 typedef struct IHS_BaseRunCallbacks {
     void (*initialized)(IHS_Base *base, void *context);

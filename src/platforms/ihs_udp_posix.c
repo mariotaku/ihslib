@@ -23,6 +23,7 @@
  *
  */
 #include "ihs_udp.h"
+#include "ihs_buffer.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,7 +38,6 @@
 struct IHS_UDPSocket {
     int fd;
     int pipe[2];
-    uint8_t buf[2048];
 };
 
 static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage *sys);
@@ -88,19 +88,21 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     struct sockaddr_storage sender;
     socklen_t senderlen = sizeof(sender);
     ssize_t len;
-    if ((len = recvfrom(s->fd, s->buf, 2048, 0, (struct sockaddr *) &sender, &senderlen)) <= 0) {
+    IHS_BufferEnsureMaxSize(&packet->buffer, 2048);
+    if ((len = recvfrom(s->fd, IHS_BufferPointer(&packet->buffer), IHS_BufferMaxSize(&packet->buffer),
+                        0, (struct sockaddr *) &sender, &senderlen)) <= 0) {
         return -1;
     }
+    packet->buffer.size = len;
     AddressFromSys(&packet->address, &sender);
-    packet->buffer = s->buf;
-    packet->length = len;
     return 1;
 }
 
 int IHS_UDPSocketSend(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     struct sockaddr_storage addr;
     size_t addr_len = AddressToSys(&packet->address, &addr);
-    return sendto(s->fd, packet->buffer, packet->length, 0, (struct sockaddr *) &addr, addr_len) > 0;
+    return sendto(s->fd, IHS_BufferPointer(&packet->buffer), packet->buffer.size, 0,
+                  (struct sockaddr *) &addr, addr_len) > 0;
 }
 
 int IHS_UDPSocketUnblock(IHS_UDPSocket *s) {

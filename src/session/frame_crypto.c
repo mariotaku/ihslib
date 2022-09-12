@@ -67,13 +67,14 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
     const uint8_t *key = session->config.sessionKey;
     const size_t keyLen = session->config.sessionKeyLen;
     IHS_SessionFrameDecryptResult result = IHS_SessionFrameDecryptFailed;
-    IHS_BufferEnsureCapacityExact(out, in->size);
-    out->size = out->capacity;
+    IHS_BufferEnsureMaxSizeExact(out, in->size);
+    size_t outLen = IHS_BufferMaxSize(out);
     if (IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointerAt(in, 16), in->size - 16,
                                          IHS_BufferPointerAt(in, 0), 16, key, keyLen,
-                                         IHS_BufferPointerAt(out, 0), &out->size) != 0) {
+                                         IHS_BufferPointerAt(out, 0), &outLen) != 0) {
         goto exit;
     }
+    out->size = outLen;
 
     const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_MD5);
     uint8_t hash[16];

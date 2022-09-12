@@ -23,6 +23,7 @@
  *
  */
 #include "ihs_udp.h"
+#include "ihs_buffer.h"
 
 #include <SDL.h>
 #include <SDL_net.h>
@@ -91,8 +92,7 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
         return ret;
     }
     AddressFromSDL(&packet->address, &socket->packet->address);
-    packet->buffer = socket->packet->data;
-    packet->length = socket->packet->len;
+    IHS_BufferAppendMem(&packet->buffer, socket->packet->data, socket->packet->len);
     return ret;
 }
 
@@ -100,8 +100,8 @@ int IHS_UDPSocketSend(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
     UDPpacket sdlPacket;
     SDL_memset(&sdlPacket, 0, sizeof(UDPpacket));
     AddressToSDL(&packet->address, &sdlPacket.address);
-    sdlPacket.data = packet->buffer;
-    sdlPacket.len = packet->length;
+    sdlPacket.data = IHS_BufferPointer(&packet->buffer);
+    sdlPacket.len = (int) packet->buffer.size;
     return SDLNet_UDP_Send(socket->socket, -1, &sdlPacket);
 }
 

@@ -59,19 +59,19 @@ size_t IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, u
     return offset;
 }
 
-IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, const uint8_t *src, size_t srcLen) {
+IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src) {
     size_t offset = 0;
-    offset += IHS_SessionPacketHeaderParse(&packet->header, src);
+    offset += IHS_SessionPacketHeaderParse(&packet->header, IHS_BufferPointerAt(src, offset));
     if (!offset) return IHS_SessionPacketResultBadHeader;
-    packet->bodyLen = srcLen - offset;
+    packet->bodyLen = src->size - offset;
     if (packet->header.hasCrc) {
         packet->bodyLen -= sizeof(uint32_t);
-        packet->body = &src[offset];
+        packet->body = IHS_BufferPointerAt(src, offset);
     }
     offset += packet->bodyLen;
     if (packet->header.hasCrc) {
-        IHS_ReadUInt32LE(&src[offset], &packet->crc);
-        if (IHS_CRC32C(src, srcLen - sizeof(uint32_t)) != packet->crc) {
+        IHS_ReadUInt32LE(IHS_BufferPointerAt(src, offset), &packet->crc);
+        if (IHS_CRC32C(IHS_BufferPointerAt(src, 0), src->size - sizeof(uint32_t)) != packet->crc) {
             return IHS_SessionPacketResultBadChecksum;
         }
     }

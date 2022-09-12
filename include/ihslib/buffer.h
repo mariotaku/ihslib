@@ -42,7 +42,7 @@ uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer);
 
 uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position);
 
-void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len);
+void IHS_BufferReadMem(const IHS_Buffer *buffer, size_t position, uint8_t *dest, size_t len);
 
 /**
  * Set internal data pointer to NULL, so it will not be freed or accessed anymore

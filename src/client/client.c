@@ -34,11 +34,13 @@
 #include "client_pri.h"
 #include "crypto.h"
 #include "base.h"
+#include "ihs_buffer.h"
+#include "protobuf/pb_utils.h"
 
 
 static const unsigned char PACKET_MAGIC[8] = {0xff, 0xff, 0xff, 0xff, 0x21, 0x4c, 0x5f, 0xa0};
 
-static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len);
+static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data);
 
 static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStreamingProgress + 1] = {
         &cmsg_remote_client_broadcast_discovery__descriptor,
@@ -52,7 +54,7 @@ static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStrea
         &cmsg_remote_device_proof_response__descriptor,
         &cmsg_remote_device_authorization_cancel_request__descriptor,
         &cmsg_remote_device_streaming_cancel_request__descriptor,
-        NULL,
+        &cmsg_remote_client_broadcast_client_iddeconflict__descriptor,
         &cmsg_remote_device_stream_transport_signal__descriptor,
         &cmsg_remote_device_streaming_progress__descriptor,
 };
@@ -143,22 +145,22 @@ bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
     return IHS_ClientSend(client, address, type, message);
 }
 
-static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, const uint8_t *data, size_t len) {
-    if (memcmp(data, PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
+static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data) {
+    if (memcmp(IHS_BufferPointer(data), PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
         IHS_BaseLog(base, IHS_LogLevelDebug, "Client", "Unrecognized packet!");
         return;
     }
-    size_t offset = sizeof(PACKET_MAGIC);
+    IHS_BufferOffsetBy(data, sizeof(PACKET_MAGIC));
     uint32_t header_size, payload_size;
-    offset += IHS_ReadUInt32LE((uint8_t *) &data[offset], &header_size);
-    CMsgRemoteClientBroadcastHeader *header = cmsg_remote_client_broadcast_header__unpack(NULL, header_size,
-                                                                                          &data[offset]);
-    offset += header_size;
-    offset += IHS_ReadUInt32LE((uint8_t *) &data[offset], &payload_size);
+    IHS_BufferOffsetBy(data, (int) IHS_ReadUInt32LE(IHS_BufferPointer(data), &header_size));
+    CMsgRemoteClientBroadcastHeader *header = IHS_UNPACK_BUFFER_SIZE(cmsg_remote_client_broadcast_header__unpack, data,
+                                                                     header_size);
+    IHS_BufferOffsetBy(data, (int) header_size);
+    IHS_BufferOffsetBy(data, (int) IHS_ReadUInt32LE(IHS_BufferPointer(data), &payload_size));
     ERemoteClientBroadcastMsg type = header->msg_type;
     const ProtobufCMessageDescriptor *descriptor = MessageDescriptors[type];
     ProtobufCMessage *message = descriptor ? protobuf_c_message_unpack(descriptor, NULL, payload_size,
-                                                                       &data[offset]) : NULL;
+                                                                       IHS_BufferPointer(data)) : NULL;
     IHS_Client *client = (IHS_Client *) base;
     switch (type) {
         case k_ERemoteClientBroadcastMsgDiscovery:

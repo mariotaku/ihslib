@@ -26,13 +26,13 @@
 #pragma once
 
 #include "ihslib/common.h"
+#include "ihslib/buffer.h"
 
 typedef struct IHS_UDPSocket IHS_UDPSocket;
 
 typedef struct IHS_UDPPacket {
     IHS_SocketAddress address;
-    uint8_t *buffer;
-    uint16_t length;
+    IHS_Buffer buffer;
 } IHS_UDPPacket;
 
 IHS_UDPSocket *IHS_UDPSocketOpen();

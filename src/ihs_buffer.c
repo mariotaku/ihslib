@@ -61,11 +61,21 @@ void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
     IHS_BufferEnsureCapacityExact(buffer, newCapacity);
 }
 
+void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize) {
+    IHS_BufferEnsureCapacityExact(buffer, buffer->offset + maxSize);
+}
+
+void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
+    IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize);
+}
+
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData) {
-    buffer->capacity = 0;
     buffer->size = 0;
     buffer->offset = 0;
-    if (freeData && buffer->data != NULL) {
+    if (buffer->data == NULL) {
+        assert(buffer->capacity == 0);
+    } else if (freeData) {
+        buffer->capacity = 0;
         free(buffer->data);
         buffer->data = NULL;
     }
@@ -82,13 +92,13 @@ uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer) {
 }
 
 uint8_t *IHS_BufferPointerAt(const IHS_Buffer *buffer, size_t position) {
-    assert(position >= 0 && position < (buffer->capacity - buffer->offset));
+    assert(position >= 0 && position < IHS_BufferMaxSize(buffer));
     return &buffer->data[buffer->offset + position];
 }
 
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     size_t newSize = buffer->size + appendSize;
-    IHS_BufferEnsureCapacity(buffer, buffer->offset + newSize);
+    IHS_BufferEnsureMaxSize(buffer, newSize);
     return IHS_BufferPointerAt(buffer, buffer->size);
 }
 
@@ -98,13 +108,20 @@ void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen
     buffer->size += dataLen;
 }
 
-void IHS_BufferCopyToMem(const IHS_Buffer *buffer, uint8_t *dest, size_t len) {
+void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
+    uint8_t *dst = IHS_BufferPointerAt(buffer, position);
+    memcpy(dst, src, srcLen);
+    buffer->size = position + srcLen;
+}
+
+void IHS_BufferReadMem(const IHS_Buffer *buffer, size_t position, uint8_t *dest, size_t len) {
     assert(len <= buffer->size);
-    memcpy(dest, buffer->data + buffer->offset, len);
+    memcpy(dest, IHS_BufferPointerAt(buffer, position), len);
 }
 
 void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
     buffer->data = NULL;
+    buffer->capacity = 0;
     IHS_BufferClear(buffer, false);
 }
 

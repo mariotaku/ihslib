@@ -37,6 +37,10 @@ void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity);
 
 void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity);
 
+void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize);
+
+void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
+
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
 
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
@@ -45,4 +49,10 @@ uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
 void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
 
+void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen);
+
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);
+
+static inline size_t IHS_BufferMaxSize(const IHS_Buffer *buffer) {
+    return buffer->capacity - buffer->offset;
+}
