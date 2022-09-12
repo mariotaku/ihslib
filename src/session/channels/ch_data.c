@@ -30,6 +30,8 @@
 #include "endianness.h"
 #include "session/session_pri.h"
 
+#include "ihs_buffer_ext.h"
+
 static void DataThreadWorker(IHS_SessionChannelData *channel);
 
 static void DataThreadInterrupt(IHS_SessionChannelData *channel);

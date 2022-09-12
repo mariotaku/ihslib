@@ -29,11 +29,12 @@
 #include <stdlib.h>
 
 #include "channel.h"
-#include "session/session_pri.h"
 #include "endianness.h"
 #include "ihs_buffer.h"
-#include "session/frame.h"
+#include "ihs_buffer_ext.h"
 
+#include "session/session_pri.h"
+#include "session/frame.h"
 
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
                                              IHS_SessionChannelType type, IHS_SessionChannelId id, const void *config) {

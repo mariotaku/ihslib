@@ -35,6 +35,8 @@
 #include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
+#include "ihs_buffer_ext.h"
+
 static bool IsMessageEncrypted(EStreamControlMessage type);
 
 static size_t EncryptedMessageCapacity(size_t plainSize);

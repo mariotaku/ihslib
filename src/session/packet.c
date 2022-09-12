@@ -28,6 +28,7 @@
 #include "endianness.h"
 #include "crc32c.h"
 #include "ihs_buffer.h"
+#include "ihs_buffer_ext.h"
 
 size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8_t *src) {
     size_t offset = 0;

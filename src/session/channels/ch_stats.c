@@ -26,7 +26,7 @@
 #include <malloc.h>
 #include "ch_stats.h"
 #include "ihs_buffer.h"
-
+#include "ihs_buffer_ext.h"
 
 static const IHS_SessionChannelClass ChannelClass = {
         .received = IHS_SessionChannelReceivedPacketNoop,

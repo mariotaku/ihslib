@@ -29,8 +29,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <protobuf-c/protobuf-c.h>
-
 #include "ihslib/buffer.h"
 #include "endianness.h"
 
@@ -79,34 +77,3 @@ void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src,
 void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen);
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);
-
-inline static size_t IHS_BufferAppendUInt8(IHS_Buffer *buf, uint8_t value) {
-    *IHS_BufferPointerForAppend(buf, 1) = value;
-    buf->size += 1;
-    return 1;
-}
-
-inline static size_t IHS_BufferAppendSInt16LE(IHS_Buffer *buf, int16_t value) {
-    IHS_WriteSInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
-    buf->size += 2;
-    return 2;
-}
-
-inline static size_t IHS_BufferAppendUInt16LE(IHS_Buffer *buf, uint16_t value) {
-    IHS_WriteUInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
-    buf->size += 2;
-    return 2;
-}
-
-inline static size_t IHS_BufferAppendUInt32LE(IHS_Buffer *buf, uint32_t value) {
-    IHS_WriteUInt32LE(IHS_BufferPointerForAppend(buf, 4), value);
-    buf->size += 4;
-    return 4;
-}
-
-inline static size_t IHS_BufferAppendMessage(IHS_Buffer *buf, const ProtobufCMessage *message) {
-    size_t size = protobuf_c_message_get_packed_size(message);
-    protobuf_c_message_pack(message, IHS_BufferPointerForAppend(buf, size));
-    buf->size += size;
-    return size;
-}

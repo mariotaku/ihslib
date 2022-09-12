@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <mbedtls/pk.h>
 #include <mbedtls/ctr_drbg.h>

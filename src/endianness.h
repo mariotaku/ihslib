@@ -32,7 +32,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <memory.h>
-#include <protobuf-c/protobuf-c.h>
 
 inline static size_t IHS_WriteUInt16LE(uint8_t *out, uint16_t value) {
     *(uint16_t *) out = value;

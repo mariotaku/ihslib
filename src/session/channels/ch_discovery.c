@@ -33,6 +33,7 @@
 #include "ch_discovery.h"
 #include "ch_control.h"
 #include "endianness.h"
+#include "ihs_buffer_ext.h"
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 

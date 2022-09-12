@@ -35,6 +35,7 @@
 #include "crypto.h"
 #include "base.h"
 #include "ihs_buffer.h"
+#include "ihs_buffer_ext.h"
 #include "protobuf/pb_utils.h"
 
 
