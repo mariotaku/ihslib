@@ -48,6 +48,8 @@ typedef enum IHS_SessionPacketType {
     IHS_SessionPacketTypeACK = 7,
     IHS_SessionPacketTypeNACK = 8,
     IHS_SessionPacketTypeDisconnect = 9,
+    IHS_SessionPacketTypeUnreliableNack = 10,
+    IHS_SessionPacketTypeMax,
 } IHS_SessionPacketType;
 
 typedef enum IHS_SessionChannelId {
@@ -84,20 +86,19 @@ typedef struct IHS_SessionPacket {
 #define IHS_PACKET_ID_NEXT (-1)
 
 /**
- *
+ * Parse packet from source buffer
  * @param header Packet header
  * @param src Source buffer
- * @return Size read (should be 12), 0 if failed
+ * @return Size read (should be 13), 0 if failed
  */
 size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8_t *src);
 
 /**
- *
+ * Write packet header to start of the buffer
  * @param header Packet header
  * @param dest Destination buffer
- * @return Size written (should be 12), 0 if failed
  */
-size_t IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, uint8_t *dest);
+void IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, IHS_Buffer *dest);
 
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src);
 

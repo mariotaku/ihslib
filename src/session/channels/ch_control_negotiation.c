@@ -60,6 +60,15 @@ void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStream
 }
 
 static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationInitMsg *message, uint16_t packetId) {
+    IHS_NegotiationConfig ihsConf = {
+            .enableHevc = false
+    };
+
+    IHS_Session *session = channel->session;
+    if (session->callbacks.session && session->callbacks.session->negotiating) {
+        session->callbacks.session->negotiating(session, &ihsConf, session->callbackContexts.session);
+    }
+
     EStreamAudioCodec audioCodec = k_EStreamAudioCodecNone;
     EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
     for (int i = 0; i < message->n_supported_audio_codecs; i++) {
@@ -70,7 +79,10 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     }
     for (int i = 0; i < message->n_supported_video_codecs; i++) {
         EStreamVideoCodec codec = message->supported_video_codecs[i];
-        if (codec == k_EStreamVideoCodecH264) {
+        if (ihsConf.enableHevc && codec == k_EStreamVideoCodecHEVC) {
+            videoCodec = codec;
+            break;
+        } else if (codec == k_EStreamVideoCodecH264) {
             videoCodec = codec;
         }
     }
@@ -107,6 +119,9 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
     PROTOBUF_C_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_bitrate_kbps, 30000);
+    if (ihsConf.enableHevc) {
+        PROTOBUF_C_SET_VALUE(clientConfig, enable_video_hevc, true);
+    }
 
     CStreamingClientCaps clientCaps = CSTREAMING_CLIENT_CAPS__INIT;
 
@@ -120,7 +135,9 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     PROTOBUF_C_SET_VALUE(clientCaps, system_can_suspend, true);
     PROTOBUF_C_SET_VALUE(clientCaps, maximum_decode_bitrate_kbps, 30000);
     PROTOBUF_C_SET_VALUE(clientCaps, maximum_burst_bitrate_kbps, 90000);
-    PROTOBUF_C_SET_VALUE(clientCaps, supports_video_hevc, false);
+    if (ihsConf.enableHevc) {
+        PROTOBUF_C_SET_VALUE(clientCaps, supports_video_hevc, true);
+    }
     PROTOBUF_C_SET_VALUE(clientCaps, form_factor, k_EStreamDeviceFormFactorTV);
 
     CNegotiationSetConfigMsg response = CNEGOTIATION_SET_CONFIG_MSG__INIT;

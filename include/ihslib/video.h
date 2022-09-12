@@ -63,11 +63,4 @@ typedef struct IHS_StreamVideoCallbacks {
     void (*stop)(IHS_Session *session, void *context);
 
     int (*setCaptureSize)(IHS_Session *session, int width, int height, void *context);
-
-    struct {
-        /**
-         * If true, multiple partial frames will be combined into one
-         */
-        bool full;
-    } config;
 } IHS_StreamVideoCallbacks;

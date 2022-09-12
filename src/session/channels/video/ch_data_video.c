@@ -34,9 +34,11 @@
 #include "crypto.h"
 #include "endianness.h"
 #include "session/session_pri.h"
-#include "session/channels/video/frame_h264.h"
 #include "session/channels/ch_stats.h"
 #include "protobuf/pb_utils.h"
+
+#include "frame_h264.h"
+#include "frame_hevc.h"
 
 typedef struct IHS_SessionChannelVideo {
     IHS_SessionChannelData base;
@@ -129,7 +131,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
     videoCh->config.codec = (IHS_StreamVideoCodec) message->codec;
     if (message->has_codec_data) {
         videoCh->config.codecDataLen = message->codec_data.len;
-        videoCh->config.codecData = malloc(message->codec_data.len);
+        videoCh->config.codecData = malloc(videoCh->config.codecDataLen);
         memcpy(videoCh->config.codecData, message->codec_data.data, message->codec_data.len);
     }
     videoCh->stateMutex = IHS_MutexCreate();
@@ -304,8 +306,19 @@ static void DiscardPending(IHS_SessionChannelVideo *channel) {
 
 static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
                                 const IHS_VideoFrameHeader *header) {
-    assert (channel->config.codec == IHS_StreamVideoCodecH264);
-    IHS_SessionVideoFrameAppendH264(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+    switch (channel->config.codec) {
+        case IHS_StreamVideoCodecH264:
+            IHS_SessionVideoFrameAppendH264(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+            break;
+        case IHS_StreamVideoCodecHEVC:
+            IHS_SessionVideoFrameAppendHEVC(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+            break;
+        default: {
+            IHS_SessionLog(((IHS_SessionChannel *) channel)->session, IHS_LogLevelFatal, "Video",
+                           "Unsupported codec %u", channel->config.codec);
+            abort();
+        }
+    }
     if (header->flags & VideoFrameFlagKeyFrame) {
         channel->frame.flags |= IHS_StreamVideoFrameKeyFrame;
     }

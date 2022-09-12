@@ -39,10 +39,16 @@ typedef struct IHS_SessionConfig {
     uint64_t steamId;
 } IHS_SessionConfig;
 
+typedef struct IHS_NegotiationConfig {
+    bool enableHevc;
+} IHS_NegotiationConfig;
+
 typedef struct IHS_StreamSessionCallbacks {
     void (*initialized)(IHS_Session *session, void *context);
 
     void (*connecting)(IHS_Session *session, void *context);
+
+    void (*negotiating)(IHS_Session *session, IHS_NegotiationConfig *config, void *context);
 
     void (*connected)(IHS_Session *session, void *context);
 

@@ -23,14 +23,14 @@
  *
  */
 
-#include "frame_h264.h"
+#include "frame_hevc.h"
 #include "ch_data_video.h"
 
 const static uint8_t startSeq[] = {0x00, 0x00, 0x00, 0x01};
 
 static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
 
-void IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, size_t len,
+void IHS_SessionVideoFrameAppendHEVC(IHS_Buffer *buffer, const uint8_t *data, size_t len,
                                      const IHS_VideoFrameHeader *header) {
     if (header->flags & VideoFrameFlagNeedEscape) {
         size_t escapedCap = (len * 3) / 2 + 1;

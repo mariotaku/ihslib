@@ -33,7 +33,7 @@ size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8
     size_t offset = 0;
     header->hasCrc = (src[offset] & 0x80) == 0x80;
     header->type = src[offset] & 0x7f;
-    if (header->type > IHS_SessionPacketTypeDisconnect) {
+    if (header->type >= IHS_SessionPacketTypeMax) {
         return 0;
     }
     offset += 1;
@@ -47,17 +47,19 @@ size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8
     return offset;
 }
 
-size_t IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, uint8_t *dest) {
+void IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, IHS_Buffer *dest) {
+    uint8_t serialized[IHS_PACKET_HEADER_SIZE];
     size_t offset = 0;
-    dest[offset++] = (header->hasCrc ? 0x80 : 0) | header->type & 0x7F;
-    dest[offset++] = header->retransmitCount;
-    dest[offset++] = header->srcConnectionId;
-    dest[offset++] = header->dstConnectionId;
-    dest[offset++] = header->channelId;
-    offset += IHS_WriteSInt16LE(&dest[offset], header->fragmentId);
-    offset += IHS_WriteUInt16LE(&dest[offset], header->packetId);
-    offset += IHS_WriteUInt32LE(&dest[offset], header->sendTimestamp);
-    return offset;
+    serialized[offset++] = (header->hasCrc ? 0x80 : 0) | header->type & 0x7F;
+    serialized[offset++] = header->retransmitCount;
+    serialized[offset++] = header->srcConnectionId;
+    serialized[offset++] = header->dstConnectionId;
+    serialized[offset++] = header->channelId;
+    offset += IHS_WriteSInt16LE(&serialized[offset], header->fragmentId);
+    offset += IHS_WriteUInt16LE(&serialized[offset], header->packetId);
+    offset += IHS_WriteUInt32LE(&serialized[offset], header->sendTimestamp);
+    assert(offset == IHS_PACKET_HEADER_SIZE);
+    IHS_BufferWriteMem(dest, 0, serialized, offset);
 }
 
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src) {
@@ -88,7 +90,7 @@ size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
     IHS_BufferTransferOwnership(&packet->body, dest);
     IHS_BufferOffsetBy(dest, -IHS_PACKET_HEADER_SIZE);
     assert(dest->offset == 0);
-    IHS_SessionPacketHeaderSerialize(&packet->header, IHS_BufferPointer(dest));
+    IHS_SessionPacketHeaderSerialize(&packet->header, dest);
 
     if (packet->header.hasCrc) {
         uint32_t crc = IHS_CRC32C(IHS_BufferPointer(dest), dest->size);

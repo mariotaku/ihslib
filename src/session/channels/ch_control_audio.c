@@ -28,7 +28,7 @@
 
 #include "ch_control.h"
 #include "ch_data_audio.h"
-#include "client/client_pri.h"
+#include "session/session_pri.h"
 
 #include "protobuf/pb_utils.h"
 #include "protobuf/discovery.pb-c.h"

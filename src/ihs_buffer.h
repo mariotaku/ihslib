@@ -86,7 +86,13 @@ inline static size_t IHS_BufferAppendUInt8(IHS_Buffer *buf, uint8_t value) {
     return 1;
 }
 
-inline static size_t IHS_BufferAppendUInt16LE(IHS_Buffer *buf, uint32_t value) {
+inline static size_t IHS_BufferAppendSInt16LE(IHS_Buffer *buf, int16_t value) {
+    IHS_WriteSInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
+    buf->size += 2;
+    return 2;
+}
+
+inline static size_t IHS_BufferAppendUInt16LE(IHS_Buffer *buf, uint16_t value) {
     IHS_WriteUInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
     buf->size += 2;
     return 2;

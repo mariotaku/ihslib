@@ -27,7 +27,6 @@
 #include <stdlib.h>
 
 #include "ch_data.h"
-#include "client/client_pri.h"
 #include "endianness.h"
 #include "session/session_pri.h"
 
@@ -69,10 +68,13 @@ void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
 void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     assert(dataCh->window != NULL);
+    IHS_SessionPacketType type = packet->header.type;
+    assert(type == IHS_SessionPacketTypeUnreliable || type == IHS_SessionPacketTypeUnreliableFrag);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-        IHS_SessionLog(channel->session, IHS_LogLevelError, "Data", "%s channel packets overflow! Available: %u",
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Data", "%s channel packets overflow! Available: %u",
                        DataChannelName(channel->type), IHS_SessionPacketsWindowAvailable(dataCh->window));
-        abort();
+        IHS_SessionPacketsWindowDiscard(dataCh->window, 0);
+        IHS_SessionChannelDataLost(channel);
     }
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
 }

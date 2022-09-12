@@ -10,9 +10,23 @@ GstAppSrc *source;
 
 static int Start(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context) {
     GError *error = NULL;
-    pipeline = gst_parse_launch(
-            "appsrc name=in ! h264parse ! avdec_h264 ! videoconvert ! autovideosink",
-            &error);
+    switch (config->codec) {
+        case IHS_StreamVideoCodecH264:
+            g_print("Start H264 pipeline\n");
+            pipeline = gst_parse_launch(
+                    "appsrc is-live=true name=in ! h264parse ! avdec_h264 ! videoconvert ! autovideosink",
+                    &error);
+            break;
+        case IHS_StreamVideoCodecHEVC:
+            g_print("Start HEVC pipeline\n");
+            pipeline = gst_parse_launch(
+                    "appsrc is-live=true name=in ! h265parse ! avdec_h265 ! videoconvert ! autovideosink",
+                    &error);
+            break;
+        default: {
+            abort();
+        }
+    }
     g_assert(pipeline != NULL);
     source = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(pipeline), "in"));
     g_assert(source != NULL);

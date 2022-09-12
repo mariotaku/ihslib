@@ -35,10 +35,12 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16],
-                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen, bool enc);
+static bool CheckPKCS7Pad(const uint8_t *data, uint8_t pad);
 
-static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc);
+static int CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16],
+                                  const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen, bool enc);
+
+static int CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc);
 
 
 int IHS_CryptoSymmetricEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
@@ -63,16 +65,16 @@ int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint
     int ret;
     if (withIV) {
         uint8_t *ivEnc = malloc(ivLen);
-        if ((ret = IHS_CryptoAES_ECB(iv, key, keyLen, ivEnc, true)) != 0) {
+        if ((ret = CryptoAES_ECB(iv, key, keyLen, ivEnc, true)) != 0) {
             free(ivEnc);
             return ret;
         }
-        memcpy(&out[offset], ivEnc, ivLen);
+        memcpy(out + offset, ivEnc, ivLen);
         free(ivEnc);
         offset += ivLen;
     }
     size_t cipherLen = *outLen - offset;
-    if ((ret = IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, &out[offset], &cipherLen, true)) != 0) {
+    if ((ret = CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, out + offset, &cipherLen, true)) != 0) {
         return ret;
     }
     offset += cipherLen;
@@ -83,14 +85,14 @@ int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint
 int IHS_CryptoSymmetricDecrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
                                size_t *outLen) {
     uint8_t iv[16];
-    IHS_CryptoAES_ECB(in, key, keyLen, iv, false);
+    CryptoAES_ECB(in, key, keyLen, iv, false);
     return IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen);
 }
 
 int IHS_CryptoSymmetricDecryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen) {
     assert(ivLen == 16);
-    return IHS_CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, out, outLen, false);
+    return CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, out, outLen, false);
 }
 
 
@@ -137,8 +139,8 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
     return ret;
 }
 
-static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16], const uint8_t *key,
-                                      size_t keyLen, uint8_t *out, size_t *outLen, bool enc) {
+static int CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t iv[16], const uint8_t *key,
+                                  size_t keyLen, uint8_t *out, size_t *outLen, bool enc) {
     int ret = 0;
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
@@ -154,7 +156,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
         for (size_t i = 0; i < writeLen; i += IHS_CRYPTO_AES_BLOCK_SIZE) {
             size_t inCopyLen = MIN(inLen - i, IHS_CRYPTO_AES_BLOCK_SIZE);
             if (inCopyLen > 0) {
-                memcpy(block, &in[i], inCopyLen);
+                memcpy(block, in + i, inCopyLen);
             }
             if (inCopyLen < IHS_CRYPTO_AES_BLOCK_SIZE) {
                 /* Perform PKCS7 padding */
@@ -174,7 +176,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
         }
         mbedtls_aes_setkey_dec(&aes, key, keyLen * 8);
         for (size_t i = 0; i < inLen; i += IHS_CRYPTO_AES_BLOCK_SIZE) {
-            memcpy(block, &in[i], IHS_CRYPTO_AES_BLOCK_SIZE);
+            memcpy(block, in + i, IHS_CRYPTO_AES_BLOCK_SIZE);
             ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, IHS_CRYPTO_AES_BLOCK_SIZE, blockIv, block, &out[i]);
             if (ret != 0) {
                 goto cleanup;
@@ -186,11 +188,9 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
             ret = -1;
             goto cleanup;
         }
-        for (size_t i = inLen - padLen; i < inLen; i++) {
-            if (out[i] != padLen) {
-                ret = -1;
-                goto cleanup;
-            }
+        if (!CheckPKCS7Pad(&out[inLen - padLen], padLen)) {
+            ret = -1;
+            goto cleanup;
         }
         *outLen = inLen - padLen;
     }
@@ -199,7 +199,7 @@ static int IHS_CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uin
     return ret;
 }
 
-static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc) {
+static int CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLen, uint8_t *out, bool enc) {
     int ret;
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
@@ -211,6 +211,15 @@ static int IHS_CryptoAES_ECB(const uint8_t *in, const uint8_t *key, size_t keyLe
     ret = mbedtls_aes_crypt_ecb(&aes, enc ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT, in, out);
     mbedtls_aes_free(&aes);
     return ret;
+}
+
+static bool CheckPKCS7Pad(const uint8_t *data, uint8_t pad) {
+    for (int i = 0; i < pad; i++) {
+        if (data[i] != pad) {
+            return false;
+        }
+    }
+    return true;
 }
 
 uint32_t IHS_CryptoRandomUInt32() {

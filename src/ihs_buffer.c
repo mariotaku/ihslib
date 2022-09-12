@@ -139,17 +139,23 @@ void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen
 }
 
 void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
-    IHS_BufferEnsureMaxSize(buffer, position + srcLen);
+    size_t writeEnd = position + srcLen;
+    IHS_BufferEnsureMaxSize(buffer, writeEnd);
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
     memcpy(dst, src, srcLen);
-    buffer->size = position + srcLen;
+    if (buffer->size < writeEnd) {
+        buffer->size = writeEnd;
+    }
 }
 
 void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen) {
-    IHS_BufferEnsureMaxSize(buffer, position + fillLen);
+    size_t fillEnd = position + fillLen;
+    IHS_BufferEnsureMaxSize(buffer, fillEnd);
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
     memset(dst, fill, fillLen);
-    buffer->size = position + fillLen;
+    if (buffer->size < fillEnd) {
+        buffer->size = fillEnd;
+    }
 }
 
 void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {

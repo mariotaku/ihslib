@@ -24,7 +24,7 @@
  */
 
 #include "session/channels/ch_control.h"
-#include "client/client_pri.h"
+#include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
 bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y) {
