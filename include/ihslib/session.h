@@ -54,6 +54,11 @@ typedef struct IHS_StreamSessionCallbacks {
 
     void (*disconnected)(IHS_Session *session, void *context);
 
+    /**
+     * All the resources and states has been destroyed. Nothing can be used beyond this call.
+     * @param session Session pointer
+     * @param context Callback context
+     */
     void (*finalized)(IHS_Session *session, void *context);
 } IHS_StreamSessionCallbacks;
 

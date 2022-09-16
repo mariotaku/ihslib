@@ -58,6 +58,8 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
     session->channels[IHS_SessionChannelIdControl] = IHS_SessionChannelControlCreate(session);
     session->channels[IHS_SessionChannelIdStats] = IHS_SessionChannelStatsCreate(session);
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session created. IP address: %s",
+                   IHS_IPAddressToString(&sessionInfo->address.ip));
     return session;
 }
 

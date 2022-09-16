@@ -43,6 +43,7 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     if (client->taskHandles.streaming) {
         return false;
     }
+    IHS_ClientLog(client, IHS_LogLevelInfo, "Client", "Begin sending streaming request to host %s", host->hostname);
     IHS_StreamingState *state = malloc(sizeof(IHS_StreamingState));
     state->client = client;
     state->host = *host;

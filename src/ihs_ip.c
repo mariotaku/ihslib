@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ihs_udp.h"
 
@@ -35,6 +36,23 @@ char *IHS_IPAddressToString(const IHS_IPAddress *address) {
             snprintf(result, 16, "%u.%u.%u.%u", address->v4.data[0], address->v4.data[1],
                      address->v4.data[2], address->v4.data[3]);
             return result;
+        }
+        default: {
+            abort();
+        }
+    }
+}
+
+int IHS_IPAddressCompare(const IHS_IPAddress *a, const IHS_IPAddress *b) {
+    if (a->family != b->family) {
+        return (int) a->family - (int) b->family;
+    }
+    switch (a->family) {
+        case IHS_IPAddressFamilyIPv4: {
+            return memcmp(&a->v4.data, &b->v4.data, 4);
+        }
+        case IHS_IPAddressFamilyIPv6: {
+            return memcmp(&a->v6.data, &b->v6.data, 16);
         }
         default: {
             abort();

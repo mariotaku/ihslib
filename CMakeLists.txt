@@ -33,7 +33,7 @@ add_library(ihslib
         src/base.c
         src/crc32c.c
         src/ihs_timer.c
-        src/ihs_udp.c
+        src/ihs_ip.c
         src/ihs_thread.c
         src/ihs_queue.c
         src/ihs_buffer.c

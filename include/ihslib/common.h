@@ -92,3 +92,5 @@ typedef enum IHS_LogLevel {
 typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *tag, const char *message);
 
 char *IHS_IPAddressToString(const IHS_IPAddress *address);
+
+int IHS_IPAddressCompare(const IHS_IPAddress *a, const IHS_IPAddress *b);
