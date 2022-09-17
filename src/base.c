@@ -29,7 +29,6 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <unistd.h>
 
 #include "endianness.h"
 #include "crypto.h"
@@ -38,7 +37,7 @@
 
 struct IHS_QueueItem {
     enum {
-        IHS_BaseQueueSend
+        IHS_BaseQueueSend,
     } type;
     union {
         IHS_UDPPacket send;
@@ -50,6 +49,7 @@ static void QueueItemDestroy(IHS_QueueItem *item);
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast) {
     memset(base, 0, sizeof(IHS_Base));
+    base->broadcast = broadcast;
     base->lock = IHS_MutexCreate();
     base->queue = IHS_QueueCreate(sizeof(IHS_QueueItem), QueueItemDestroy);
     base->timers = IHS_TimersCreate();
@@ -145,7 +145,7 @@ void IHS_BaseThreadedJoin(IHS_Base *base) {
     base->worker = NULL;
 }
 
-void IHS_BaseFree(IHS_Base *base) {
+void IHS_BaseDestroy(IHS_Base *base) {
     IHS_TimersDestroy(base->timers);
     IHS_QueueDestroy(base->queue);
     IHS_MutexDestroy(base->lock);

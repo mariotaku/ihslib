@@ -216,3 +216,10 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
     IHS_SessionChannelSendPacket(channel, &packet);
     IHS_SessionPacketClear(&packet, true);
 }
+
+void IHS_SessionChannelStop(IHS_SessionChannel *channel) {
+    if (channel->cls->stopped == NULL) {
+        return;
+    }
+    channel->cls->stopped(channel);
+}

@@ -87,3 +87,5 @@ void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCal
 void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context);
 
 void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context);
+
+const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session);

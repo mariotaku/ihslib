@@ -65,6 +65,7 @@ struct IHS_Base {
         void *run;
     } callbackContexts;
 
+    bool broadcast;
     IHS_UDPSocket *socket;
 
     IHS_Thread *worker;
@@ -92,7 +93,11 @@ void IHS_BaseStartWorker(IHS_Base *base, const char *name, IHS_ThreadFunction *w
 
 void IHS_BaseThreadedJoin(IHS_Base *base);
 
-void IHS_BaseFree(IHS_Base *base);
+/**
+ * Destroys resources allocated in base. The pointer will not be destroyed.
+ * @param base Base pointer
+ */
+void IHS_BaseDestroy(IHS_Base *base);
 
 bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, IHS_Buffer *data);
 

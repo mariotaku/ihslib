@@ -92,7 +92,7 @@ void IHS_ClientThreadedJoin(IHS_Client *client) {
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
-    IHS_BaseFree(&client->base);
+    IHS_BaseDestroy(&client->base);
     free(client);
 }
 

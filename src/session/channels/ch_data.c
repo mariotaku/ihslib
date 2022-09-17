@@ -91,6 +91,10 @@ void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
     IHS_SessionPacketClear(&packet, true);
 }
 
+void IHS_SessionChannelDataStopped(IHS_SessionChannel *channel) {
+    DataThreadInterrupt((IHS_SessionChannelData *) channel);
+}
+
 size_t IHS_SessionChannelDataFrameHeaderParse(IHS_SessionDataFrameHeader *header, const IHS_Buffer *data) {
     size_t offset = 0;
     offset += IHS_ReadUInt16LE(IHS_BufferPointerAt(data, offset), &header->id);
@@ -104,16 +108,14 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     IHS_SessionFrame frame;
     IHS_BufferInit(&frame.body, 1024, 1024 * 1024);
-    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "Starting %s channel",
-                   DataChannelName(channel->base.type));
+    const char *channelName = DataChannelName(channel->base.type);
+    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "Starting %s channel", channelName);
     if (!cls->start((IHS_SessionChannel *) channel)) {
-        IHS_SessionLog(channel->base.session, IHS_LogLevelError, "Data", "Failed to start %s channel",
-                       DataChannelName(channel->base.type));
+        IHS_SessionLog(channel->base.session, IHS_LogLevelError, "Data", "Failed to start %s channel", channelName);
         IHS_SessionDisconnect(channel->base.session);
         return;
     }
-    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "%s channel started",
-                   DataChannelName(channel->base.type));
+    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "%s channel started", channelName);
     while (!channel->interrupted) {
         for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
              IHS_SessionPacketsWindowPoll(channel->window, &frame);
@@ -121,11 +123,15 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
             ReceivedFrame(channel, &frame);
         }
     }
+    IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "Stopping %s channel", channelName);
     IHS_BufferClear(&frame.body, true);
     cls->stop((IHS_SessionChannel *) channel);
 }
 
 static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
+    if (channel->interrupted) {
+        return;
+    }
     IHS_MutexLock(channel->lock);
     channel->interrupted = true;
     IHS_MutexUnlock(channel->lock);

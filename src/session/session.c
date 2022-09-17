@@ -51,15 +51,16 @@ static const IHS_BaseRunCallbacks SessionRunCallbacks = {
 
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionInfo *sessionInfo) {
     IHS_Session *session = calloc(1, sizeof(IHS_Session));
-    IHS_BaseInit(&session->base, clientConfig, SessionRecvCallback, 0);
-    IHS_BaseSetRunCallbacks(&session->base, &SessionRunCallbacks, session);
+    IHS_BaseInit(&session->base, clientConfig, SessionRecvCallback, false);
+    IHS_BaseSetRunCallbacks(&session->base, &SessionRunCallbacks, NULL);
     session->info = *sessionInfo;
     session->numChannels = 3;
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
     session->channels[IHS_SessionChannelIdControl] = IHS_SessionChannelControlCreate(session);
     session->channels[IHS_SessionChannelIdStats] = IHS_SessionChannelStatsCreate(session);
-    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session created. IP address: %s",
-                   IHS_IPAddressToString(&sessionInfo->address.ip));
+    char *ipStr = IHS_IPAddressToString(&sessionInfo->address.ip);
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session created. IP address: %s", ipStr);
+    free(ipStr);
     return session;
 }
 
@@ -127,10 +128,14 @@ void IHS_SessionRun(IHS_Session *session) {
 
 void IHS_SessionStop(IHS_Session *session) {
     IHS_BaseStop(&session->base);
+    for (int i = session->numChannels - 1; i >= 0; --i) {
+        IHS_SessionChannelStop(session->channels[i]);
+    }
 }
 
 void IHS_SessionThreadedRun(IHS_Session *session) {
     IHS_BaseStartWorker(&session->base, "IHSSession", (IHS_ThreadFunction *) IHS_SessionRun);
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session thread exited");
 }
 
 void IHS_SessionThreadedJoin(IHS_Session *session) {
@@ -141,7 +146,8 @@ void IHS_SessionDestroy(IHS_Session *session) {
     for (int i = 0; i < session->numChannels; ++i) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
-    IHS_BaseFree(&session->base);
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Destroying session, bye!");
+    IHS_BaseDestroy(&session->base);
     free(session);
 }
 
@@ -167,6 +173,10 @@ bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage t
     return IHS_SessionChannelControlSend(channel, type, message, IHS_PACKET_ID_NEXT);
 }
 
+const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session) {
+    return &session->info;
+}
+
 static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data) {
     (void) address;
     IHS_Session *session = (IHS_Session *) base;
@@ -184,15 +194,17 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
 }
 
 static void SessionInitialized(IHS_Base *base, void *context) {
+    (void) context;
     IHS_Session *session = (IHS_Session *) base;
     if (session->callbacks.session && session->callbacks.session->initialized) {
-        session->callbacks.session->initialized(session, context);
+        session->callbacks.session->initialized(session, session->callbackContexts.session);
     }
 }
 
 static void SessionFinalized(IHS_Base *base, void *context) {
+    (void) context;
     IHS_Session *session = (IHS_Session *) base;
     if (session->callbacks.session && session->callbacks.session->finalized) {
-        session->callbacks.session->finalized(session, context);
+        session->callbacks.session->finalized(session, session->callbackContexts.session);
     }
 }

@@ -51,6 +51,7 @@ static const IHS_SessionChannelDataClass ChannelClass = {
                 .init = ChannelAudioInit,
                 .deinit = ChannelAudioDeinit,
                 .received = IHS_SessionChannelDataReceived,
+                .stopped = IHS_SessionChannelDataStopped,
                 .instanceSize = sizeof(ChannelAudio)
         },
         .start = DataStart,

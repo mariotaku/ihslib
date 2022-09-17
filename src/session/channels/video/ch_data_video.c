@@ -106,6 +106,7 @@ static const IHS_SessionChannelDataClass ChannelClass = {
                 .init = ChannelVideoInit,
                 .deinit = ChannelVideoDeinit,
                 .received = IHS_SessionChannelDataReceived,
+                .stopped = IHS_SessionChannelDataStopped,
                 .instanceSize = sizeof(IHS_SessionChannelVideo)
         },
         .start = DataStart,

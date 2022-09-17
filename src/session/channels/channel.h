@@ -46,7 +46,9 @@ typedef struct IHS_SessionChannelClass {
 
     void (*deinit)(IHS_SessionChannel *channel);
 
-    void (*received)(struct IHS_SessionChannel *channel, IHS_SessionPacket *packet);
+    void (*received)(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
+
+    void (*stopped)(IHS_SessionChannel *channel);
 
     size_t instanceSize;
 } IHS_SessionChannelClass;
@@ -82,7 +84,7 @@ bool IHS_SessionChannelPacketHeaderInitialize(IHS_SessionChannel *channel, IHS_S
                                               IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
 bool IHS_SessionChannelFrameInitialize(IHS_SessionChannel *channel, IHS_SessionFrame *frame,
-                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
+                                       IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
 bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
                                         IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
@@ -95,3 +97,5 @@ bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketT
                                  const uint8_t *body, size_t bodyLen, size_t padTo);
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);
+
+void IHS_SessionChannelStop(IHS_SessionChannel *channel);
