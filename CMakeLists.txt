@@ -7,8 +7,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     option(IHSLIB_SAMPLES "Build Samples" ON)
+    option(IHSLIB_CODEGEN "Code Generator" ON)
 else ()
     option(IHSLIB_SAMPLES "Build Samples" OFF)
+    option(IHSLIB_CODEGEN "Code Generator" OFF)
 endif ()
 
 option(IHSLIB_SANITIZE_ADDRESS "Link Address Sanitizer" OFF)
@@ -61,6 +63,7 @@ add_library(ihslib
         src/session/channels/video/ch_data_video.c
         src/session/channels/control/control_cursor.c
         src/session/channels/control/control_input.c
+        src/session/channels/control/control_hid.c
         src/session/channels/ch_stats.c
         )
 
@@ -95,6 +98,21 @@ endif()
 
 if (IHSLIB_SAMPLES)
     add_subdirectory(samples)
+endif ()
+
+# Don't include tools and samples if used as library
+if (IHSLIB_CODEGEN)
+    find_program(PROTOC_C protoc-c)
+    find_program(PYTHON python3)
+
+    set(PROTOBUF_FILES
+            protobuf/discovery.proto
+            protobuf/remoteplay.proto
+            protobuf/hiddevices.proto)
+    add_custom_target(protoc-gen
+            COMMAND ${PROTOC_C} --c_out=src ${PROTOBUF_FILES}
+            COMMAND ${PYTHON} scripts/protobuf-src-fixup.py src/protobuf
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif ()
 
 # Don't include tests by default if used as library

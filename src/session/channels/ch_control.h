@@ -27,9 +27,11 @@
 
 #include "channel.h"
 
-#include "protobuf/remoteplay.pb-c.h"
 #include "session/frame.h"
 #include "ihs_timer.h"
+
+#include "protobuf/remoteplay.pb-c.h"
+#include "protobuf/hiddevices.pb-c.h"
 
 typedef struct IHS_SessionChannelControl {
     IHS_SessionChannel base;
@@ -69,3 +71,7 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel);
 
 void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel);
+
+void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMessageToRemote *message);
+
+bool IHS_SessionChannelControlSendHIDMsg(IHS_SessionChannel *channel, const CHIDMessageFromRemote *message);

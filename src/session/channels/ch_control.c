@@ -269,6 +269,16 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlSetIcon:
         case k_EStreamControlSetActivity:
             break;
+        case k_EStreamControlRemoteHID: {
+            CRemoteHIDMsg *message = IHS_UNPACK_BUFFER(cremote_hidmsg__unpack, payload);
+            if (message->has_data) {
+                CHIDMessageToRemote *hid = chidmessage_to_remote__unpack(NULL, message->data.len, message->data.data);
+                IHS_SessionChannelControlOnHIDMsg(channel, hid);
+                chidmessage_to_remote__free_unpacked(hid, NULL);
+            }
+            cremote_hidmsg__free_unpacked(message, NULL);
+            break;
+        }
         default: {
             IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control", "Unhandled control message: %s",
                            ControlMessageTypeName(type));
@@ -276,6 +286,7 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
     }
 }
+
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message) {
     if (message->info->has_mtu) {
