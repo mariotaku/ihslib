@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     };
     IHS_SessionChannel *channel = IHS_SessionChannelDiscoveryCreate(&session);
     IHS_SessionPacket packet;
-    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeConnect, false, 12);
+    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeConnect, false, 12);
     assert(packet.header.srcConnectionId == session.state.connectionId);
     assert(packet.header.dstConnectionId == session.state.hostConnectionId);
 

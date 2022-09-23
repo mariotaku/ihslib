@@ -107,3 +107,13 @@ size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData) {
     IHS_BufferClear(&packet->body, freeData);
 }
+
+void IHS_SessionPacketBodyInitialize(IHS_Buffer *body) {
+    IHS_BufferInit(body, 2048, 2048);
+
+    // Reserve space for serialized header
+    IHS_BufferFillMem(body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(body, IHS_PACKET_HEADER_SIZE);
+
+    assert(body->offset == IHS_PACKET_HEADER_SIZE);
+}

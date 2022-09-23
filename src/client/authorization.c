@@ -28,7 +28,7 @@
 #include "crypto.h"
 
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 typedef struct IHS_AuthorizationState {
     IHS_Client *client;

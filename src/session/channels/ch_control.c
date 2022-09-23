@@ -25,7 +25,7 @@
 
 #include "ch_control.h"
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "crypto.h"
@@ -83,7 +83,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Send control message: %s, id=%d", value->name,
                    packetId);
     IHS_SessionFrame frame;
-    IHS_SessionChannelFrameInitialize(channel, &frame, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_SessionChannelInitializeFrame(channel, &frame, IHS_SessionPacketTypeReliable, true, packetId);
     IHS_BufferAppendUInt8(&frame.body, type);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);

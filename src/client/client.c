@@ -26,7 +26,7 @@
 #include "ihslib/client.h"
 
 #include <stdint.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <memory.h>
 
 #include "protobuf/discovery.pb-c.h"

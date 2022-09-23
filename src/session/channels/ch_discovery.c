@@ -119,7 +119,7 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
     size_t msgSize = cdiscovery_ping_response__get_packed_size(&response);
 
     IHS_SessionPacket outPacket;
-    IHS_SessionChannelPacketInitialize(channel, &outPacket, IHS_SessionPacketTypeUnconnected, true, 0);
+    IHS_SessionChannelInitializePacket(channel, &outPacket, IHS_SessionPacketTypeUnconnected, true, 0);
     IHS_BufferAppendUInt8(&outPacket.body, k_EStreamDiscoveryPingResponse);
     IHS_BufferAppendUInt32LE(&outPacket.body, msgSize);
     IHS_BufferAppendMessage(&outPacket.body, (const ProtobufCMessage *) &response);

@@ -23,7 +23,7 @@
  *
  */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <memory.h>
 
 #include "ch_data_audio.h"

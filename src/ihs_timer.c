@@ -24,7 +24,7 @@
  */
 
 #include <stdbool.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "ihs_timer.h"

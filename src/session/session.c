@@ -110,7 +110,7 @@ bool IHS_SessionConnect(IHS_Session *session) {
 
     IHS_SessionChannel *discovery = IHS_SessionChannelFor(session, IHS_SessionChannelIdDiscovery);
     IHS_SessionPacket packet;
-    IHS_SessionChannelPacketInitialize(discovery, &packet, IHS_SessionPacketTypeConnect, true, 0);
+    IHS_SessionChannelInitializePacket(discovery, &packet, IHS_SessionPacketTypeConnect, true, 0);
     IHS_BufferAppendMem(&packet.body, body, sizeof(body));
     bool ret = IHS_SessionSendPacket(session, &packet);
     IHS_SessionPacketClear(&packet, true);

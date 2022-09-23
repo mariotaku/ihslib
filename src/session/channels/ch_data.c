@@ -84,7 +84,7 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPack
 void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
     CStreamDataLostMsg message = CSTREAM_DATA_LOST_MSG__INIT;
     IHS_SessionPacket packet;
-    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT);
+    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT);
     IHS_BufferAppendUInt8(&packet.body, k_EStreamDataLost);
     IHS_BufferAppendMessage(&packet.body, (const ProtobufCMessage *) &message);
     IHS_SessionChannelSendPacket(channel, &packet);

@@ -109,3 +109,5 @@ size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest);
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet);
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData);
+
+void IHS_SessionPacketBodyInitialize(IHS_Buffer *body);

@@ -80,14 +80,15 @@ void IHS_SessionChannelReceivedPacketNoop(IHS_SessionChannel *channel, IHS_Sessi
 
 uint16_t IHS_SessionChannelNextPacketId(IHS_SessionChannel *channel);
 
-bool IHS_SessionChannelPacketHeaderInitialize(IHS_SessionChannel *channel, IHS_SessionPacketHeader *header,
+void IHS_SessionChannelInitializePacketHeader(IHS_SessionChannel *channel, IHS_SessionPacketHeader *header,
                                               IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
-bool IHS_SessionChannelFrameInitialize(IHS_SessionChannel *channel, IHS_SessionFrame *frame,
+bool IHS_SessionChannelInitializePacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
+                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
+
+bool IHS_SessionChannelInitializeFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame,
                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
-bool IHS_SessionChannelPacketInitialize(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
-                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
 bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 

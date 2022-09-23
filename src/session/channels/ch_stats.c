@@ -23,7 +23,7 @@
  *
  */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include "ch_stats.h"
 #include "ihs_buffer.h"
 #include "ihs_buffer_ext.h"
@@ -41,7 +41,7 @@ IHS_SessionChannel *IHS_SessionChannelStatsCreate(IHS_Session *session) {
 bool IHS_SessionChannelStatsSend(IHS_SessionChannel *channel, EStreamStatsMessage type,
                                  const ProtobufCMessage *message, int32_t packetId) {
     IHS_SessionPacket packet;
-    IHS_SessionChannelPacketInitialize(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
     IHS_BufferAppendUInt8(&packet.body, type);
     IHS_BufferAppendMessage(&packet.body, message);
     bool ret = IHS_SessionChannelSendPacket(channel, &packet);
