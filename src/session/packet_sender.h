@@ -47,7 +47,7 @@ void IHS_SessionPacketSenderDestroy(IHS_SessionPacketSender *sender);
  */
 bool IHS_SessionPacketSenderQueue(IHS_SessionPacketSender *sender, IHS_SessionPacket *packet, bool retransmit);
 
-bool IHS_SessionPacketSenderEmpty(const IHS_SessionPacketSender *sender);
+bool IHS_SessionPacketSenderHasPacket(const IHS_SessionPacketSender *sender);
 
 bool IHS_SessionPacketSenderFlush(IHS_SessionPacketSender *sender, IHS_SessionPacketSendFunction *fn, void *context);
 

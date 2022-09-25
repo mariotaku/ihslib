@@ -95,13 +95,17 @@ bool IHS_SessionPacketSenderQueue(IHS_SessionPacketSender *sender, IHS_SessionPa
     return added;
 }
 
-bool IHS_SessionPacketSenderEmpty(const IHS_SessionPacketSender *sender) {
-    return sender->size == 0;
+bool IHS_SessionPacketSenderHasPacket(const IHS_SessionPacketSender *sender) {
+    return sender->size > 0;
 }
 
 bool IHS_SessionPacketSenderFlush(IHS_SessionPacketSender *sender, IHS_SessionPacketSendFunction *fn, void *context) {
     uint32_t now = IHS_SessionPacketTimestamp();
     IHS_MutexLock(sender->lock);
+    if (!IHS_SessionPacketSenderHasPacket(sender)) {
+        IHS_MutexUnlock(sender->lock);
+        return false;
+    }
     size_t numSend = 0;
     for (int i = 0; i < sender->capability; ++i) {
         SenderItem *item = &sender->items[i];
