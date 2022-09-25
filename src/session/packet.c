@@ -24,6 +24,8 @@
  */
 
 #include <memory.h>
+#include <time.h>
+
 #include "packet.h"
 #include "endianness.h"
 #include "crc32c.h"
@@ -120,4 +122,12 @@ size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData) {
     IHS_BufferClear(&packet->body, freeData);
+}
+
+uint32_t IHS_SessionPacketTimestamp() {
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    uint64_t nsec = tp.tv_nsec * 65536 / 1000000000;
+    uint32_t sec = tp.tv_sec * 65536;
+    return sec + nsec;
 }

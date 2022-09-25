@@ -31,6 +31,7 @@ IHS_Thread *IHS_ThreadCreate(IHS_ThreadFunction *function, const char *name, voi
 }
 
 void IHS_ThreadJoin(IHS_Thread *thread) {
+    SDL_assert(thread != NULL);
     SDL_WaitThread((SDL_Thread *) thread, NULL);
 }
 
@@ -39,14 +40,17 @@ IHS_Mutex *IHS_MutexCreate() {
 }
 
 void IHS_MutexDestroy(IHS_Mutex *mutex) {
+    SDL_assert(mutex != NULL);
     return SDL_DestroyMutex((SDL_mutex *) mutex);
 }
 
 void IHS_MutexLock(IHS_Mutex *mutex) {
+    SDL_assert(mutex != NULL);
     SDL_LockMutex((SDL_mutex *) mutex);
 }
 
 void IHS_MutexUnlock(IHS_Mutex *mutex) {
+    SDL_assert(mutex != NULL);
     SDL_UnlockMutex((SDL_mutex *) mutex);
 }
 
@@ -55,14 +59,17 @@ IHS_Cond *IHS_CondCreate() {
 }
 
 void IHS_CondDestroy(IHS_Cond *cond) {
+    SDL_assert(cond != NULL);
     SDL_DestroyCond((SDL_cond *) cond);
 }
 
 void IHS_CondSignal(IHS_Cond *cond) {
+    SDL_assert(cond != NULL);
     SDL_CondSignal((SDL_cond *) cond);
 }
 
 IHS_CondWaitRet IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
+    SDL_assert(cond != NULL);
     switch (SDL_CondWait((SDL_cond *) cond, (SDL_mutex *) mutex)) {
         case 0:
             return IHS_CONDWAIT_SIGNALED;
@@ -72,6 +79,7 @@ IHS_CondWaitRet IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
 }
 
 IHS_CondWaitRet IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs) {
+    SDL_assert(cond != NULL);
     switch (SDL_CondWaitTimeout((SDL_cond *) cond, (SDL_mutex *) mutex, timeoutMs)) {
         case 0:
             return IHS_CONDWAIT_SIGNALED;

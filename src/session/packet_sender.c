@@ -23,9 +23,9 @@
  *
  */
 
-#include <stdlib.h>
 #include "packet_sender.h"
-#include "session_pri.h"
+
+#include <stdlib.h>
 
 #define MAX_RETRANSMIT 10
 
@@ -42,7 +42,6 @@ struct IHS_SessionPacketSender {
     SenderItem *items;
     size_t capability;
     size_t size;
-    IHS_Mutex *lock;
 };
 
 IHS_SessionPacketSender *IHS_SessionPacketSenderCreate(size_t capability) {
@@ -50,12 +49,10 @@ IHS_SessionPacketSender *IHS_SessionPacketSenderCreate(size_t capability) {
     sender->items = calloc(capability, sizeof(SenderItem));
     sender->capability = capability;
     sender->size = 0;
-    sender->lock = IHS_MutexCreate();
     return sender;
 }
 
 void IHS_SessionPacketSenderDestroy(IHS_SessionPacketSender *sender) {
-    IHS_MutexLock(sender->lock);
     for (int i = 0; i < sender->capability; ++i) {
         SenderItem *item = &sender->items[i];
         if (!item->used) {
@@ -63,14 +60,11 @@ void IHS_SessionPacketSenderDestroy(IHS_SessionPacketSender *sender) {
         }
         IHS_BufferClear(&item->packet.body, true);
     }
-    IHS_MutexUnlock(sender->lock);
-    IHS_MutexDestroy(sender->lock);
     free(sender->items);
     free(sender);
 }
 
 bool IHS_SessionPacketSenderQueue(IHS_SessionPacketSender *sender, IHS_SessionPacket *packet, bool retransmit) {
-    IHS_MutexLock(sender->lock);
     bool added = false;
     for (int i = 0; i < sender->capability; ++i) {
         SenderItem *item = &sender->items[i];
@@ -91,7 +85,6 @@ bool IHS_SessionPacketSenderQueue(IHS_SessionPacketSender *sender, IHS_SessionPa
         added = true;
         break;
     }
-    IHS_MutexUnlock(sender->lock);
     return added;
 }
 
@@ -101,9 +94,7 @@ bool IHS_SessionPacketSenderHasPacket(const IHS_SessionPacketSender *sender) {
 
 bool IHS_SessionPacketSenderFlush(IHS_SessionPacketSender *sender, IHS_SessionPacketSendFunction *fn, void *context) {
     uint32_t now = IHS_SessionPacketTimestamp();
-    IHS_MutexLock(sender->lock);
     if (!IHS_SessionPacketSenderHasPacket(sender)) {
-        IHS_MutexUnlock(sender->lock);
         return false;
     }
     size_t numSend = 0;
@@ -133,12 +124,10 @@ bool IHS_SessionPacketSenderFlush(IHS_SessionPacketSender *sender, IHS_SessionPa
         }
         numSend++;
     }
-    IHS_MutexUnlock(sender->lock);
     return numSend > 0;
 }
 
 bool IHS_SessionPacketSenderRemove(IHS_SessionPacketSender *sender, IHS_SessionChannelId channelId, uint16_t packetId) {
-    IHS_MutexLock(sender->lock);
     bool removed = false;
     for (int i = 0; i < sender->capability; ++i) {
         SenderItem *item = &sender->items[i];
@@ -153,7 +142,6 @@ bool IHS_SessionPacketSenderRemove(IHS_SessionPacketSender *sender, IHS_SessionC
             break;
         }
     }
-    IHS_MutexUnlock(sender->lock);
     return removed;
 }
 

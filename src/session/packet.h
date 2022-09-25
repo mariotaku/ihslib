@@ -85,6 +85,10 @@ typedef struct IHS_SessionPacket {
  */
 #define IHS_PACKET_ID_NEXT (-1)
 
+#define IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(millis) ((uint32_t) (((uint64_t) (millis)) * 65536 / 1000))
+
+#define IHS_SESSION_PACKET_TIMESTAMP_TO_MILLIS(diff) ((uint32_t) (((uint64_t) (diff)) * 1000 / 65536))
+
 /**
  * Parse packet from source buffer
  * @param header Packet header
@@ -129,3 +133,5 @@ void IHS_SessionPacketPopulateBuffer(IHS_SessionPacket *packet);
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet);
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData);
+
+uint32_t IHS_SessionPacketTimestamp();

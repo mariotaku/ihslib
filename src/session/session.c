@@ -25,8 +25,6 @@
 
 #include <stdlib.h>
 #include <memory.h>
-#include <time.h>
-#include <unistd.h>
 
 #include "ihslib/session.h"
 #include "ihslib/common.h"
@@ -59,6 +57,8 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     IHS_BaseInit(&session->base, clientConfig, SessionRecvCallback, false);
     IHS_BaseSetRunCallbacks(&session->base, &SessionRunCallbacks, NULL);
     session->info = *sessionInfo;
+    session->sendThreadMutex = IHS_MutexCreate();
+    session->sendThreadCond = IHS_CondCreate();
     session->sender = IHS_SessionPacketSenderCreate(256);
     session->timers = IHS_TimersCreate();
 
@@ -93,6 +93,8 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_TimersDestroy(session->timers);
+    IHS_CondDestroy(session->sendThreadCond);
+    IHS_MutexDestroy(session->sendThreadMutex);
     IHS_SessionPacketSenderDestroy(session->sender);
     IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Destroying session, bye!");
     IHS_BaseDestroy(&session->base);
@@ -108,14 +110,6 @@ void IHS_SessionInterrupt(IHS_Session *session) {
     for (int i = session->numChannels - 1; i >= 0; --i) {
         IHS_SessionChannelStop(session->channels[i]);
     }
-}
-
-uint32_t IHS_SessionPacketTimestamp() {
-    struct timespec tp;
-    clock_gettime(CLOCK_MONOTONIC, &tp);
-    uint64_t nsec = tp.tv_nsec * 65536 / 1000000000;
-    uint32_t sec = tp.tv_sec * 65536;
-    return sec + nsec;
 }
 
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit) {
