@@ -46,7 +46,7 @@ add_library(ihslib
         src/session/packet.c
         src/session/packet_sender.c
         src/session/frame.c
-        src/session/frame_window.c
+        src/session/window.c
         src/session/frame_crypto.c
         src/session/channels/channel.c
         src/session/channels/ch_discovery.c

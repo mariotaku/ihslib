@@ -38,8 +38,6 @@ typedef struct IHS_SessionFramePacket {
     IHS_Buffer body;
 } IHS_SessionFramePacket;
 
-typedef struct IHS_SessionPacketsWindow IHS_SessionPacketsWindow;
-
 typedef struct IHS_SessionFrame {
     IHS_SessionPacketHeader header;
     IHS_Buffer body;
@@ -53,27 +51,6 @@ typedef enum IHS_SessionFrameDecryptResult {
     IHS_SessionFrameDecryptHashMismatch = -2,
     IHS_SessionFrameDecryptFailed = -3,
 } IHS_SessionFrameDecryptResult;
-
-IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity);
-
-void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window);
-
-bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPacket *packet);
-
-bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame);
-
-/**
- * Discard all frames with timestamp difference between tail larger than `diff`
- * @param window
- * @param diff
- */
-uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff);
-
-void IHS_SessionPacketsWindowReleaseFrame(IHS_SessionFrame *frame);
-
-uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *window);
-
-uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 
 /**
  * Initialize capacity, set offset (for header) and suffix (for CRC) of a frame buffer

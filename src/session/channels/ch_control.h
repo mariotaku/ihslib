@@ -28,6 +28,7 @@
 #include "channel.h"
 
 #include "session/frame.h"
+#include "session/window.h"
 #include "ihs_timer.h"
 
 #include "protobuf/remoteplay.pb-c.h"

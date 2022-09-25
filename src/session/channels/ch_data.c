@@ -50,6 +50,8 @@ IHS_SessionChannel *IHS_SessionChannelDataCreate(const IHS_SessionChannelDataCla
 void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapacity) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
     dataCh->lock = IHS_MutexCreate();
+    dataCh->windowLock = IHS_MutexCreate();
+    dataCh->windowCond = IHS_CondCreate();
     dataCh->window = IHS_SessionPacketsWindowCreate(windowCapacity);
     dataCh->interrupted = false;
     dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker,
@@ -59,10 +61,12 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapa
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelData *dataCh = (IHS_SessionChannelData *) channel;
 
-    DataThreadInterrupt(dataCh);
+    assert(dataCh->interrupted);
 
     IHS_ThreadJoin(dataCh->worker);
     IHS_SessionPacketsWindowDestroy(dataCh->window);
+    IHS_MutexDestroy(dataCh->windowLock);
+    IHS_CondDestroy(dataCh->windowCond);
     dataCh->window = NULL;
     IHS_MutexDestroy(dataCh->lock);
 }
@@ -72,12 +76,15 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPack
     assert(dataCh->window != NULL);
     IHS_SessionPacketType type = packet->header.type;
     assert(type == IHS_SessionPacketTypeUnreliable || type == IHS_SessionPacketTypeUnreliableFrag);
+    IHS_MutexLock(dataCh->windowLock);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
         IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Data", "%s channel items overflow! Available: %u",
                        DataChannelName(channel->type), IHS_SessionPacketsWindowAvailable(dataCh->window));
         IHS_SessionPacketsWindowDiscard(dataCh->window, 0);
         IHS_SessionChannelDataLost(channel);
     }
+    IHS_CondSignal(dataCh->windowCond);
+    IHS_MutexUnlock(dataCh->windowLock);
     dataCh->lastPacketTimestamp = packet->header.sendTimestamp;
 }
 
@@ -117,10 +124,19 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     }
     IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "%s channel started", channelName);
     while (!channel->interrupted) {
-        for (IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
-             IHS_SessionPacketsWindowPoll(channel->window, &frame);
-             IHS_SessionPacketsWindowReleaseFrame(&frame)) {
+        IHS_MutexLock(channel->windowLock);
+        IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
+        bool hasFrame;
+        while (!(hasFrame = IHS_SessionPacketsWindowPoll(channel->window, &frame))) {
+            IHS_CondWait(channel->windowCond, channel->windowLock);
+            if (channel->interrupted) {
+                break;
+            }
+        }
+        IHS_MutexUnlock(channel->windowLock);
+        if (hasFrame) {
             ReceivedFrame(channel, &frame);
+            IHS_SessionPacketsWindowReleaseFrame(&frame);
         }
     }
     IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "Stopping %s channel", channelName);
@@ -135,6 +151,10 @@ static void DataThreadInterrupt(IHS_SessionChannelData *channel) {
     IHS_MutexLock(channel->lock);
     channel->interrupted = true;
     IHS_MutexUnlock(channel->lock);
+
+    IHS_MutexLock(channel->windowLock);
+    IHS_CondSignal(channel->windowCond);
+    IHS_MutexUnlock(channel->windowLock);
 }
 
 static void ReceivedFrame(IHS_SessionChannelData *channel, IHS_SessionFrame *frame) {

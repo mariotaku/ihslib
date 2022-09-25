@@ -61,9 +61,28 @@ struct IHS_SessionChannel {
     uint16_t nextPacketId;
 };
 
+/**
+ * Create a channel
+ * @param cls Channel class
+ * @param session Session of the channel
+ * @param type Channel type
+ * @param id Channel id
+ * @param config
+ * @return Channel instance
+ */
 IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls, IHS_Session *session,
                                              IHS_SessionChannelType type, IHS_SessionChannelId id, const void *config);
 
+/**
+ * Ask the channel to end processing data. For threaded channels, it should break runner loop.
+ * @param channel
+ */
+void IHS_SessionChannelStop(IHS_SessionChannel *channel);
+
+/**
+ * Release all resources and free the channel. It must be stopped before destroying.
+ * @param channel
+ */
 void IHS_SessionChannelDestroy(IHS_SessionChannel *channel);
 
 IHS_SessionChannel *IHS_SessionChannelFor(IHS_Session *session, IHS_SessionChannelId channelId);
@@ -95,5 +114,3 @@ bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket
 bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit);
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);
-
-void IHS_SessionChannelStop(IHS_SessionChannel *channel);

@@ -28,6 +28,7 @@
 #include "channel.h"
 #include "protobuf/remoteplay.pb-c.h"
 #include "session/frame.h"
+#include "session/window.h"
 #include "ihs_thread.h"
 
 typedef struct IHS_SessionDataFrameHeader {
@@ -40,6 +41,9 @@ typedef struct IHS_SessionDataFrameHeader {
 typedef struct IHS_SessionChannelData {
     IHS_SessionChannel base;
     IHS_SessionPacketsWindow *window;
+    IHS_Mutex *windowLock;
+    IHS_Cond *windowCond;
+
     IHS_Thread *worker;
     bool interrupted;
     IHS_Mutex *lock;

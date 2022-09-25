@@ -30,6 +30,7 @@
 
 #include "crypto.h"
 #include "session/frame.h"
+#include "session/window.h"
 #include "ch_discovery.h"
 
 #include "session/session_pri.h"

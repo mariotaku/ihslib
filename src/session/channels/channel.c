@@ -55,6 +55,13 @@ IHS_SessionChannel *IHS_SessionChannelCreate(const IHS_SessionChannelClass *cls,
     return channel;
 }
 
+void IHS_SessionChannelStop(IHS_SessionChannel *channel) {
+    if (channel->cls->stopped == NULL) {
+        return;
+    }
+    channel->cls->stopped(channel);
+}
+
 void IHS_SessionChannelDestroy(IHS_SessionChannel *channel) {
     if (channel->cls->deinit) {
         channel->cls->deinit(channel);
@@ -88,6 +95,7 @@ void IHS_SessionChannelAdd(IHS_Session *session, IHS_SessionChannel *channel) {
     if (IHS_SessionChannelFor(session, channel->id)) {
         return;
     }
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Channel", "Adding channel %u", channel->id);
     session->channels[session->numChannels] = channel;
     session->numChannels++;
 }
@@ -103,7 +111,9 @@ void IHS_SessionChannelRemove(IHS_Session *session, IHS_SessionChannelId channel
         }
     }
     if (channelIndex < 0) return;
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Channel", "Removing channel %u", channelId);
     IHS_SessionChannel *channelToRemove = session->channels[channelIndex];
+    IHS_SessionChannelStop(channelToRemove);
     IHS_SessionChannelDestroy(channelToRemove);
     int remaining = session->numChannels - 1 - channelIndex;
     if (remaining > 0) {
@@ -194,13 +204,6 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
     IHS_BufferAppendUInt32LE(&packet.body, IHS_SessionPacketTimestamp());
     IHS_SessionChannelSendPacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
-}
-
-void IHS_SessionChannelStop(IHS_SessionChannel *channel) {
-    if (channel->cls->stopped == NULL) {
-        return;
-    }
-    channel->cls->stopped(channel);
 }
 
 static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,

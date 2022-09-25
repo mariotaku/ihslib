@@ -22,18 +22,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "window.h"
 
 #include <memory.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#include "frame.h"
-#include "crypto.h"
-#include "session_pri.h"
-
-
 struct IHS_SessionPacketsWindow {
-    IHS_Mutex *mutex;
     IHS_SessionFramePacket *data;
     uint16_t capacity;
     /*
@@ -61,13 +56,8 @@ static inline void FrameItemUsePacket(IHS_SessionFramePacket *item, IHS_SessionP
 
 static inline void FrameItemRecycle(IHS_SessionFramePacket *item);
 
-/**
- *
- * @param window
- */
 IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
     IHS_SessionPacketsWindow *window = calloc(1, sizeof(IHS_SessionPacketsWindow));
-    window->mutex = IHS_MutexCreate();
     window->capacity = capacity;
     window->data = calloc(capacity, sizeof(IHS_SessionFramePacket));
     window->head.pos = 0;
@@ -76,7 +66,6 @@ IHS_SessionPacketsWindow *IHS_SessionPacketsWindowCreate(uint16_t capacity) {
 }
 
 void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
-    IHS_MutexLock(window->mutex);
     for (int i = 0, j = window->capacity; i < j; i++) {
         if (!FrameItemIsUsed(&window->data[i])) {
             continue;
@@ -84,37 +73,29 @@ void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
         FrameItemRecycle(&window->data[i]);
     }
     free(window->data);
-    IHS_MutexUnlock(window->mutex);
-    IHS_MutexDestroy(window->mutex);
     free(window);
 }
 
 bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPacket *packet) {
-    IHS_MutexLock(window->mutex);
     /* Calculate distance of 2 items */
     int tailOffset = window->tail.pos < 0 ? 1 : (int) (packet->header.packetId - window->tail.id);
-    bool ret = false;
     /* We already processed this packet, so ignore it */
     if (tailOffset < 0 && -tailOffset > IHS_SessionPacketsWindowSize(window)) {
-        ret = true;
-        goto unlock;
+        return true;
     }
     /* Not sure why but the offset is significantly larger than window capacity. Ignore it first */
     if (tailOffset > window->capacity) {
-        ret = true;
-        goto unlock;
+        return true;
     }
     /* Large offset means overflow, abort processing and hangup */
     if (tailOffset > (int) IHS_SessionPacketsWindowAvailable(window)) {
-        ret = false;
-        goto unlock;
+        return false;
     }
     const int writePos = (window->tail.pos + tailOffset + window->capacity) % window->capacity;
     IHS_SessionFramePacket *tailPkt = &window->data[writePos];
     /* Ignore if the slot is used */
     if (FrameItemIsUsed(tailPkt)) {
-        ret = true;
-        goto unlock;
+        return true;
     }
     FrameItemUsePacket(tailPkt, packet);
 
@@ -123,34 +104,26 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPa
         window->tail.pos = writePos;
         window->tail.id = packet->header.packetId;
     }
-    ret = true;
-    unlock:
-    IHS_MutexUnlock(window->mutex);
-    return ret;
+    return true;
 }
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame) {
-    IHS_MutexLock(window->mutex);
     uint16_t size = IHS_SessionPacketsWindowSize(window);
-    bool ret = false;
-    if (!size) {
-        ret = false;
-        goto unlock;
+    if (size == 0) {
+        return false;
     }
     assert(window->head.pos >= 0);
     IHS_SessionFramePacket *head = &window->data[window->head.pos % window->capacity];
 
     /* Must start from packet head */
     if (!FrameItemIsHead(head)) {
-        ret = false;
-        goto unlock;
+        return false;
     }
 
     /* Must have size enough for all fragments */
     int packetsCount = 1 + head->header.fragmentId;
     if (size < packetsCount) {
-        ret = false;
-        goto unlock;
+        return false;
     }
 
     size_t frameBodyLen = 0;
@@ -158,8 +131,7 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
         /* The array is sparse, must collect all fragments */
         const IHS_SessionFramePacket *item = &window->data[i % window->capacity];
         if (!FrameItemIsUsed(item)) {
-            ret = false;
-            goto unlock;
+            return false;
         }
         frameBodyLen += item->body.size;
     }
@@ -179,19 +151,14 @@ bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionF
     if (window->head.pos > window->capacity) {
         window->head.pos = window->head.pos % window->capacity;
     }
-    ret = true;
-    unlock:
-    IHS_MutexUnlock(window->mutex);
-    return ret;
+    return true;
 }
 
 uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint32_t diff) {
-    IHS_MutexLock(window->mutex);
     uint16_t size = IHS_SessionPacketsWindowSize(window);
-    uint16_t discarded = 0;
-    if (!size) goto unlock;
+    if (!size) return 0;
     IHS_SessionFramePacket *tailPkt = &window->data[window->tail.pos];
-    if (tailPkt->header.sendTimestamp < diff) goto unlock;
+    if (tailPkt->header.sendTimestamp < diff) return 0;
     /* Should discard all frames older than discardBefore */
     uint32_t discardBefore = tailPkt->header.sendTimestamp - diff;
     /* Find first valid index after discardBefore */
@@ -206,7 +173,8 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
             break;
         }
     }
-    if (firstValid < 0) goto unlock;
+    if (firstValid < 0) return 0;
+    uint16_t discarded = 0;
     for (int i = window->head.pos; i < firstValid; i++) {
         IHS_SessionFramePacket *item = &window->data[i % window->capacity];
         discarded++;
@@ -220,8 +188,6 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
     if (window->head.pos > window->capacity) {
         window->head.pos = window->head.pos % window->capacity;
     }
-    unlock:
-    IHS_MutexUnlock(window->mutex);
     return discarded;
 }
 
