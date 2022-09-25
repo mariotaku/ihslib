@@ -196,6 +196,10 @@ static void SessionInitialized(IHS_Base *base, void *context) {
     IHS_Session *session = (IHS_Session *) base;
     session->sendThread = IHS_ThreadCreate(SessionSendWorker, "ihs-sess-send", session);
 
+    if (session->callbacks.session && session->callbacks.session->initialized) {
+        session->callbacks.session->initialized(session, session->callbackContexts.session);
+    }
+
     if (session->callbacks.session && session->callbacks.session->connecting) {
         session->callbacks.session->connecting(session, session->callbackContexts.session);
     }
