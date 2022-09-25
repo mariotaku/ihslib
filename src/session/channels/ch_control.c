@@ -162,8 +162,8 @@ static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *pa
         if (IsMessageEncrypted(type)) {
             IHS_Buffer plain;
             IHS_BufferInit(&plain, 1024, 1024 * 1024);
-            uint64_t expectedSequence = control->recvEncryptSequence++;
-            switch (IHS_SessionFrameDecrypt(channel->session, &frame.body, &plain, expectedSequence)) {
+            uint64_t expectSequence = control->recvEncryptSequence++, actualSequence;
+            switch (IHS_SessionFrameDecrypt(channel->session, &frame.body, &plain, expectSequence, &actualSequence)) {
                 case IHS_SessionPacketResultOK: {
                     OnControlMessageReceived(channel, type, &plain, &frame.header);
                     break;
@@ -175,8 +175,10 @@ static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *pa
                 }
                 case IHS_SessionFrameDecryptSequenceMismatch: {
                     IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control",
-                                   "Mismatched message sequence. id=%d, retransmit=%d, type=%s",
-                                   frame.header.packetId, frame.header.retransmitCount, ControlMessageTypeName(type));
+                                   "Mismatched message sequence %llu (expect %llu). id=%d, retransmit=%d, type=%s",
+                                   actualSequence, expectSequence, frame.header.packetId, frame.header.retransmitCount,
+                                   ControlMessageTypeName(type));
+                    control->recvEncryptSequence = actualSequence + 1;
                     break;
                 }
                 case IHS_SessionFrameDecryptFailed: {

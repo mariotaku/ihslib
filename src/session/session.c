@@ -230,8 +230,8 @@ static void SessionSendWorker(void *context) {
     while (!session->base.interrupted) {
         IHS_TimersTick(session->timers);
         IHS_MutexLock(session->sendThreadMutex);
-        while (IHS_SessionPacketSenderEmpty(session->sender)) {
-            IHS_CondTimedWait(session->sendThreadCond, session->sendThreadMutex, 1000);
+        if (IHS_SessionPacketSenderEmpty(session->sender)) {
+            IHS_CondTimedWait(session->sendThreadCond, session->sendThreadMutex, 1);
         }
         IHS_MutexUnlock(session->sendThreadMutex);
         IHS_SessionPacketSenderFlush(session->sender, SessionDoSendPacket, session);

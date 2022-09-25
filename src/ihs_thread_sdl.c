@@ -62,10 +62,22 @@ void IHS_CondSignal(IHS_Cond *cond) {
     SDL_CondSignal((SDL_cond *) cond);
 }
 
-void IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
-    SDL_CondWait((SDL_cond *) cond, (SDL_mutex *) mutex);
+IHS_CondWaitRet IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
+    switch (SDL_CondWait((SDL_cond *) cond, (SDL_mutex *) mutex)) {
+        case 0:
+            return IHS_CONDWAIT_SIGNALED;
+        default:
+            return IHS_CONDWAIT_ERROR;
+    }
 }
 
-void IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs) {
-    SDL_CondWaitTimeout((SDL_cond *) cond, (SDL_mutex *) mutex, timeoutMs);
+IHS_CondWaitRet IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs) {
+    switch (SDL_CondWaitTimeout((SDL_cond *) cond, (SDL_mutex *) mutex, timeoutMs)) {
+        case 0:
+            return IHS_CONDWAIT_SIGNALED;
+        case SDL_MUTEX_TIMEDOUT:
+            return IHS_CONDWAIT_TIMEOUT;
+        default:
+            return IHS_CONDWAIT_ERROR;
+    }
 }
