@@ -23,22 +23,19 @@
  *
  */
 
-#pragma once
+#include "frame.h"
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <assert.h>
 
-#include "ihslib.h"
+void IHS_SessionFrameBodyInitialize(IHS_Buffer *body, bool hasCrc) {
+    IHS_BufferInit(body, 2048, 2048);
 
-extern const IHS_StreamAudioCallbacks AudioCallbacks;
-extern const IHS_StreamVideoCallbacks VideoCallbacks;
-
-extern IHS_Session *ActiveSession;
-
-bool RequestStream(IHS_SessionInfo *info);
-
-void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
-
-void VideoInit(int argc, char *argv[]);
-
-void VideoDeinit();
+    // Reserve space for serialized header
+    IHS_BufferFillMem(body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(body, IHS_PACKET_HEADER_SIZE);
+    assert(body->offset == IHS_PACKET_HEADER_SIZE);
+    if (hasCrc) {
+        IHS_BufferSetSuffixLength(body, 4);
+        assert(body->suffix == 4);
+    }
+}

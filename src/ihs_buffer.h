@@ -39,7 +39,11 @@ void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapaci
  */
 
 static inline size_t IHS_BufferMaxSize(const IHS_Buffer *buffer) {
-    return buffer->capacity - buffer->offset;
+    return buffer->capacity - buffer->offset - buffer->suffix;
+}
+
+static inline size_t IHS_BufferUsedSize(const IHS_Buffer *buffer) {
+    return buffer->offset + buffer->size + buffer->suffix;
 }
 
 static inline bool IHS_BufferIsNull(const IHS_Buffer *buffer) {
@@ -62,11 +66,32 @@ void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
  * Write functions: Enough write space will be ensured
  */
 
+/**
+ * Set size, offset and suffix to 0. Free owned memory if specified.
+ * @param buffer Buffer instance
+ * @param freeData If true, owned memory will be freed
+ */
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
 
+/**
+ * Move beginning index of data pointer by offset. Size will be decreased if moving towards end; increased if moving
+ * towards beginning.
+ * @param buffer Buffer instance
+ * @param offset Move offset, can't be moved beyond beginning or actual size of the pointer
+ */
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
 
+void IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen);
+
+/**
+ * Move offset and suffix to the total length
+ * @param buffer Buffer instance
+ */
+void IHS_BufferExtendSize(IHS_Buffer *buffer);
+
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
+
+uint8_t *IHS_BufferSuffixPointer(IHS_Buffer *buffer);
 
 void IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data);
 

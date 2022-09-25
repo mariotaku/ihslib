@@ -44,7 +44,7 @@ bool IHS_SessionChannelStatsSend(IHS_SessionChannel *channel, EStreamStatsMessag
     IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeReliable, true, packetId);
     IHS_BufferAppendUInt8(&packet.body, type);
     IHS_BufferAppendMessage(&packet.body, message);
-    bool ret = IHS_SessionChannelSendPacket(channel, &packet);
+    bool ret = IHS_SessionChannelSendPacket(channel, &packet, true);
     IHS_SessionPacketClear(&packet, true);
     return ret;
 }

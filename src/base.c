@@ -32,27 +32,16 @@
 
 #include "endianness.h"
 #include "crypto.h"
-#include "ihs_queue.h"
 #include "ihs_buffer.h"
 
-struct IHS_QueueItem {
-    enum {
-        IHS_BaseQueueSend,
-    } type;
-    union {
-        IHS_UDPPacket send;
-    };
-};
 
-static void QueueItemDestroy(IHS_QueueItem *item);
+static void BaseWorker(IHS_Base *base);
 
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast) {
     memset(base, 0, sizeof(IHS_Base));
     base->broadcast = broadcast;
     base->lock = IHS_MutexCreate();
-    base->queue = IHS_QueueCreate(sizeof(IHS_QueueItem), QueueItemDestroy);
-    base->timers = IHS_TimersCreate();
     base->callbacks.received = recvCb;
 
     base->deviceId = config->deviceId;
@@ -64,49 +53,6 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
     IHS_WriteUInt64LE(in, base->deviceId);
     IHS_CryptoSymmetricEncrypt(in, 8, base->secretKey, sizeof(base->secretKey),
                                base->deviceToken, &deviceTokenLen);
-}
-
-void IHS_BaseRun(IHS_Base *base) {
-    base->socket = IHS_UDPSocketOpen();
-    if (base->callbacks.run && base->callbacks.run->initialized) {
-        base->callbacks.run->initialized(base, base->callbackContexts.run);
-    }
-    IHS_UDPPacket recv;
-    IHS_BufferInit(&recv.buffer, 2048, 2048);
-    while (!base->interrupted) {
-        IHS_TimersTick(base->timers);
-        for (IHS_QueueItem *item; (item = IHS_QueuePoll(base->queue)) != NULL; IHS_QueueItemFree(base->queue, item)) {
-            switch (item->type) {
-                case IHS_BaseQueueSend:
-                    IHS_UDPSocketSend(base->socket, &item->send);
-                    break;
-                default:
-                    IHS_BaseLog(base, IHS_LogLevelFatal, "Queue", "Unrecognized queue item %d", item->type);
-                    abort();
-            }
-        }
-        int ret;
-        if ((ret = IHS_UDPSocketReceive(base->socket, &recv)) < 0) {
-            break;
-        }
-        if (ret) {
-            base->callbacks.received(base, &recv.address, &recv.buffer);
-        }
-        IHS_BufferClear(&recv.buffer, false);
-    }
-    IHS_BufferClear(&recv.buffer, true);
-    if (base->callbacks.run && base->callbacks.run->finalized) {
-        base->callbacks.run->finalized(base, base->callbackContexts.run);
-    }
-    IHS_UDPSocketClose(base->socket);
-}
-
-void IHS_BaseStop(IHS_Base *base) {
-    if (base->interrupted) {
-        return;
-    }
-    base->interrupted = true;
-    IHS_UDPSocketUnblock(base->socket);
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
@@ -132,36 +78,57 @@ void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char
     va_end(args);
 }
 
-void IHS_BaseStartWorker(IHS_Base *base, const char *name, IHS_ThreadFunction *worker) {
-    IHS_BaseLock(base);
-    if (!base->worker) {
-        base->worker = IHS_ThreadCreate(worker, name, base);
+const char *IHS_LogLevelName(IHS_LogLevel level) {
+    switch (level) {
+        case IHS_LogLevelDebug:
+            return "Debug";
+        case IHS_LogLevelInfo:
+            return "Info";
+        case IHS_LogLevelWarn:
+            return "Warn";
+        case IHS_LogLevelError:
+            return "Error";
+        case IHS_LogLevelFatal:
+            return "Fatal";
+        default:
+            return "";
     }
-    IHS_BaseUnlock(base);
 }
 
-void IHS_BaseThreadedJoin(IHS_Base *base) {
+bool IHS_BaseStartWorker(IHS_Base *base, const char *name) {
+    IHS_BaseLock(base);
+    if (base->worker!= NULL) {
+        IHS_BaseUnlock(base);
+        return false;
+    }
+    base->worker = IHS_ThreadCreate((IHS_ThreadFunction *) BaseWorker, name, base);
+    IHS_BaseLog(base, IHS_LogLevelInfo, "Worker", "Worker thread %s created", name);
+    IHS_BaseUnlock(base);
+    return true;
+}
+
+void IHS_BaseInterruptWorker(IHS_Base *base) {
+    if (base->interrupted) {
+        return;
+    }
+    base->interrupted = true;
+}
+
+void IHS_BaseWaitWorker(IHS_Base *base) {
     IHS_ThreadJoin(base->worker);
     base->worker = NULL;
 }
 
 void IHS_BaseDestroy(IHS_Base *base) {
-    IHS_TimersDestroy(base->timers);
-    IHS_QueueDestroy(base->queue);
     IHS_MutexDestroy(base->lock);
 }
 
-bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, IHS_Buffer *data) {
-    IHS_QueueItem *item = IHS_QueueItemObtain(base->queue);
-    item->type = IHS_BaseQueueSend;
-    item->send.address = address;
-    IHS_BufferTransferOwnership(data, &item->send.buffer);
-
-    IHS_QueueAppend(base->queue, item);
-    if (base->socket != NULL) {
-        IHS_UDPSocketUnblock(base->socket);
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const IHS_Buffer *data) {
+    if (base->socket == NULL) {
+        return false;
     }
-    return true;
+    IHS_UDPPacket packet = {.address = address, .buffer = *data};
+    return IHS_UDPSocketSend(base->socket, &packet);
 }
 
 void IHS_BaseLock(IHS_Base *base) {
@@ -172,10 +139,30 @@ void IHS_BaseUnlock(IHS_Base *base) {
     IHS_MutexUnlock(base->lock);
 }
 
-static void QueueItemDestroy(IHS_QueueItem *item) {
-    switch (item->type) {
-        case IHS_BaseQueueSend:
-            IHS_BufferClear(&item->send.buffer, true);
-            break;
+static void BaseWorker(IHS_Base *base) {
+    base->socket = IHS_UDPSocketOpen(base->broadcast);
+    if (base->callbacks.run && base->callbacks.run->initialized) {
+        base->callbacks.run->initialized(base, base->callbackContexts.run);
     }
+    IHS_UDPPacket recv;
+    IHS_BufferInit(&recv.buffer, 2048, 2048);
+    while (!base->interrupted) {
+        if (base->callbacks.run && base->callbacks.run->looped) {
+            base->callbacks.run->looped(base, base->callbackContexts.run);
+        }
+        int ret;
+        if ((ret = IHS_UDPSocketReceive(base->socket, &recv)) < 0) {
+            break;
+        }
+        if (ret) {
+            base->callbacks.received(base, &recv.address, &recv.buffer);
+        }
+        IHS_BufferClear(&recv.buffer, false);
+    }
+    IHS_BufferClear(&recv.buffer, true);
+    if (base->callbacks.run && base->callbacks.run->finalized) {
+        base->callbacks.run->finalized(base, base->callbackContexts.run);
+    }
+    IHS_UDPSocketClose(base->socket);
 }
+

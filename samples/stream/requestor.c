@@ -59,14 +59,15 @@ bool RequestStream(IHS_SessionInfo *info) {
     RequestorCallbacksContext context = {.requested = false, .succeeded = false};
     IHS_ClientSetDiscoveryCallbacks(client, &discoveryCallbacks, &context);
     IHS_ClientSetStreamingCallbacks(client, &streamingCallbacks, &context);
+    IHS_ClientSetLogFunction(client, LogPrint);
     bool ret = false;
-    if (!IHS_ClientDiscoveryBroadcast(client)) {
+    if (!IHS_ClientStartDiscovery(client, 0)) {
         fprintf(stderr, "Broadcast error: %s\n", IHS_ClientError(client));
         ret = false;
         goto exit;
     }
 
-    IHS_ClientRun(client);
+    IHS_ClientThreadedJoin(client);
 
     if (!context.succeeded) {
         ret = false;
@@ -98,7 +99,6 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
         fprintf(stderr, "IHS_ClientStreamingRequest failed: %s\n", info.hostname);
         return;
     }
-    printf("IHS_ClientStreamingRequest: %s\n", info.hostname);
 }
 
 

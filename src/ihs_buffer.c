@@ -89,11 +89,11 @@ void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
 }
 
 void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize) {
-    IHS_BufferEnsureCapacityExact(buffer, buffer->offset + maxSize);
+    IHS_BufferEnsureCapacityExact(buffer, buffer->offset + maxSize + buffer->suffix);
 }
 
 void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
-    IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize);
+    IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize + buffer->suffix);
 }
 
 /*
@@ -122,9 +122,25 @@ void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset) {
     buffer->size -= offset;
 }
 
+void IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen) {
+    IHS_BufferEnsureCapacity(buffer, buffer->offset + buffer->size + suffixLen);
+    buffer->suffix = suffixLen;
+}
+
+void IHS_BufferExtendSize(IHS_Buffer *buffer) {
+    buffer->size = buffer->size + buffer->offset + buffer->suffix;
+    buffer->offset = 0;
+    buffer->suffix = 0;
+}
+
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     size_t newSize = buffer->size + appendSize;
     IHS_BufferEnsureMaxSize(buffer, newSize);
+    return IHS_BufferPointerAt(buffer, buffer->size);
+}
+
+uint8_t *IHS_BufferSuffixPointer(IHS_Buffer *buffer) {
+    assert(buffer->suffix > 0);
     return IHS_BufferPointerAt(buffer, buffer->size);
 }
 

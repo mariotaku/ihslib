@@ -24,6 +24,7 @@
  */
 #include "ihs_udp.h"
 #include "ihs_buffer.h"
+#include "ihs_thread.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,65 +33,48 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include <assert.h>
 
 struct IHS_UDPSocket {
     int fd;
-    int pipe[2];
+    IHS_Mutex *mutex;
 };
 
 static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage *sys);
 
 static size_t AddressToSys(const IHS_SocketAddress *ihs, struct sockaddr_storage *sys);
 
-IHS_UDPSocket *IHS_UDPSocketOpen() {
+IHS_UDPSocket *IHS_UDPSocketOpen(bool broadcast) {
     IHS_UDPSocket *s = calloc(1, sizeof(IHS_UDPSocket));
-
     s->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     assert(s->fd >= 0);
-    uint32_t broadcast = 1;
-    setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, (char *) &broadcast, sizeof(broadcast));
-
-    assert(pipe(s->pipe) == 0);
-    fcntl(s->pipe[0], F_SETFL, O_NONBLOCK);
-    fcntl(s->pipe[1], F_SETFL, O_NONBLOCK);
+    s->mutex = IHS_MutexCreate();
+    assert(s->mutex != NULL);
+    if (broadcast) {
+        uint32_t opt = 1;
+        setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, (char *) &opt, sizeof(opt));
+    }
     return s;
 }
 
 void IHS_UDPSocketClose(IHS_UDPSocket *s) {
-    close(s->pipe[1]);
-    close(s->pipe[0]);
+    IHS_MutexDestroy(s->mutex);
     close(s->fd);
     free(s);
 }
 
 int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(s->fd, &fds);
-    FD_SET(s->pipe[0], &fds);
-
-    if (select((s->fd > s->pipe[0] ? s->fd : s->pipe[0]) + 1, &fds, NULL, NULL, NULL) <= 0) {
-        return 0;
-    }
-
-    if (FD_ISSET(s->pipe[0], &fds)) {
-        // Drain self pipe
-        char buf[32];
-        while (read(s->pipe[0], buf, 32) > 0);
-    }
-
-    if (!FD_ISSET(s->fd, &fds)) {
-        return 0;
-    }
-
     struct sockaddr_storage sender;
     socklen_t senderlen = sizeof(sender);
     ssize_t len;
     IHS_BufferEnsureMaxSize(&packet->buffer, 2048);
     if ((len = recvfrom(s->fd, IHS_BufferPointer(&packet->buffer), IHS_BufferMaxSize(&packet->buffer),
                         0, (struct sockaddr *) &sender, &senderlen)) <= 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT) {
+            return 0;
+        }
         return -1;
     }
     packet->buffer.size = len;
@@ -98,17 +82,25 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     return 1;
 }
 
-int IHS_UDPSocketSend(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
+bool IHS_UDPSocketSend(IHS_UDPSocket *s, const IHS_UDPPacket *packet) {
     struct sockaddr_storage addr;
     size_t addr_len = AddressToSys(&packet->address, &addr);
-    return sendto(s->fd, IHS_BufferPointer(&packet->buffer), packet->buffer.size, 0,
-                  (struct sockaddr *) &addr, addr_len) > 0;
+    IHS_MutexLock(s->mutex);
+    bool ret = sendto(s->fd, IHS_BufferPointer(&packet->buffer), packet->buffer.size, 0,
+                      (struct sockaddr *) &addr, addr_len) > 0;
+    IHS_MutexUnlock(s->mutex);
+    return ret;
 }
 
-int IHS_UDPSocketUnblock(IHS_UDPSocket *s) {
-    assert(s != NULL);
-    const static uint8_t empty[1] = {0};
-    return write(s->pipe[1], empty, 1) == 1;
+bool IHS_UDPSocketSetBlocking(IHS_UDPSocket *s, bool blocking) {
+    return fcntl(s->fd, F_SETFL, blocking ? 0 : O_NONBLOCK) == 0;
+}
+
+bool IHS_UDPSocketSetRecvTimeout(IHS_UDPSocket *s, uint32_t timeoutUs) {
+    struct timeval tv;
+    tv.tv_sec = (int32_t) (timeoutUs / 1000000);
+    tv.tv_usec = (int32_t) (timeoutUs % 1000000);
+    return setsockopt(s->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == 0;
 }
 
 static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage *sys) {

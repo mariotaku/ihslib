@@ -35,7 +35,7 @@ typedef struct IHS_UDPPacket {
     IHS_Buffer buffer;
 } IHS_UDPPacket;
 
-IHS_UDPSocket *IHS_UDPSocketOpen();
+IHS_UDPSocket *IHS_UDPSocketOpen(bool broadcast);
 
 void IHS_UDPSocketClose(IHS_UDPSocket *socket);
 
@@ -45,8 +45,10 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet);
  *
  * @param s
  * @param packet
- * @return 1 if sent
+ * @return true if succeeded
  */
-int IHS_UDPSocketSend(IHS_UDPSocket *s, IHS_UDPPacket *packet);
+bool IHS_UDPSocketSend(IHS_UDPSocket *s, const IHS_UDPPacket *packet);
 
-int IHS_UDPSocketUnblock(IHS_UDPSocket *s);
+bool IHS_UDPSocketSetBlocking(IHS_UDPSocket *s, bool blocking);
+
+bool IHS_UDPSocketSetRecvTimeout(IHS_UDPSocket *s, uint32_t timeoutUs);

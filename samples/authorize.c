@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
     };
     IHS_ClientSetDiscoveryCallbacks(client, &dcallbacks, NULL);
     IHS_ClientSetAuthorizationCallbacks(client, &acallbacks, NULL);
-    IHS_ClientDiscoveryBroadcast(client);
-    IHS_ClientRun(client);
+    IHS_ClientStartDiscovery(client, 0);
+    IHS_ClientThreadedJoin(client);
     IHS_ClientDestroy(client);
 }
 

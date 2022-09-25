@@ -25,20 +25,30 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-#include "ihslib.h"
+#include "packet.h"
 
-extern const IHS_StreamAudioCallbacks AudioCallbacks;
-extern const IHS_StreamVideoCallbacks VideoCallbacks;
+typedef struct IHS_SessionPacketSender IHS_SessionPacketSender;
 
-extern IHS_Session *ActiveSession;
+typedef bool (IHS_SessionPacketSendFunction)(IHS_SessionPacket *packet, void *context);
 
-bool RequestStream(IHS_SessionInfo *info);
+IHS_SessionPacketSender *IHS_SessionPacketSenderCreate(size_t capability);
 
-void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
+void IHS_SessionPacketSenderDestroy(IHS_SessionPacketSender *sender);
 
-void VideoInit(int argc, char *argv[]);
+/**
+ * Add packet to queue
+ * @param sender
+ * @param packet
+ * @param retransmit
+ * @return
+ */
+bool IHS_SessionPacketSenderQueue(IHS_SessionPacketSender *sender, IHS_SessionPacket *packet, bool retransmit);
 
-void VideoDeinit();
+bool IHS_SessionPacketSenderEmpty(const IHS_SessionPacketSender *sender);
+
+bool IHS_SessionPacketSenderFlush(IHS_SessionPacketSender *sender, IHS_SessionPacketSendFunction *fn, void *context);
+
+bool IHS_SessionPacketSenderRemove(IHS_SessionPacketSender *sender, IHS_SessionChannelId channelId, uint16_t packetId);

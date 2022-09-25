@@ -28,12 +28,35 @@
 
 #include <string.h>
 
+static uint64_t DiscoveryTimerRun(IHS_Client *client);
 
-bool IHS_ClientDiscoveryBroadcast(IHS_Client *client) {
-    CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
-    PROTOBUF_C_SET_VALUE(discovery, seq_num, client->discoverySeq++);
+static void DiscoveryTimerEnd(IHS_Client *client);
 
-    return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+static bool DiscoveryBroadcast(IHS_Client *client);
+
+bool IHS_ClientStartDiscovery(IHS_Client *client, uint32_t interval) {
+    IHS_BaseLock(&client->base);
+    if (client->discoveryTimer != NULL) {
+        IHS_BaseUnlock(&client->base);
+        return false;
+    }
+    client->discoveryInterval = interval;
+    client->discoveryTimer = IHS_TimerStart(client->timers, (IHS_TimerRunFunction *) DiscoveryTimerRun,
+                                            (IHS_TimerEndFunction *) DiscoveryTimerEnd, 0, client);
+    IHS_BaseUnlock(&client->base);
+    return true;
+}
+
+bool IHS_ClientStopDiscovery(IHS_Client *client) {
+    IHS_BaseLock(&client->base);
+    if (client->discoveryTimer == NULL) {
+        IHS_BaseUnlock(&client->base);
+        return false;
+    }
+    client->discoveryInterval = 0;
+    client->discoveryTimer = NULL;
+    IHS_BaseUnlock(&client->base);
+    return true;
 }
 
 
@@ -54,4 +77,26 @@ void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
             client->callbacks.discovery->discovered(client, info, client->callbackContexts.discovery);
         }
     }
+}
+
+static uint64_t DiscoveryTimerRun(IHS_Client *client) {
+    if (client->discoveryTimer == NULL) {
+        return 0;
+    }
+    IHS_ClientLog(client, IHS_LogLevelDebug, "Discovery", "Send broadcast");
+    DiscoveryBroadcast(client);
+    return client->discoveryInterval;
+}
+
+static void DiscoveryTimerEnd(IHS_Client *client) {
+    IHS_BaseLock(&client->base);
+    client->discoveryTimer = NULL;
+    IHS_BaseUnlock(&client->base);
+}
+
+static bool DiscoveryBroadcast(IHS_Client *client) {
+    CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
+    PROTOBUF_C_SET_VALUE(discovery, seq_num, client->discoverySeq++);
+
+    return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }

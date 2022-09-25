@@ -34,8 +34,6 @@
 
 static void InterruptHandler(int sig);
 
-static void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
-
 static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
 
 static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context);
@@ -81,7 +79,7 @@ int main(int argc, char *argv[]) {
         goto sessionExit;
     }
     ActiveSession = session;
-    IHS_SessionRun(session);
+    IHS_SessionThreadedJoin(session);
     sessionExit:
     ActiveSession = NULL;
     IHS_SessionDestroy(session);
@@ -100,7 +98,7 @@ static void InterruptHandler(int sig) {
     IHS_SessionDisconnect(ActiveSession);
 }
 
-static void LogPrint(IHS_LogLevel level, const char *tag, const char *message) {
+void LogPrint(IHS_LogLevel level, const char *tag, const char *message) {
     switch (level) {
         case IHS_LogLevelInfo:
             fprintf(stderr, "[IHS.%s]\x1b[36m %s\x1b[0m\n", tag, message);

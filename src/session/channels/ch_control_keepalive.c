@@ -33,7 +33,7 @@ static uint64_t SendKeepAlive(void *data);
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     if (control->keepAliveTimer) return;
-    control->keepAliveTimer = IHS_TimerStart(channel->session->base.timers, SendKeepAlive, NULL,
+    control->keepAliveTimer = IHS_TimerStart(channel->session->timers, SendKeepAlive, NULL,
                                              5000, control);
 }
 

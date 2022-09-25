@@ -38,6 +38,9 @@
 #include "ihs_buffer_ext.h"
 #include "protobuf/pb_utils.h"
 
+static void ClientInitialized(IHS_Base *base, void *context);
+
+static void ClientLooped(IHS_Base *base, void *context);
 
 static const unsigned char PACKET_MAGIC[8] = {0xff, 0xff, 0xff, 0xff, 0x21, 0x4c, 0x5f, 0xa0};
 
@@ -60,14 +63,23 @@ static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStrea
         &cmsg_remote_device_streaming_progress__descriptor,
 };
 
+static IHS_BaseRunCallbacks ClientRunCallbacks = {
+        .initialized = ClientInitialized,
+        .looped = ClientLooped,
+};
+
 IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     IHS_Client *client = malloc(sizeof(IHS_Client));
     memset(client, 0, sizeof(IHS_Client));
     IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
+    IHS_BaseSetRunCallbacks(&client->base, &ClientRunCallbacks, NULL);
+    client->timers = IHS_TimersCreate();
 
     client->privCallbacks.discovery = IHS_ClientDiscoveryCallback;
     client->privCallbacks.authorization = IHS_ClientAuthorizationCallback;
     client->privCallbacks.streaming = IHS_ClientStreamingCallback;
+
+    IHS_BaseStartWorker(&client->base, "IHSClient");
     return client;
 }
 
@@ -75,23 +87,17 @@ void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction) 
     IHS_BaseSetLogFunction(&client->base, logFunction);
 }
 
-void IHS_ClientRun(IHS_Client *client) {
-    IHS_BaseRun(&client->base);
-}
-
 void IHS_ClientStop(IHS_Client *client) {
-    IHS_BaseStop(&client->base);
-}
-
-void IHS_ClientThreadedStart(IHS_Client *client) {
-    IHS_BaseStartWorker(&client->base, "IHSClient", (IHS_ThreadFunction *) IHS_ClientRun);
+    IHS_BaseInterruptWorker(&client->base);
 }
 
 void IHS_ClientThreadedJoin(IHS_Client *client) {
-    IHS_BaseThreadedJoin(&client->base);
+    IHS_BaseWaitWorker(&client->base);
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
+    IHS_TimersDestroy(client->timers);
+    IHS_ClientLog(client, IHS_LogLevelInfo, "Client", "Destroying client, bye!");
     IHS_BaseDestroy(&client->base);
     free(client);
 }
@@ -141,8 +147,9 @@ bool IHS_ClientSend(IHS_Client *client, IHS_SocketAddress address, ERemoteClient
         IHS_BufferAppendUInt32LE(&buf, 0);
     }
 
-    // buf.data WILL be owned in IHS_BaseSend, so no need to clear it
-    return IHS_BaseSend(&client->base, address, &buf);
+    bool ret = IHS_BaseSend(&client->base, address, &buf);
+    IHS_BufferClear(&buf, true);
+    return ret;
 }
 
 bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
@@ -193,4 +200,16 @@ static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address,
     }
     cmsg_remote_client_broadcast_header__free_unpacked(header, NULL);
     protobuf_c_message_free_unpacked(message, NULL);
+}
+
+static void ClientInitialized(IHS_Base *base, void *context) {
+    (void) context;
+    IHS_UDPSocketSetBlocking(base->socket, true);
+    IHS_UDPSocketSetRecvTimeout(base->socket, 10000 /* 10ms */);
+}
+
+static void ClientLooped(IHS_Base *base, void *context) {
+    (void) context;
+    IHS_Client *client = (IHS_Client *) base;
+    IHS_TimersTick(client->timers);
 }

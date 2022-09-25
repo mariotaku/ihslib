@@ -22,8 +22,10 @@ int main(int argc, char *argv[]) {
     uint8_t body[4] = {0xc7, 0x3d, 0x8f, 0x3c};
     IHS_BufferAppendMem(&packet.body, body, 4);
 
-    IHS_Buffer dest = {.data = NULL};
-    IHS_SessionPacketSerialize(&packet, &dest);
+    IHS_SessionPacketPopulateBuffer(&packet);
+    IHS_Buffer dest = packet.body;
+    IHS_BufferClear(&packet.body, false);
+    IHS_BufferExtendSize(&dest);
     assert(dest.data != NULL);
 
     IHS_SessionPacket parsed;

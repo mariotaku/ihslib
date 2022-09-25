@@ -100,14 +100,32 @@ size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8
  */
 void IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, IHS_Buffer *dest);
 
+/**
+ * Initialize capacity, set offset (for header) and suffix (for CRC) of a packet buffer
+ * @param body Buffer pointer
+ * @param hasCrc If true, the suffix will be set to 4
+ * @see IHS_SessionFrameBodyInitialize
+ */
+void IHS_SessionPacketBodyInitialize(IHS_Buffer *body, bool hasCrc);
+
+
+/**
+ * Parse session packet from body of a UDP packet
+ * @param packet Pointer to store parsed packet
+ * @param src UDP body buffer. Memory ownership of this buffer will be taken
+ * @return Parse result
+ */
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src);
 
 void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo);
 
-size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest);
+/**
+ * Update header bytes and CRC for packet
+ * @param packet Packet pointer
+ * @return
+ */
+void IHS_SessionPacketPopulateBuffer(IHS_SessionPacket *packet);
 
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet);
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData);
-
-void IHS_SessionPacketBodyInitialize(IHS_Buffer *body);

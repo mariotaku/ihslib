@@ -31,7 +31,6 @@
 #include "ihslib/common.h"
 #include "ihs_udp.h"
 #include "ihs_thread.h"
-#include "ihs_queue.h"
 #include "ihs_timer.h"
 
 typedef struct IHS_Base IHS_Base;
@@ -40,6 +39,8 @@ typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress 
 
 typedef struct IHS_BaseRunCallbacks {
     void (*initialized)(IHS_Base *base, void *context);
+
+    void (*looped)(IHS_Base *base, void *context);
 
     /**
      * Indicating all the resources and states has been destroyed. Nothing can be used beyond this call.
@@ -69,8 +70,6 @@ struct IHS_Base {
     IHS_UDPSocket *socket;
 
     IHS_Thread *worker;
-    IHS_Queue *queue;
-    IHS_Timers *timers;
     IHS_Mutex *lock;
     bool interrupted;
 };
@@ -79,27 +78,32 @@ struct IHS_Base {
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast);
 
-void IHS_BaseRun(IHS_Base *base);
-
-void IHS_BaseStop(IHS_Base *base);
-
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction);
 
 void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context);
 
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char *fmt, ...);
 
-void IHS_BaseStartWorker(IHS_Base *base, const char *name, IHS_ThreadFunction *worker);
+bool IHS_BaseStartWorker(IHS_Base *base, const char *name);
 
-void IHS_BaseThreadedJoin(IHS_Base *base);
+void IHS_BaseInterruptWorker(IHS_Base *base);
+
+void IHS_BaseWaitWorker(IHS_Base *base);
 
 /**
  * Destroys resources allocated in base. The pointer will not be destroyed.
- * @param base Base pointer
+ * @param base Base instance
  */
 void IHS_BaseDestroy(IHS_Base *base);
 
-bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, IHS_Buffer *data);
+/**
+ * Send the data to address immediately.
+ * @param base Base instance
+ * @param address Target address
+ * @param data Data to send
+ * @return true if succeeded
+ */
+bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const IHS_Buffer *data);
 
 void IHS_BaseLock(IHS_Base *base);
 

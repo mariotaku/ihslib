@@ -62,23 +62,46 @@ typedef struct IHS_StreamSessionCallbacks {
     void (*finalized)(IHS_Session *session, void *context);
 } IHS_StreamSessionCallbacks;
 
+/*
+ * Lifecycle functions
+ */
+
+/**
+ * Create session instance
+ * @param clientConfig Client info
+ * @param sessionInfo Session info
+ * @return Session instance
+ */
 IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_SessionInfo *sessionInfo);
 
-void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
-
-void IHS_SessionRun(IHS_Session *session);
-
-void IHS_SessionStop(IHS_Session *session);
-
-void IHS_SessionThreadedRun(IHS_Session *session);
-
-void IHS_SessionThreadedJoin(IHS_Session *session);
-
-void IHS_SessionDestroy(IHS_Session *session);
-
+/**
+ * Start receive and send thread, and send connect request
+ * @param session Session instance
+ * @return
+ */
 bool IHS_SessionConnect(IHS_Session *session);
 
+/**
+ * Send disconnect request
+ * @param session Session instance
+ */
 void IHS_SessionDisconnect(IHS_Session *session);
+
+/**
+ * Wait for all threads to finish
+ * @param session Session instance
+ */
+void IHS_SessionThreadedJoin(IHS_Session *session);
+
+/**
+ * Release all resources of the session and free the pointer
+ * @param session Session instance
+ */
+void IHS_SessionDestroy(IHS_Session *session);
+
+/*
+ * Callback related functions
+ */
 
 void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context);
 
@@ -87,5 +110,7 @@ void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCal
 void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context);
 
 void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context);
+
+void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 
 const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session);

@@ -73,7 +73,7 @@ void IHS_SessionChannelDataReceived(IHS_SessionChannel *channel, IHS_SessionPack
     IHS_SessionPacketType type = packet->header.type;
     assert(type == IHS_SessionPacketTypeUnreliable || type == IHS_SessionPacketTypeUnreliableFrag);
     if (!IHS_SessionPacketsWindowAdd(dataCh->window, packet)) {
-        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Data", "%s channel packets overflow! Available: %u",
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Data", "%s channel items overflow! Available: %u",
                        DataChannelName(channel->type), IHS_SessionPacketsWindowAvailable(dataCh->window));
         IHS_SessionPacketsWindowDiscard(dataCh->window, 0);
         IHS_SessionChannelDataLost(channel);
@@ -87,7 +87,7 @@ void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
     IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT);
     IHS_BufferAppendUInt8(&packet.body, k_EStreamDataLost);
     IHS_BufferAppendMessage(&packet.body, (const ProtobufCMessage *) &message);
-    IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionChannelSendPacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
 }
 

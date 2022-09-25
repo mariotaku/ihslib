@@ -32,9 +32,11 @@ int main(int argc, char *argv[]) {
 
     IHS_SessionPacketPadTo(&outPacket, packet_size_requested);
 
-    IHS_Buffer dest = {.data = NULL};
-    IHS_SessionPacketSerialize(&outPacket, &dest);
+    IHS_SessionPacketPopulateBuffer(&outPacket);
+    IHS_Buffer dest = outPacket.body;
+    IHS_BufferClear(&outPacket.body, false);
     assert(dest.data != NULL);
+    IHS_BufferExtendSize(&dest);
     assert(dest.size == packet_size_requested + 4);
 
     IHS_SessionPacket parsed;

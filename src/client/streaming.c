@@ -50,7 +50,7 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     state->request = *request;
     state->requestId = IHS_CryptoRandomUInt32();
     IHS_BaseLock(&client->base);
-    client->taskHandles.streaming = IHS_TimerStart(client->base.timers, StreamingRequestTimer, StreamingRequestCleanup,
+    client->taskHandles.streaming = IHS_TimerStart(client->timers, StreamingRequestTimer, StreamingRequestCleanup,
                                                    0, state);
     IHS_BaseUnlock(&client->base);
     return true;
@@ -87,11 +87,15 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
             if (response->request_id != state->requestId) return;
             switch (response->result) {
                 case k_ERemoteDeviceStreamingInProgress:
+                    IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request in progress: host %s",
+                                  state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->progress) {
                         client->callbacks.streaming->progress(client, client->callbackContexts.streaming);
                     }
                     return;
                 case k_ERemoteDeviceStreamingSuccess:
+                    IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request succeeded: host %s",
+                                  state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->success) {
                         ProtobufCBinaryData enc = response->encrypted_session_key;
                         uint8_t key[128];
@@ -104,6 +108,8 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
                     }
                     break;
                 default:
+                    IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request failed: host %s",
+                                  state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->failed) {
                         client->callbacks.streaming->failed(client, (IHS_StreamingResult) response->result,
                                                             client->callbackContexts.streaming);
@@ -174,6 +180,7 @@ static uint64_t StreamingRequestTimer(void *context) {
     EStreamTransport transports[] = {k_EStreamTransportUDP};
     message.supported_transport = transports;
 
+    IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Sending streaming request packet to host %s", host.hostname);
     IHS_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest,
                    (ProtobufCMessage *) &message);
     return 3000;

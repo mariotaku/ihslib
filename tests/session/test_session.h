@@ -25,20 +25,35 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "session/session_pri.h"
 
-#include "ihslib.h"
 
-extern const IHS_StreamAudioCallbacks AudioCallbacks;
-extern const IHS_StreamVideoCallbacks VideoCallbacks;
+static const uint64_t deviceId = 11451419190810;
 
-extern IHS_Session *ActiveSession;
+static const uint8_t secretKey[32] = {
+        11, 45, 14, 19, 19, 8, 1, 0,
+        11, 45, 14, 19, 19, 8, 1, 0,
+        11, 45, 14, 19, 19, 8, 1, 0,
+        11, 45, 14, 19, 19, 8, 1, 0,
+};
 
-bool RequestStream(IHS_SessionInfo *info);
+static const char deviceName[] = "BABYLON STAGE34\0";
 
-void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
+static const IHS_ClientConfig clientConfig = {deviceId, secretKey, deviceName};
 
-void VideoInit(int argc, char *argv[]);
+static const IHS_SessionInfo sessionInfo = {
+        .address = {
+                .port = 11451,
+                .ip.v4 = {IHS_IPAddressFamilyIPv4, {127, 0, 0, 1}}
+        },
+        .sessionKey = {
+                8, 1, 0, 11, 45, 14, 19, 19,
+                8, 1, 0, 11, 45, 14, 19, 19,
+                8, 1, 0, 11, 45, 14, 19, 19,
+                8, 1, 0, 11, 45, 14, 19, 19,
+        },
+        .sessionKeyLen = 32,
+        .steamId = 0,
+};
 
-void VideoDeinit();
+IHS_Session *IHS_TestSessionCreate();

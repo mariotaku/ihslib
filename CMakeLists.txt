@@ -45,6 +45,8 @@ add_library(ihslib
         src/client/streaming.c
         src/session/session.c
         src/session/packet.c
+        src/session/packet_sender.c
+        src/session/frame.c
         src/session/frame_window.c
         src/session/frame_crypto.c
         src/session/channels/channel.c

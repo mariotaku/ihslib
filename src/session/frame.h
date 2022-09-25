@@ -75,6 +75,14 @@ uint16_t IHS_SessionPacketsWindowAvailable(const IHS_SessionPacketsWindow *windo
 
 uint16_t IHS_SessionPacketsWindowSize(const IHS_SessionPacketsWindow *window);
 
+/**
+ * Initialize capacity, set offset (for header) and suffix (for CRC) of a frame buffer
+ * @param body Buffer pointer
+ * @param hasCrc If true, the suffix will be set to 4
+ * @see IHS_SessionPacketBodyInitialize
+ */
+void IHS_SessionFrameBodyInitialize(IHS_Buffer *body, bool hasCrc);
+
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence);
 
@@ -83,4 +91,4 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen);
 
-void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData) ;
+void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData);

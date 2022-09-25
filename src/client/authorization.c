@@ -54,7 +54,7 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
     strncpy(state->deviceName, client->base.deviceName, sizeof(state->deviceName) - 1);
     strncpy(state->pin, pin, sizeof(state->pin) - 1);
     IHS_BaseLock(&client->base);
-    client->taskHandles.authorization = IHS_TimerStart(client->base.timers, AuthorizationRequestTimer,
+    client->taskHandles.authorization = IHS_TimerStart(client->timers, AuthorizationRequestTimer,
                                                        AuthorizationRequestCleanup, 0, state);
     IHS_BaseUnlock(&client->base);
     return true;

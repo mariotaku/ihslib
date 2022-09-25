@@ -65,3 +65,7 @@ void IHS_CondSignal(IHS_Cond *cond) {
 void IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
     SDL_CondWait((SDL_cond *) cond, (SDL_mutex *) mutex);
 }
+
+void IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs) {
+    SDL_CondWaitTimeout((SDL_cond *) cond, (SDL_mutex *) mutex, timeoutMs);
+}

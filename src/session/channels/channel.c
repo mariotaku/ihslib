@@ -35,7 +35,8 @@
 #include "session/session_pri.h"
 #include "session/frame.h"
 
-static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit);
+static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
+                                              bool enableRetransmit);
 
 static IHS_SessionPacketType FragmentedPacketType(IHS_SessionPacketType type);
 
@@ -149,28 +150,22 @@ void IHS_SessionChannelInitializePacketHeader(IHS_SessionChannel *channel, IHS_S
 bool IHS_SessionChannelInitializePacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet,
                                         IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
     IHS_SessionChannelInitializePacketHeader(channel, &packet->header, type, hasCrc, packetId);
-    IHS_SessionPacketBodyInitialize(&packet->body);
+    IHS_SessionPacketBodyInitialize(&packet->body, hasCrc);
     return true;
 }
 
 bool IHS_SessionChannelInitializeFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame,
                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId) {
     IHS_SessionChannelInitializePacketHeader(channel, &frame->header, type, hasCrc, packetId);
-    IHS_BufferInit(&frame->body, 2048, 1024 * 1024);
-
-    // Reserve space for serialized header
-    IHS_BufferFillMem(&frame->body, 0, 0, IHS_PACKET_HEADER_SIZE);
-    IHS_BufferOffsetBy(&frame->body, IHS_PACKET_HEADER_SIZE);
-
-    assert(frame->body.offset == IHS_PACKET_HEADER_SIZE);
+    IHS_SessionFrameBodyInitialize(&frame->body, hasCrc);
     return true;
 }
 
-bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
-    return IHS_SessionSendPacket(channel->session, packet);
+bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit) {
+    return IHS_SessionQueuePacket(channel->session, packet, enableRetransmit);
 }
 
-bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame) {
+bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit) {
     size_t mtu = channel->session->state.mtu > 0 ? channel->session->state.mtu : 1024;
     int packetBodySizeLimit = (int) mtu - IHS_PACKET_HEADER_SIZE;
     if (frame->header.hasCrc) {
@@ -184,25 +179,11 @@ bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *
         IHS_SessionPacket packet;
         packet.header = frame->header;
         IHS_BufferTransferOwnership(&frame->body, &packet.body);
-        ret = IHS_SessionSendPacket(channel->session, &packet);
+        ret = IHS_SessionQueuePacket(channel->session, &packet, enableRetransmit);
         IHS_SessionPacketClear(&packet, true);
     } else {
-        ret = SessionChannelSendFrameFragmented(channel, frame, packetBodySizeLimit);
+        ret = SessionChannelSendFrameFragmented(channel, frame, packetBodySizeLimit, enableRetransmit);
     }
-    return ret;
-}
-
-bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
-                                 const uint8_t *body, size_t bodyLen, size_t padTo) {
-    IHS_Session *session = channel->session;
-    IHS_SessionPacket packet;
-    IHS_SessionChannelInitializePacket(channel, &packet, type, hasCrc, packetId);
-    IHS_BufferAppendMem(&packet.body, body, bodyLen);
-    if (padTo) {
-        IHS_SessionPacketPadTo(&packet, padTo);
-    }
-    bool ret = IHS_SessionSendPacket(session, &packet);
-    IHS_SessionPacketClear(&packet, true);
     return ret;
 }
 
@@ -211,7 +192,7 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
     IHS_SessionPacketType type = ok ? IHS_SessionPacketTypeACK : IHS_SessionPacketTypeNACK;
     IHS_SessionChannelInitializePacket(channel, &packet, type, true, packetId);
     IHS_BufferAppendUInt32LE(&packet.body, IHS_SessionPacketTimestamp());
-    IHS_SessionChannelSendPacket(channel, &packet);
+    IHS_SessionChannelSendPacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
 }
 
@@ -222,8 +203,8 @@ void IHS_SessionChannelStop(IHS_SessionChannel *channel) {
     channel->cls->stopped(channel);
 }
 
-static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit) {
-
+static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
+                                              bool enableRetransmit) {
     int fragmentSize = (int) (frame->body.size / bodyLimit + 1);
     assert(fragmentSize <= INT16_MAX);
     int16_t fragmentId = -1;
@@ -237,9 +218,9 @@ static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_S
             packet.header.fragmentId = fragmentId;
             packet.header.type = FragmentedPacketType(packet.header.type);
         }
-        IHS_SessionPacketBodyInitialize(&packet.body);
+        IHS_SessionPacketBodyInitialize(&packet.body, packet.header.hasCrc);
         IHS_BufferAppendMem(&packet.body, IHS_BufferPointer(&frame->body), packetBodySize);
-        bool ret = IHS_SessionSendPacket(channel->session, &packet);
+        bool ret = IHS_SessionQueuePacket(channel->session, &packet, enableRetransmit);
         IHS_SessionPacketClear(&packet, true);
         if (!ret) {
             return false;

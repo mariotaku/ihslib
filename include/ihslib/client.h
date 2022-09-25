@@ -124,11 +124,7 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config);
 
 void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction);
 
-void IHS_ClientRun(IHS_Client *client);
-
 void IHS_ClientStop(IHS_Client *client);
-
-void IHS_ClientThreadedStart(IHS_Client *client);
 
 void IHS_ClientThreadedJoin(IHS_Client *client);
 
@@ -146,7 +142,15 @@ const char *IHS_ClientError(IHS_Client *client);
  * - Discovery functions
  * ---------------------------------------------------- */
 
-bool IHS_ClientDiscoveryBroadcast(IHS_Client *client);
+/**
+ * Start discovery
+ * @param client Client instance
+ * @param interval Milliseconds between each discovery request. 0 for single-shot
+ * @return
+ */
+bool IHS_ClientStartDiscovery(IHS_Client *client, uint32_t interval);
+
+bool IHS_ClientStopDiscovery(IHS_Client *client);
 
 /* ----------------------------------------------------
  * - Authorization functions

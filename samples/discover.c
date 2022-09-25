@@ -34,30 +34,54 @@ static void InterruptHandler(int sig);
 
 static IHS_Client *ActiveClient = NULL;
 
+static void Log(IHS_LogLevel level, const char *tag, const char *message);
+
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
+    ActiveClient = client;
+    IHS_ClientSetLogFunction(client, Log);
     IHS_ClientDiscoveryCallbacks callbacks = {
             .discovered = OnHostStatus
     };
     IHS_ClientSetDiscoveryCallbacks(client, &callbacks, NULL);
-    IHS_ClientDiscoveryBroadcast(client);
-    ActiveClient = client;
-    IHS_ClientRun(client);
+    IHS_ClientStartDiscovery(client, 10000);
+    IHS_ClientThreadedJoin(client);
     IHS_ClientDestroy(client);
 }
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
-    printf("Found device: %s, port: %d, universe: %d\n",
-           info.hostname, info.address.port, info.universe);
+    printf("[Sample] Found device: %s, port: %d, universe: %d\n", info.hostname, info.address.port,
+           info.universe);
 }
 
 static void InterruptHandler(int sig) {
-    if (!ActiveClient) {
+    if (ActiveClient == NULL) {
         signal(SIGINT, SIG_DFL);
         raise(SIGINT);
         return;
     }
+    IHS_ClientStopDiscovery(ActiveClient);
     IHS_ClientStop(ActiveClient);
+}
+
+static void Log(IHS_LogLevel level, const char *tag, const char *message) {
+    switch (level) {
+        case IHS_LogLevelInfo:
+            fprintf(stderr, "[%s]\x1b[36m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelWarn:
+            fprintf(stderr, "[%s]\x1b[33m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelError:
+            fprintf(stderr, "[%s]\x1b[31m %s\x1b[0m\n", tag, message);
+            break;
+        case IHS_LogLevelFatal:
+            fprintf(stderr, "[%s]\x1b[41m %s\x1b[0m\n", tag, message);
+            break;
+        default:
+            fprintf(stderr, "[%s] %s\n", tag, message);
+            break;
+    }
 }

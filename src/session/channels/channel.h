@@ -90,12 +90,9 @@ bool IHS_SessionChannelInitializeFrame(IHS_SessionChannel *channel, IHS_SessionF
                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
 
-bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
+bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit);
 
-bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame);
-
-bool IHS_SessionChannelSendBytes(IHS_SessionChannel *channel, IHS_SessionPacketType type, bool hasCrc, int32_t packetId,
-                                 const uint8_t *body, size_t bodyLen, size_t padTo);
+bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit);
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);
 

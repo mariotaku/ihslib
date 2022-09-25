@@ -9286,7 +9286,7 @@ const ProtobufCMessageDescriptor cset_bitrate_override_msg__descriptor =
 static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1] =
 {
   {
-    "packets",
+    "items",
     1,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_UINT32,
@@ -9299,7 +9299,7 @@ static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1
   },
 };
 static const unsigned cstream_data_lost_msg__field_indices_by_name[] = {
-  0,   /* field[0] = packets */
+  0,   /* field[0] = items */
 };
 static const ProtobufCIntRange cstream_data_lost_msg__number_ranges[1 + 1] =
 {

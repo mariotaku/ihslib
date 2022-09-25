@@ -23,22 +23,8 @@
  *
  */
 
-#pragma once
+#include "test_session.h"
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "ihslib.h"
-
-extern const IHS_StreamAudioCallbacks AudioCallbacks;
-extern const IHS_StreamVideoCallbacks VideoCallbacks;
-
-extern IHS_Session *ActiveSession;
-
-bool RequestStream(IHS_SessionInfo *info);
-
-void LogPrint(IHS_LogLevel level, const char *tag, const char *message);
-
-void VideoInit(int argc, char *argv[]);
-
-void VideoDeinit();
+IHS_Session *IHS_TestSessionCreate() {
+    return IHS_SessionCreate(&clientConfig, &sessionInfo);
+}

@@ -63,6 +63,19 @@ void IHS_SessionPacketHeaderSerialize(const IHS_SessionPacketHeader *header, IHS
     IHS_BufferWriteMem(dest, 0, serialized, offset);
 }
 
+void IHS_SessionPacketBodyInitialize(IHS_Buffer *body, bool hasCrc) {
+    IHS_BufferInit(body, 2048, 2048);
+
+    // Reserve space for serialized header
+    IHS_BufferFillMem(body, 0, 0, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(body, IHS_PACKET_HEADER_SIZE);
+    assert(body->offset == IHS_PACKET_HEADER_SIZE);
+    if (hasCrc) {
+        IHS_BufferSetSuffixLength(body, 4);
+        assert(body->suffix == 4);
+    }
+}
+
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src) {
     memset(packet, 0, sizeof(IHS_SessionPacket));
     size_t headLen = IHS_SessionPacketHeaderParse(&packet->header, IHS_BufferPointer(src));
@@ -87,17 +100,18 @@ void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo) {
     IHS_BufferFillMem(&packet->body, packet->body.size, 0xFE, padTo - curSize);
 }
 
-size_t IHS_SessionPacketSerialize(IHS_SessionPacket *packet, IHS_Buffer *dest) {
-    IHS_BufferTransferOwnership(&packet->body, dest);
-    IHS_BufferOffsetBy(dest, -IHS_PACKET_HEADER_SIZE);
-    assert(dest->offset == 0);
-    IHS_SessionPacketHeaderSerialize(&packet->header, dest);
+void IHS_SessionPacketPopulateBuffer(IHS_SessionPacket *packet) {
+    assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
+    IHS_BufferOffsetBy(&packet->body, -IHS_PACKET_HEADER_SIZE);
+    IHS_SessionPacketHeaderSerialize(&packet->header, &packet->body);
 
     if (packet->header.hasCrc) {
-        uint32_t crc = IHS_CRC32C(IHS_BufferPointer(dest), dest->size);
-        IHS_BufferAppendUInt32LE(dest, crc);
+        assert(packet->body.suffix == 4);
+        uint32_t crc = IHS_CRC32C(IHS_BufferPointer(&packet->body), packet->body.size);
+        IHS_WriteUInt32LE(IHS_BufferSuffixPointer(&packet->body), crc);
     }
-    return dest->size;
+    IHS_BufferOffsetBy(&packet->body, IHS_PACKET_HEADER_SIZE);
+    assert(IHS_SessionPacketSize(packet) == IHS_BufferUsedSize(&packet->body));
 }
 
 size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
@@ -106,14 +120,4 @@ size_t IHS_SessionPacketSize(const IHS_SessionPacket *packet) {
 
 void IHS_SessionPacketClear(IHS_SessionPacket *packet, bool freeData) {
     IHS_BufferClear(&packet->body, freeData);
-}
-
-void IHS_SessionPacketBodyInitialize(IHS_Buffer *body) {
-    IHS_BufferInit(body, 2048, 2048);
-
-    // Reserve space for serialized header
-    IHS_BufferFillMem(body, 0, 0, IHS_PACKET_HEADER_SIZE);
-    IHS_BufferOffsetBy(body, IHS_PACKET_HEADER_SIZE);
-
-    assert(body->offset == IHS_PACKET_HEADER_SIZE);
 }

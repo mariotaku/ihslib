@@ -28,14 +28,17 @@
 #include <time.h>
 
 #include "ihs_timer.h"
+#include "ihs_thread.h"
 
 #define MAX_TIMERS_COUNT 16
 
 struct IHS_Timers {
     IHS_Timer *timers[MAX_TIMERS_COUNT];
+    IHS_Mutex *mutex;
 };
 
 struct IHS_Timer {
+    IHS_Timers *timers;
     IHS_TimerRunFunction *run;
     IHS_TimerEndFunction *end;
     void *context;
@@ -46,10 +49,12 @@ static bool TimerExecute(IHS_Timer *timer);
 
 IHS_Timers *IHS_TimersCreate() {
     IHS_Timers *timers = calloc(1, sizeof(IHS_Timers));
+    timers->mutex = IHS_MutexCreate();
     return timers;
 }
 
 void IHS_TimersDestroy(IHS_Timers *timers) {
+    IHS_MutexLock(timers->mutex);
     for (int i = 0; i < MAX_TIMERS_COUNT; i++) {
         IHS_Timer *timer = timers->timers[i];
         if (!timer) continue;
@@ -59,13 +64,16 @@ void IHS_TimersDestroy(IHS_Timers *timers) {
         free(timer);
         timers->timers[i] = NULL;
     }
+    IHS_MutexUnlock(timers->mutex);
+    IHS_MutexDestroy(timers->mutex);
     free(timers);
 }
 
 void IHS_TimersTick(IHS_Timers *timers) {
+    IHS_MutexLock(timers->mutex);
     for (int i = 0; i < MAX_TIMERS_COUNT; i++) {
         IHS_Timer *timer = timers->timers[i];
-        if (!timer) return;
+        if (!timer) continue;
         if (!TimerExecute(timer)) {
             if (timer->end) {
                 timer->end(timer->context);
@@ -74,28 +82,37 @@ void IHS_TimersTick(IHS_Timers *timers) {
             timers->timers[i] = NULL;
         }
     }
+    IHS_MutexUnlock(timers->mutex);
 }
 
 IHS_Timer *IHS_TimerStart(IHS_Timers *timers, IHS_TimerRunFunction *run, IHS_TimerEndFunction *end,
                           uint64_t timeout, void *context) {
+    IHS_MutexLock(timers->mutex);
     int availIndex = -1;
     for (int i = 0; i < MAX_TIMERS_COUNT; i++) {
         if (timers->timers[i]) continue;
         availIndex = i;
         break;
     }
-    if (availIndex < 0) return NULL;
+    if (availIndex < 0) {
+        IHS_MutexUnlock(timers->mutex);
+        return NULL;
+    }
     IHS_Timer *timer = calloc(1, sizeof(IHS_Timer));
+    timer->timers = timers;
     timer->run = run;
     timer->end = end;
     timer->context = context;
     timer->nextExecution = IHS_TimerNow() + timeout;
     timers->timers[availIndex] = timer;
+    IHS_MutexUnlock(timers->mutex);
     return timer;
 }
 
 void IHS_TimerStop(IHS_Timer *timer) {
+    IHS_MutexLock(timer->timers->mutex);
     timer->nextExecution = 0;
+    IHS_MutexUnlock(timer->timers->mutex);
 }
 
 void *IHS_TimerGetContext(IHS_Timer *timer) {

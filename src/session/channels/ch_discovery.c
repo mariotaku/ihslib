@@ -57,7 +57,10 @@ IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
 }
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
-    IHS_SessionChannelSendBytes(channel, IHS_SessionPacketTypeDisconnect, true, 0, NULL, 0, 0);
+    IHS_SessionPacket packet;
+    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeDisconnect, true, 0);
+    IHS_SessionChannelSendPacket(channel, &packet, false);
+    IHS_SessionPacketClear(&packet, true);
 }
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
@@ -80,6 +83,7 @@ static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *p
     IHS_Session *session = channel->session;
     if (session->state.connectionId != packet->header.dstConnectionId) return;
     session->state.hostConnectionId = packet->header.srcConnectionId;
+    IHS_SessionPacketSenderRemove(session->sender, IHS_SessionChannelIdDiscovery, 0);
 
     IHS_SessionChannel *control = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
     IHS_SessionChannelControlHandshake(control, false);
@@ -108,7 +112,7 @@ static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *p
     IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session disconnected");
     IHS_SessionChannel *control = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
     IHS_SessionChannelControlStopHeartbeat(control);
-    IHS_SessionStop(session);
+    IHS_SessionInterrupt(session);
 }
 
 static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *packet,
@@ -125,6 +129,6 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
     IHS_BufferAppendMessage(&outPacket.body, (const ProtobufCMessage *) &response);
 
     IHS_SessionPacketPadTo(&outPacket, request->packet_size_requested);
-    IHS_SessionSendPacket(channel->session, &outPacket);
+    IHS_SessionQueuePacket(channel->session, &outPacket, false);
     IHS_SessionPacketClear(&outPacket, true);
 }

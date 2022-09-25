@@ -29,10 +29,23 @@
 #include <stdint.h>
 
 typedef struct IHS_Buffer {
+    /**
+     * Data pointer
+     */
     uint8_t *data;
+    /**
+     * Allocation size of the data pointer
+     */
     size_t capacity;
-    size_t size;
+    /**
+     * Length before beginning of data
+     */
     size_t offset;
+    size_t size;
+    /**
+     * Length after data size
+     */
+    size_t suffix;
 
     size_t initialCapacity;
     size_t maxCapacity;

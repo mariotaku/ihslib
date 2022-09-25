@@ -103,7 +103,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     } else {
         IHS_BufferAppendMessage(&frame.body, message);
     }
-    ret = IHS_SessionChannelSendFrame(channel, &frame);
+    ret = IHS_SessionChannelSendFrame(channel, &frame, true);
     IHS_SessionFrameClear(&frame, true);
     return ret;
 }
@@ -147,7 +147,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *pa
             // Stop retransmit of the packet
             break;
         default:
-            // Other packets should not come here
+            // Other items should not come here
             IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Unrecognized packet %u\n",
                            packet->header.type);
             IHS_SessionDisconnect(channel->session);
