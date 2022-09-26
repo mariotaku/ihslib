@@ -40,6 +40,7 @@ static bool AuthorizationStart = false;
 
 
 int main(int argc, char *argv[]) {
+    IHS_Init();
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
     IHS_ClientDiscoveryCallbacks dcallbacks = {
@@ -55,6 +56,7 @@ int main(int argc, char *argv[]) {
     IHS_ClientStartDiscovery(client, 0);
     IHS_ClientThreadedJoin(client);
     IHS_ClientDestroy(client);
+    IHS_Quit();
 }
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {

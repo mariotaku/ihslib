@@ -28,11 +28,11 @@
 #include "ihslib/session.h"
 #include "base.h"
 #include "packet.h"
-#include "packet_sender.h"
 
 #include "channels/channel.h"
 
 #include "protobuf/remoteplay.pb-c.h"
+#include "ihs_queue.h"
 
 typedef struct IHS_SessionState {
     int mtu;
@@ -47,10 +47,10 @@ struct IHS_Session {
     uint8_t numChannels;
     IHS_SessionChannel *channels[16];
     IHS_Thread *sendThread;
-    IHS_Cond *sendThreadCond;
-    IHS_Mutex *sendThreadMutex;
-    IHS_SessionPacketSender *sender;
-    IHS_Timers *timers;
+    IHS_Cond *sendQueueCond;
+    IHS_Mutex *sendQueueMutex;
+    IHS_Queue *sendQueue;
+    IHS_Timer *timers;
     struct {
         const IHS_StreamSessionCallbacks *session;
         const IHS_StreamAudioCallbacks *audio;
@@ -77,5 +77,7 @@ void IHS_SessionInterrupt(IHS_Session *session);
  * @return
  */
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit);
+
+bool IHS_SessionCancelQueuePacket(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId);
 
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message);

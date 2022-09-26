@@ -39,7 +39,7 @@ typedef struct IHS_SessionChannelControl {
     uint64_t sendEncryptSequence;
     uint64_t recvEncryptSequence;
     IHS_SessionPacketsWindow *framePacketWindow;
-    IHS_Timer *keepAliveTimer;
+    IHS_TimerTask *keepAliveTimer;
 } IHS_SessionChannelControl;
 
 IHS_SessionChannel *IHS_SessionChannelControlCreate(IHS_Session *session);

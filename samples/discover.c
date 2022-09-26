@@ -38,6 +38,7 @@ static void Log(IHS_LogLevel level, const char *tag, const char *message);
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
+    IHS_Init();
     IHS_ClientConfig config = {deviceId, secretKey, deviceName};
     IHS_Client *client = IHS_ClientCreate(&config);
     ActiveClient = client;
@@ -46,9 +47,11 @@ int main(int argc, char *argv[]) {
             .discovered = OnHostStatus
     };
     IHS_ClientSetDiscoveryCallbacks(client, &callbacks, NULL);
+    printf("[Sample] Send discover request for every 10 seconds\n");
     IHS_ClientStartDiscovery(client, 10000);
     IHS_ClientThreadedJoin(client);
     IHS_ClientDestroy(client);
+    IHS_Quit();
 }
 
 static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {

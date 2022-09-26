@@ -54,8 +54,8 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
     strncpy(state->deviceName, client->base.deviceName, sizeof(state->deviceName) - 1);
     strncpy(state->pin, pin, sizeof(state->pin) - 1);
     IHS_BaseLock(&client->base);
-    client->taskHandles.authorization = IHS_TimerStart(client->timers, AuthorizationRequestTimer,
-                                                       AuthorizationRequestCleanup, 0, state);
+    client->taskHandles.authorization = IHS_TimerTaskStart(client->timers, AuthorizationRequestTimer,
+                                                           AuthorizationRequestCleanup, 0, state);
     IHS_BaseUnlock(&client->base);
     return true;
 }
@@ -63,7 +63,7 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
 
 void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip,
                                      CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
-    IHS_Timer *timer = client->taskHandles.authorization;
+    IHS_TimerTask *timer = client->taskHandles.authorization;
     if (!timer) return;
     if (header->msg_type != k_ERemoteDeviceAuthorizationResponse) {
         return;
@@ -87,7 +87,7 @@ void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip,
             }
             break;
     }
-    IHS_TimerStop(timer);
+    IHS_TimerTaskStop(timer);
 }
 
 

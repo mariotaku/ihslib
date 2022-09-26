@@ -37,8 +37,8 @@ typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_IPAddress ip, CMsgRem
 
 struct IHS_Client {
     IHS_Base base;
-    IHS_Timers *timers;
-    IHS_Timer *discoveryTimer;
+    IHS_Timer *timers;
+    IHS_TimerTask *discoveryTimer;
     uint32_t discoveryInterval;
     uint32_t discoverySeq;
     struct {
@@ -57,8 +57,8 @@ struct IHS_Client {
         IHS_MessageCallback *streaming;
     } privCallbacks;
     struct {
-        IHS_Timer *authorization;
-        IHS_Timer *streaming;
+        IHS_TimerTask *authorization;
+        IHS_TimerTask *streaming;
     } taskHandles;
 };
 

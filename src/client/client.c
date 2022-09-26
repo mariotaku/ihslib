@@ -40,8 +40,6 @@
 
 static void ClientInitialized(IHS_Base *base, void *context);
 
-static void ClientLooped(IHS_Base *base, void *context);
-
 static const unsigned char PACKET_MAGIC[8] = {0xff, 0xff, 0xff, 0xff, 0x21, 0x4c, 0x5f, 0xa0};
 
 static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data);
@@ -65,7 +63,6 @@ static const ProtobufCMessageDescriptor *MessageDescriptors[k_ERemoteDeviceStrea
 
 static IHS_BaseRunCallbacks ClientRunCallbacks = {
         .initialized = ClientInitialized,
-        .looped = ClientLooped,
 };
 
 IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
@@ -73,7 +70,7 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     memset(client, 0, sizeof(IHS_Client));
     IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
     IHS_BaseSetRunCallbacks(&client->base, &ClientRunCallbacks, NULL);
-    client->timers = IHS_TimersCreate();
+    client->timers = IHS_TimerCreate();
 
     client->privCallbacks.discovery = IHS_ClientDiscoveryCallback;
     client->privCallbacks.authorization = IHS_ClientAuthorizationCallback;
@@ -96,7 +93,7 @@ void IHS_ClientThreadedJoin(IHS_Client *client) {
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
-    IHS_TimersDestroy(client->timers);
+    IHS_TimerDestroy(client->timers);
     IHS_ClientLog(client, IHS_LogLevelInfo, "Client", "Destroying client, bye!");
     IHS_BaseDestroy(&client->base);
     free(client);
@@ -208,8 +205,3 @@ static void ClientInitialized(IHS_Base *base, void *context) {
     IHS_UDPSocketSetRecvTimeout(base->socket, 10000 /* 10ms */);
 }
 
-static void ClientLooped(IHS_Base *base, void *context) {
-    (void) context;
-    IHS_Client *client = (IHS_Client *) base;
-    IHS_TimersTick(client->timers);
-}

@@ -55,6 +55,7 @@ static IHS_StreamSessionCallbacks SessionCallbacks = {
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
+    IHS_Init();
     VideoInit(argc, argv);
 
     IHS_SessionInfo sessionConfig;
@@ -85,6 +86,7 @@ int main(int argc, char *argv[]) {
     IHS_SessionDestroy(session);
 
     VideoDeinit();
+    IHS_Quit();
     return 0;
 }
 

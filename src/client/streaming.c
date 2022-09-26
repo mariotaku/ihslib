@@ -50,8 +50,8 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     state->request = *request;
     state->requestId = IHS_CryptoRandomUInt32();
     IHS_BaseLock(&client->base);
-    client->taskHandles.streaming = IHS_TimerStart(client->timers, StreamingRequestTimer, StreamingRequestCleanup,
-                                                   0, state);
+    client->taskHandles.streaming = IHS_TimerTaskStart(client->timers, StreamingRequestTimer, StreamingRequestCleanup,
+                                                       0, state);
     IHS_BaseUnlock(&client->base);
     return true;
 }
@@ -59,9 +59,9 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
 void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
                                  ProtobufCMessage *message) {
     IHS_UNUSED(ip);
-    IHS_Timer *timer = client->taskHandles.streaming;
+    IHS_TimerTask *timer = client->taskHandles.streaming;
     if (!timer) return;
-    IHS_StreamingState *state = IHS_TimerGetContext(timer);
+    IHS_StreamingState *state = IHS_TimerTaskGetContext(timer);
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
             CMsgRemoteDeviceProofRequest *request = (CMsgRemoteDeviceProofRequest *) message;
@@ -116,7 +116,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
                     }
                     break;
             }
-            IHS_TimerStop(timer);
+            IHS_TimerTaskStop(timer);
             break;
         }
         default:

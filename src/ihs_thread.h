@@ -31,11 +31,16 @@ typedef struct IHS_Thread IHS_Thread;
 typedef struct IHS_Mutex IHS_Mutex;
 typedef struct IHS_Cond IHS_Cond;
 
-typedef enum IHS_CondWaitRet {
+typedef enum IHS_MutexResult {
+    IHS_MUTEX_ERROR = -1,
+    IHS_MUTEX_OK = 0,
+} IHS_MutexResult;
+
+typedef enum IHS_CondWaitResult {
     IHS_CONDWAIT_ERROR = -1,
     IHS_CONDWAIT_SIGNALED = 0,
     IHS_CONDWAIT_TIMEOUT = 1,
-} IHS_CondWaitRet;
+} IHS_CondWaitResult;
 
 typedef void (IHS_ThreadFunction)(void *context);
 
@@ -47,9 +52,9 @@ IHS_Mutex *IHS_MutexCreate();
 
 void IHS_MutexDestroy(IHS_Mutex *mutex);
 
-void IHS_MutexLock(IHS_Mutex *mutex);
+IHS_MutexResult IHS_MutexLock(IHS_Mutex *mutex);
 
-void IHS_MutexUnlock(IHS_Mutex *mutex);
+IHS_MutexResult IHS_MutexUnlock(IHS_Mutex *mutex);
 
 IHS_Cond *IHS_CondCreate();
 
@@ -57,6 +62,6 @@ void IHS_CondDestroy(IHS_Cond *cond);
 
 void IHS_CondSignal(IHS_Cond *cond);
 
-IHS_CondWaitRet IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex);
+IHS_CondWaitResult IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex);
 
-IHS_CondWaitRet IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs);
+IHS_CondWaitResult IHS_CondTimedWait(IHS_Cond *cond, IHS_Mutex *mutex, uint32_t timeoutMs);

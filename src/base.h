@@ -40,8 +40,6 @@ typedef void (IHS_BaseReceivedFunction)(IHS_Base *base, const IHS_SocketAddress 
 typedef struct IHS_BaseRunCallbacks {
     void (*initialized)(IHS_Base *base, void *context);
 
-    void (*looped)(IHS_Base *base, void *context);
-
     /**
      * Indicating all the resources and states has been destroyed. Nothing can be used beyond this call.
      * @param base

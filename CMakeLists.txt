@@ -38,6 +38,7 @@ add_library(ihslib
         src/ihs_ip.c
         src/ihs_thread.c
         src/ihs_buffer.c
+        src/ihs_queue.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c

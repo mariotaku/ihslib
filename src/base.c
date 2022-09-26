@@ -25,20 +25,31 @@
 
 #include "base.h"
 
-#include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 
 #include "endianness.h"
 #include "crypto.h"
 #include "ihs_buffer.h"
 
-
 static void BaseWorker(IHS_Base *base);
 
+static bool initialized;
+
+void IHS_Init() {
+    initialized = true;
+    IHS_TimerInit();
+}
+
+void IHS_Quit() {
+    IHS_TimerQuit();
+    initialized = false;
+}
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast) {
+    assert(initialized);
     memset(base, 0, sizeof(IHS_Base));
     base->broadcast = broadcast;
     base->lock = IHS_MutexCreate();
@@ -97,7 +108,7 @@ const char *IHS_LogLevelName(IHS_LogLevel level) {
 
 bool IHS_BaseStartWorker(IHS_Base *base, const char *name) {
     IHS_BaseLock(base);
-    if (base->worker!= NULL) {
+    if (base->worker != NULL) {
         IHS_BaseUnlock(base);
         return false;
     }
@@ -147,9 +158,6 @@ static void BaseWorker(IHS_Base *base) {
     IHS_UDPPacket recv;
     IHS_BufferInit(&recv.buffer, 2048, 2048);
     while (!base->interrupted) {
-        if (base->callbacks.run && base->callbacks.run->looped) {
-            base->callbacks.run->looped(base, base->callbackContexts.run);
-        }
         int ret;
         if ((ret = IHS_UDPSocketReceive(base->socket, &recv)) < 0) {
             break;

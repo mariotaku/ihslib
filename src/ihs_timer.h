@@ -27,24 +27,34 @@
 
 #include <stdint.h>
 
-typedef struct IHS_Timers IHS_Timers;
 typedef struct IHS_Timer IHS_Timer;
+typedef struct IHS_TimerTask IHS_TimerTask;
 
 typedef uint64_t (IHS_TimerRunFunction)(void *context);
 
 typedef void (IHS_TimerEndFunction)(void *context);
 
-IHS_Timers *IHS_TimersCreate();
+void IHS_TimerInit();
 
-void IHS_TimersDestroy(IHS_Timers *timers);
+void IHS_TimerQuit();
 
-void IHS_TimersTick(IHS_Timers *timers);
+/**
+ * Create tasks instance. Start timer thread if not started
+ * @return Timers instance
+ */
+IHS_Timer *IHS_TimerCreate();
 
-IHS_Timer *IHS_TimerStart(IHS_Timers *timers, IHS_TimerRunFunction *run, IHS_TimerEndFunction *end,
-                          uint64_t timeout, void *context);
+/**
+ * Destroy tasks instance. If all references are removed, destroy the timer
+ * @param timer
+ */
+void IHS_TimerDestroy(IHS_Timer *timer);
 
-void IHS_TimerStop(IHS_Timer *timer);
+IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, IHS_TimerEndFunction *end,
+                                  uint64_t timeout, void *context);
 
-void *IHS_TimerGetContext(IHS_Timer *timer);
+void IHS_TimerTaskStop(IHS_TimerTask *task);
+
+void *IHS_TimerTaskGetContext(IHS_TimerTask *task);
 
 uint64_t IHS_TimerNow();

@@ -56,7 +56,7 @@ typedef struct IHS_SessionChannelVideo {
         IHS_Buffer buffer;
         IHS_StreamVideoFrameFlag flags;
     } frame;
-    IHS_Timer *statsTimer;
+    IHS_TimerTask *statsTimer;
     IHS_Mutex *stateMutex;
 } IHS_SessionChannelVideo;
 
@@ -162,7 +162,7 @@ static bool DataStart(IHS_SessionChannel *channel) {
     message.info = "Marvell hardware decoding";
     PROTOBUF_C_SET_VALUE(message, threads, 1);
 
-    videoCh->statsTimer = IHS_TimerStart(session->timers, ReportVideoStats, NULL, 1000, videoCh);
+    videoCh->statsTimer = IHS_TimerTaskStart(session->timers, ReportVideoStats, NULL, 1000, videoCh);
 
     return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
                                          (const ProtobufCMessage *) &message);
@@ -236,7 +236,7 @@ static void DataStop(IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     if (videoCh->statsTimer != NULL) {
-        IHS_TimerStop(videoCh->statsTimer);
+        IHS_TimerTaskStop(videoCh->statsTimer);
         videoCh->statsTimer = NULL;
     }
     const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
