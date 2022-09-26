@@ -78,7 +78,7 @@ void IHS_SessionPacketsWindowDestroy(IHS_SessionPacketsWindow *window) {
 
 bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPacket *packet) {
     /* Calculate distance of 2 items */
-    int tailOffset = window->tail.pos < 0 ? 1 : (int) (packet->header.packetId - window->tail.id);
+    int tailOffset = window->tail.pos < 0 ? 1 : (int16_t) (packet->header.packetId - window->tail.id);
     /* We already processed this packet, so ignore it */
     if (tailOffset < 0 && -tailOffset > IHS_SessionPacketsWindowSize(window)) {
         return true;

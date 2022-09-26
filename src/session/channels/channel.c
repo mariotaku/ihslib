@@ -171,11 +171,11 @@ bool IHS_SessionChannelInitializeFrame(IHS_SessionChannel *channel, IHS_SessionF
     return true;
 }
 
-bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit) {
+bool IHS_SessionChannelQueuePacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit) {
     return IHS_SessionQueuePacket(channel->session, packet, enableRetransmit);
 }
 
-bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit) {
+bool IHS_SessionChannelQueueFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit) {
     size_t mtu = channel->session->state.mtu > 0 ? channel->session->state.mtu : 1024;
     int packetBodySizeLimit = (int) mtu - IHS_PACKET_HEADER_SIZE;
     if (frame->header.hasCrc) {
@@ -202,7 +202,7 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
     IHS_SessionPacketType type = ok ? IHS_SessionPacketTypeACK : IHS_SessionPacketTypeNACK;
     IHS_SessionChannelInitializePacket(channel, &packet, type, true, packetId);
     IHS_BufferAppendUInt32LE(&packet.body, IHS_SessionPacketTimestamp());
-    IHS_SessionChannelSendPacket(channel, &packet, false);
+    IHS_SessionChannelQueuePacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
 }
 

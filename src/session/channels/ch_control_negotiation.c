@@ -61,7 +61,8 @@ void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStream
 
 static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationInitMsg *message, uint16_t packetId) {
     IHS_SessionConfig ihsConf = {
-            .enableHevc = false
+            .enableAudio = true,
+            .enableHevc = false,
     };
 
     IHS_Session *session = channel->session;
@@ -71,10 +72,12 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
 
     EStreamAudioCodec audioCodec = k_EStreamAudioCodecNone;
     EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
-    for (int i = 0; i < message->n_supported_audio_codecs; i++) {
-        EStreamAudioCodec codec = message->supported_audio_codecs[i];
-        if (codec == k_EStreamAudioCodecOpus) {
-            audioCodec = codec;
+    if (ihsConf.enableAudio) {
+        for (int i = 0; i < message->n_supported_audio_codecs; i++) {
+            EStreamAudioCodec codec = message->supported_audio_codecs[i];
+            if (codec == k_EStreamAudioCodecOpus) {
+                audioCodec = codec;
+            }
         }
     }
     for (int i = 0; i < message->n_supported_video_codecs; i++) {
@@ -112,9 +115,11 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_y, 0);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_hardware_decoding, true);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_performance_overlay, true);
-    PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
+    if (ihsConf.enableAudio) {
+        PROTOBUF_C_SET_VALUE(clientConfig, audio_channels, 2);
+        PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
+    }
     PROTOBUF_C_SET_VALUE(clientConfig, enable_video_streaming, true);
-    PROTOBUF_C_SET_VALUE(clientConfig, audio_channels, 2);
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_numerator, 5994);
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
     PROTOBUF_C_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);

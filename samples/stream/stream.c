@@ -63,11 +63,11 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    printf("Start Streaming, sessionKey[%zu]=\"", sessionConfig.sessionKeyLen);
+    fprintf(stderr, "Start Streaming, sessionKey[%zu]=\"", sessionConfig.sessionKeyLen);
     for (int i = 0; i < sessionConfig.sessionKeyLen; i++) {
-        printf("%02x", sessionConfig.sessionKey[i]);
+        fprintf(stderr, "%02x", sessionConfig.sessionKey[i]);
     }
-    printf("\"\n");
+    fprintf(stderr, "\"\n");
 
     IHS_Session *session = IHS_SessionCreate(&clientConfig, &sessionConfig);
     IHS_SessionSetLogFunction(session, LogPrint);
@@ -101,33 +101,35 @@ static void InterruptHandler(int sig) {
 }
 
 void LogPrint(IHS_LogLevel level, const char *tag, const char *message) {
+    const char *levelName = IHS_LogLevelName(level);
     switch (level) {
         case IHS_LogLevelInfo:
-            fprintf(stderr, "[IHS.%s]\x1b[36m %s\x1b[0m\n", tag, message);
+            fprintf(stderr, "[IHS.%s %s]\x1b[36m %s\x1b[0m\n", tag, levelName, message);
             break;
         case IHS_LogLevelWarn:
-            fprintf(stderr, "[IHS.%s]\x1b[33m %s\x1b[0m\n", tag, message);
+            fprintf(stderr, "[IHS.%s %s]\x1b[33m %s\x1b[0m\n", tag, levelName, message);
             break;
         case IHS_LogLevelError:
-            fprintf(stderr, "[IHS.%s]\x1b[31m %s\x1b[0m\n", tag, message);
+            fprintf(stderr, "[IHS.%s %s]\x1b[31m %s\x1b[0m\n", tag, levelName, message);
             break;
         case IHS_LogLevelFatal:
-            fprintf(stderr, "[IHS.%s]\x1b[41m %s\x1b[0m\n", tag, message);
+            fprintf(stderr, "[IHS.%s %s]\x1b[41m %s\x1b[0m\n", tag, levelName, message);
             break;
         default:
-            fprintf(stderr, "[IHS.%s] %s\n", tag, message);
+            fprintf(stderr, "[IHS.%s %s] %s\n", tag, levelName, message);
             break;
     }
 }
 
 static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context) {
-    return false;
+    return true;
 }
 
 static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context) {
-    printf("Set cursor image: %d * %d\n", image->width, image->height);
+
 }
 
 static void Configuring(IHS_Session *session, IHS_SessionConfig *config, void *context) {
-    config->enableHevc = true;
+    config->enableAudio = false;
+    config->enableHevc = false;
 }

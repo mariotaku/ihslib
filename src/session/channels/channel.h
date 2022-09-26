@@ -109,8 +109,8 @@ bool IHS_SessionChannelInitializeFrame(IHS_SessionChannel *channel, IHS_SessionF
                                        IHS_SessionPacketType type, bool hasCrc, int32_t packetId);
 
 
-bool IHS_SessionChannelSendPacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit);
+bool IHS_SessionChannelQueuePacket(IHS_SessionChannel *channel, IHS_SessionPacket *packet, bool enableRetransmit);
 
-bool IHS_SessionChannelSendFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit);
+bool IHS_SessionChannelQueueFrame(IHS_SessionChannel *channel, IHS_SessionFrame *frame, bool enableRetransmit);
 
 void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, bool ok);

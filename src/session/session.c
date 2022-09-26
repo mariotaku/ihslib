@@ -49,8 +49,6 @@ static void SessionFinalized(IHS_Base *base, void *context);
 
 static void SessionSendWorker(void *context);
 
-static bool SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
-
 static void QueuedPacketDestroy(QueuedPacket *queued, void *context);
 
 static const IHS_BaseRunCallbacks SessionRunCallbacks = {
@@ -121,6 +119,14 @@ void IHS_SessionInterrupt(IHS_Session *session) {
     }
 }
 
+bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
+    const IHS_SessionInfo *config = &session->info;
+    IHS_SessionPacketPopulateBuffer(packet);
+    IHS_Buffer serialized = packet->body;
+    IHS_BufferExtendSize(&serialized);
+    return IHS_BaseSend(&session->base, config->address, &serialized);
+}
+
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit) {
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
     assert(!packet->header.hasCrc || packet->body.suffix == 4);
@@ -186,6 +192,7 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
     IHS_SessionPacket packet;
     IHS_SessionPacketReturn ret = IHS_SessionPacketParse(&packet, data);
     if (ret != IHS_SessionPacketResultOK) {
+        IHS_SessionLog(session, IHS_LogLevelDebug, "Session", "Discarding packet. Reason: %u", ret);
         return;
     }
 
@@ -196,6 +203,8 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
     }
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, channelId);
     if (!channel) {
+        IHS_SessionLog(session, IHS_LogLevelDebug, "Session", "Unknown channel for packet(type=%u, ch=%u)", packetType,
+                       channelId);
         return;
     }
     IHS_SessionChannelReceivedPacket(channel, &packet);
@@ -252,19 +261,11 @@ static void SessionSendWorker(void *context) {
                 return;
             }
         }
-        SessionSendPacket(session, &item->packet);
+        IHS_SessionSendPacket(session, &item->packet);
         QueuedPacketDestroy(item, NULL);
         IHS_QueueItemFree(item);
         IHS_MutexUnlock(session->sendQueueMutex);
     }
-}
-
-static bool SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
-    const IHS_SessionInfo *config = &session->info;
-    IHS_SessionPacketPopulateBuffer(packet);
-    IHS_Buffer serialized = packet->body;
-    IHS_BufferExtendSize(&serialized);
-    return IHS_BaseSend(&session->base, config->address, &serialized);
 }
 
 static void QueuedPacketDestroy(QueuedPacket *queued, void *context) {

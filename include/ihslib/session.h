@@ -40,6 +40,7 @@ typedef struct IHS_SessionInfo {
 } IHS_SessionInfo;
 
 typedef struct IHS_SessionConfig {
+    bool enableAudio;
     bool enableHevc;
 } IHS_SessionConfig;
 

@@ -73,20 +73,24 @@ typedef struct IHS_HostInfo {
 } IHS_HostInfo;
 
 typedef enum IHS_LogLevel {
-    IHS_LogLevelDebug,
-    IHS_LogLevelInfo,
     /**
-     * Problem that can be self recovered
+     * Irrecoverable error, and the process should be aborted
      */
-    IHS_LogLevelWarn,
+    IHS_LogLevelFatal,
     /**
      * Error that should stop session
      */
     IHS_LogLevelError,
     /**
-     * Irrecoverable error, and the process should be aborted
+     * Problem that can be self-recovered
      */
-    IHS_LogLevelFatal,
+    IHS_LogLevelWarn,
+    /**
+     * Informative message
+     */
+    IHS_LogLevelInfo,
+    IHS_LogLevelDebug,
+    IHS_LogLevelVerbose,
 } IHS_LogLevel;
 
 typedef void (IHS_LogFunction)(IHS_LogLevel level, const char *tag, const char *message);

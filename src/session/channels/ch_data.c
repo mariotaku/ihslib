@@ -32,6 +32,8 @@
 
 #include "ihs_buffer_ext.h"
 
+#define DISCARD_DIFF IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200)
+
 static void DataThreadWorker(IHS_SessionChannelData *channel);
 
 static void DataThreadInterrupt(IHS_SessionChannelData *channel);
@@ -94,7 +96,7 @@ void IHS_SessionChannelDataLost(IHS_SessionChannel *channel) {
     IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeUnreliable, true, IHS_PACKET_ID_NEXT);
     IHS_BufferAppendUInt8(&packet.body, k_EStreamDataLost);
     IHS_BufferAppendMessage(&packet.body, (const ProtobufCMessage *) &message);
-    IHS_SessionChannelSendPacket(channel, &packet, false);
+    IHS_SessionChannelQueuePacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
 }
 
@@ -125,7 +127,10 @@ static void DataThreadWorker(IHS_SessionChannelData *channel) {
     IHS_SessionLog(channel->base.session, IHS_LogLevelInfo, "Data", "%s channel started", channelName);
     while (!channel->interrupted) {
         IHS_MutexLock(channel->windowLock);
-        IHS_SessionPacketsWindowDiscard(channel->window, IHS_SESSION_PACKET_TIMESTAMP_FROM_MILLIS(200));
+        uint16_t discarded = IHS_SessionPacketsWindowDiscard(channel->window, DISCARD_DIFF);
+        if (discarded > 0) {
+            IHS_SessionLog(channel->base.session, IHS_LogLevelDebug, channelName, "Discarded %u packets", discarded);
+        }
         bool hasFrame;
         while (!(hasFrame = IHS_SessionPacketsWindowPoll(channel->window, &frame))) {
             IHS_CondWait(channel->windowCond, channel->windowLock);

@@ -104,7 +104,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     } else {
         IHS_BufferAppendMessage(&frame.body, message);
     }
-    ret = IHS_SessionChannelSendFrame(channel, &frame, true);
+    ret = IHS_SessionChannelQueueFrame(channel, &frame, true);
     IHS_SessionFrameClear(&frame, true);
     return ret;
 }

@@ -59,7 +59,7 @@ IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
     IHS_SessionPacket packet;
     IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeDisconnect, true, 0);
-    IHS_SessionChannelSendPacket(channel, &packet, false);
+    IHS_SessionChannelQueuePacket(channel, &packet, false);
     IHS_SessionPacketClear(&packet, true);
 }
 

@@ -91,16 +91,18 @@ void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char
 
 const char *IHS_LogLevelName(IHS_LogLevel level) {
     switch (level) {
-        case IHS_LogLevelDebug:
-            return "Debug";
-        case IHS_LogLevelInfo:
-            return "Info";
-        case IHS_LogLevelWarn:
-            return "Warn";
-        case IHS_LogLevelError:
-            return "Error";
         case IHS_LogLevelFatal:
             return "Fatal";
+        case IHS_LogLevelError:
+            return "Error";
+        case IHS_LogLevelWarn:
+            return "Warn";
+        case IHS_LogLevelInfo:
+            return "Info";
+        case IHS_LogLevelDebug:
+            return "Debug";
+        case IHS_LogLevelVerbose:
+            return "Verbose";
         default:
             return "";
     }

@@ -69,6 +69,8 @@ struct IHS_Session {
 
 void IHS_SessionInterrupt(IHS_Session *session);
 
+bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
+
 /**
  * Add packet to send queue
  * @param session Session instance
