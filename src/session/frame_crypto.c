@@ -123,7 +123,3 @@ int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t i
     *outLen = mdSize;
     return ret;
 }
-
-void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData) {
-    IHS_BufferClear(&frame->body, freeData);
-}

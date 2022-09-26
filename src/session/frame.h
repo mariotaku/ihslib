@@ -33,15 +33,13 @@
 
 typedef struct IHS_Session IHS_Session;
 
-typedef struct IHS_SessionFramePacket {
-    IHS_SessionPacketHeader header;
-    IHS_Buffer body;
-} IHS_SessionFramePacket;
-
 typedef struct IHS_SessionFrame {
     IHS_SessionPacketHeader header;
     IHS_Buffer body;
-} IHS_SessionFrame;
+#if IHSLIB_PERFTRACE
+    uint32_t packetTime;
+#endif
+} IHS_SessionFrame, IHS_SessionWindowItem;
 
 typedef enum IHS_SessionFrameDecryptResult {
     IHS_SessionFrameDecryptOK = 0,
@@ -60,6 +58,12 @@ typedef enum IHS_SessionFrameDecryptResult {
  */
 void IHS_SessionFrameBodyInitialize(IHS_Buffer *body, bool hasCrc);
 
+void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData);
+
+/*
+ * Encrypt/decrypt functions
+ */
+
 int IHS_SessionFrameEncrypt(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen,
                             uint64_t sequence);
 
@@ -67,5 +71,3 @@ IHS_SessionFrameDecryptResult IHS_SessionFrameDecrypt(IHS_Session *session, cons
                                                       uint64_t expectSequence, uint64_t *actualSequence);
 
 int IHS_SessionFrameHMACSHA256(IHS_Session *session, const uint8_t *in, size_t inLen, uint8_t *out, size_t *outLen);
-
-void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData);

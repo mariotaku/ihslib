@@ -39,3 +39,7 @@ void IHS_SessionFrameBodyInitialize(IHS_Buffer *body, bool hasCrc) {
         assert(body->suffix == 4);
     }
 }
+
+void IHS_SessionFrameClear(IHS_SessionFrame *frame, bool freeData) {
+    IHS_BufferClear(&frame->body, freeData);
+}

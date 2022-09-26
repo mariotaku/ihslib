@@ -45,7 +45,6 @@ add_library(ihslib
         src/client/streaming.c
         src/session/session.c
         src/session/packet.c
-        src/session/packet_sender.c
         src/session/frame.c
         src/session/window.c
         src/session/frame_crypto.c
@@ -68,8 +67,9 @@ add_library(ihslib
         src/session/channels/control/control_hid.c
         src/session/channels/ch_stats.c
         )
+configure_file(src/config.h.in config.h @ONLY)
 
-target_include_directories(ihslib PUBLIC include PRIVATE src)
+target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(src/protobuf)
 target_link_libraries(ihslib PRIVATE ihs-protobuf)
