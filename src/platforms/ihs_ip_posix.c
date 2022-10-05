@@ -23,24 +23,37 @@
  *
  */
 
-#include <stdlib.h>
+#include "ihslib/net.h"
+
+#include <arpa/inet.h>
 #include <string.h>
+#include <assert.h>
 
-#include "ihs_udp.h"
-
-int IHS_IPAddressCompare(const IHS_IPAddress *a, const IHS_IPAddress *b) {
-    if (a->family != b->family) {
-        return (int) a->family - (int) b->family;
+bool IHS_IPAddressFromString(IHS_IPAddress *address, const char *str) {
+    if (strchr(str, ':') != NULL) {
+        if (inet_pton(AF_INET6, str, address->v6.data) != 1) {
+            return false;
+        }
+        address->family = IHS_IPAddressFamilyIPv6;
+    } else {
+        if (inet_pton(AF_INET, str, address->v4.data) != 1) {
+            return false;
+        }
+        address->family = IHS_IPAddressFamilyIPv4;
     }
-    switch (a->family) {
-        case IHS_IPAddressFamilyIPv4: {
-            return memcmp(&a->v4.data, &b->v4.data, 4);
-        }
-        case IHS_IPAddressFamilyIPv6: {
-            return memcmp(&a->v6.data, &b->v6.data, 16);
-        }
-        default: {
-            abort();
-        }
+    return true;
+}
+
+char *IHS_IPAddressToString(const IHS_IPAddress *address) {
+    assert(address->family == IHS_IPAddressFamilyIPv4 || address->family == IHS_IPAddressFamilyIPv6);
+    if (address->family == IHS_IPAddressFamilyIPv6) {
+        char buf[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, address->v6.data, buf, INET6_ADDRSTRLEN);
+        return strndup(buf, INET6_ADDRSTRLEN);
+    } else {
+        char buf[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, address->v4.data, buf, INET_ADDRSTRLEN);
+        return strndup(buf, INET_ADDRSTRLEN);
     }
 }
+

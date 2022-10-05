@@ -28,33 +28,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "net.h"
+
 typedef struct IHS_ClientConfig {
     uint64_t deviceId;
     const uint8_t *secretKey;
     const char *deviceName;
 } IHS_ClientConfig;
-
-typedef enum IHS_IPAddressFamily {
-    IHS_IPAddressFamilyIPv4,
-    IHS_IPAddressFamilyIPv6,
-} IHS_IPAddressFamily;
-
-typedef union IHS_IPAddress {
-    IHS_IPAddressFamily family;
-    struct {
-        IHS_IPAddressFamily family;
-        uint8_t data[4];
-    } v4;
-    struct {
-        IHS_IPAddressFamily family;
-        uint8_t data[16];
-    } v6;
-} IHS_IPAddress;
-
-typedef struct IHS_SocketAddress {
-    IHS_IPAddress ip;
-    uint16_t port;
-} IHS_SocketAddress;
 
 typedef enum IHS_SteamUniverse {
     IHS_SteamUniversePublic = 1,
@@ -100,7 +80,3 @@ void IHS_Init();
 void IHS_Quit();
 
 const char *IHS_LogLevelName(IHS_LogLevel level);
-
-char *IHS_IPAddressToString(const IHS_IPAddress *address);
-
-int IHS_IPAddressCompare(const IHS_IPAddress *a, const IHS_IPAddress *b);

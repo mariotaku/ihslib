@@ -32,9 +32,11 @@ typedef struct task_t {
     int id;
     int counter;
     int until;
-} task_t;
+} task_ctx_t;
 
 static uint64_t task_run(void *context);
+
+static void task_end(void *context);
 
 int main(int argc, char *argv[]) {
     (void) argc;
@@ -44,33 +46,42 @@ int main(int argc, char *argv[]) {
     IHS_Timer *timer1 = IHS_TimerCreate();
     IHS_Timer *timer2 = IHS_TimerCreate();
 
-    task_t timer1_task1 = {.timer = 1, .id = 1, .counter = 0, .until = 3};
-    IHS_TimerTaskStart(timer1, task_run, NULL, 0, &timer1_task1);
-    task_t timer1_task2 = {.timer = 1, .id = 2, .counter = 0};
-    IHS_TimerTaskStart(timer1, task_run, NULL, 0, &timer1_task2);
-    task_t timer2_task1 = {.timer = 2, .id = 1, .counter = 0, .until = 5};
-    IHS_TimerTaskStart(timer2, task_run, NULL, 0, &timer2_task1);
-    task_t timer2_task2 = {.timer = 2, .id = 2, .counter = 0, 7};
-    IHS_TimerTaskStart(timer2, task_run, NULL, 0, &timer2_task2);
+    task_ctx_t timer1_ctx1 = {.timer = 1, .id = 2, .counter = 0};
+    IHS_TimerTask *timer1_task1 = IHS_TimerTaskStart(timer1, task_run, task_end, 0, &timer1_ctx1);
+    task_ctx_t timer1_ctx2 = {.timer = 1, .id = 1, .counter = 0, .until = 3};
+    IHS_TimerTaskStart(timer1, task_run, NULL, 0, &timer1_ctx2);
+    task_ctx_t timer2_ctx1 = {.timer = 2, .id = 1, .counter = 0, .until = 5};
+    IHS_TimerTaskStart(timer2, task_run, NULL, 0, &timer2_ctx1);
+    task_ctx_t timer2_ctx2 = {.timer = 2, .id = 2, .counter = 0, 7};
+    IHS_TimerTaskStart(timer2, task_run, NULL, 0, &timer2_ctx2);
 
+    sleep(1);
+    IHS_TimerTaskStop(timer1_task1);
+    assert(IHS_TimerTaskGetContext(timer1_task1) == &timer1_ctx1);
     sleep(1);
 
     IHS_TimerDestroy(timer1);
     IHS_TimerDestroy(timer2);
     IHS_TimerQuit();
 
-    assert(timer1_task1.counter == 3);
-    assert(timer2_task1.counter == 5);
-    assert(timer2_task2.counter == 7);
+    assert(timer1_ctx1.counter < 20);
+    assert(timer1_ctx2.counter == 3);
+    assert(timer2_ctx1.counter == 5);
+    assert(timer2_ctx2.counter == 7);
     return 0;
 }
 
 static uint64_t task_run(void *context) {
-    task_t *task = context;
+    task_ctx_t *task = context;
     task->counter++;
     printf("Timer #%d task %d counter %d\n", task->timer, task->id, task->counter);
     if (task->until > 0 && task->counter >= task->until) {
         return 0;
     }
     return 100;
+}
+
+static void task_end(void *context) {
+    (void) context;
+    printf("Timer has ended\n");
 }

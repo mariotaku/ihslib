@@ -23,4 +23,35 @@
  *
  */
 
-#include "ihs_thread.h"
+#pragma once
+
+#include <stdbool.h>
+#include <stdint.h>
+
+typedef enum IHS_IPAddressFamily {
+    IHS_IPAddressFamilyIPv4,
+    IHS_IPAddressFamilyIPv6,
+} IHS_IPAddressFamily;
+
+typedef union IHS_IPAddress {
+    IHS_IPAddressFamily family;
+    struct {
+        IHS_IPAddressFamily family;
+        uint8_t data[4];
+    } v4;
+    struct {
+        IHS_IPAddressFamily family;
+        uint8_t data[16];
+    } v6;
+} IHS_IPAddress;
+
+typedef struct IHS_SocketAddress {
+    IHS_IPAddress ip;
+    uint16_t port;
+} IHS_SocketAddress;
+
+char *IHS_IPAddressToString(const IHS_IPAddress *address);
+
+bool IHS_IPAddressFromString(IHS_IPAddress *address, const char *str);
+
+int IHS_IPAddressCompare(const IHS_IPAddress *a, const IHS_IPAddress *b);

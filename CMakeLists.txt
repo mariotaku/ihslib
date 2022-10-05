@@ -36,7 +36,6 @@ add_library(ihslib
         src/crc32c.c
         src/ihs_timer.c
         src/ihs_ip.c
-        src/ihs_thread.c
         src/ihs_buffer.c
         src/ihs_queue.c
         src/client/client.c
@@ -76,12 +75,6 @@ target_link_libraries(ihslib PRIVATE ihs-protobuf)
 
 add_subdirectory(src/platforms)
 target_link_libraries(ihslib PRIVATE ihs-platforms)
-
-if (SDL2_FOUND)
-    target_sources(ihslib PRIVATE src/ihs_thread_sdl.c)
-    target_include_directories(ihslib PRIVATE SYSTEM ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(ihslib PUBLIC ${SDL2_LIBRARIES})
-endif ()
 
 if (MBEDTLS_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_mbedtls.c)
