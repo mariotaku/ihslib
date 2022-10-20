@@ -56,6 +56,23 @@ typedef enum IHS_StreamInputMouseWheelDirection {
     IHS_MOUSE_WHEEL_RIGHT,
 } IHS_StreamInputMouseWheelDirection;
 
+typedef enum IHS_StreamInputControllerType {
+    IHS_CONTROLLER_TYPE_NONE = 0x0,
+    IHS_CONTROLLER_TYPE_GENERIC = 0x1e,
+    IHS_CONTROLLER_TYPE_XBOX_360 = 0x1f,
+    IHS_CONTROLLER_TYPE_XBOX_ONE = 0x20,
+    IHS_CONTROLLER_TYPE_PS3 = 0x21,
+    IHS_CONTROLLER_TYPE_PS4 = 0x22,
+    IHS_CONTROLLER_TYPE_SWITCH = 0x26,
+    IHS_CONTROLLER_TYPE_SWITCH_GEN = 0x2a,
+    IHS_CONTROLLER_TYPE_PS5 = 0x2d,
+} IHS_StreamInputControllerType;
+
+typedef struct IHS_StreamHIDPeripheralInfo {
+    uint16_t vid, pid;
+    bool xinput;
+} IHS_StreamHIDPeripheralInfo;
+
 typedef struct IHS_StreamInputCallbacks {
     /**
      *

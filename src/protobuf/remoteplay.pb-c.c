@@ -3793,6 +3793,51 @@ void   cset_bitrate_override_msg__free_unpacked
   assert(message->base.descriptor == &cset_bitrate_override_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cshow_on_screen_keyboard_msg__init
+                     (CShowOnScreenKeyboardMsg         *message)
+{
+  static const CShowOnScreenKeyboardMsg init_value = CSHOW_ON_SCREEN_KEYBOARD_MSG__INIT;
+  *message = init_value;
+}
+size_t cshow_on_screen_keyboard_msg__get_packed_size
+                     (const CShowOnScreenKeyboardMsg *message)
+{
+  assert(message->base.descriptor == &cshow_on_screen_keyboard_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cshow_on_screen_keyboard_msg__pack
+                     (const CShowOnScreenKeyboardMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cshow_on_screen_keyboard_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cshow_on_screen_keyboard_msg__pack_to_buffer
+                     (const CShowOnScreenKeyboardMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cshow_on_screen_keyboard_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CShowOnScreenKeyboardMsg *
+       cshow_on_screen_keyboard_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CShowOnScreenKeyboardMsg *)
+     protobuf_c_message_unpack (&cshow_on_screen_keyboard_msg__descriptor,
+                                allocator, len, data);
+}
+void   cshow_on_screen_keyboard_msg__free_unpacked
+                     (CShowOnScreenKeyboardMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cshow_on_screen_keyboard_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cstream_data_lost_msg__init
                      (CStreamDataLostMsg         *message)
 {
@@ -4345,6 +4390,75 @@ void   ctransport_signal_msg__free_unpacked
   assert(message->base.descriptor == &ctransport_signal_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ccontroller_config_msg__controller_config_response__init
+                     (CControllerConfigMsg__ControllerConfigResponse         *message)
+{
+  static const CControllerConfigMsg__ControllerConfigResponse init_value = CCONTROLLER_CONFIG_MSG__CONTROLLER_CONFIG_RESPONSE__INIT;
+  *message = init_value;
+}
+void   ccontroller_config_msg__controller_personalization_response__init
+                     (CControllerConfigMsg__ControllerPersonalizationResponse         *message)
+{
+  static const CControllerConfigMsg__ControllerPersonalizationResponse init_value = CCONTROLLER_CONFIG_MSG__CONTROLLER_PERSONALIZATION_RESPONSE__INIT;
+  *message = init_value;
+}
+void   ccontroller_config_msg__controller_active_config_change_response__init
+                     (CControllerConfigMsg__ControllerActiveConfigChangeResponse         *message)
+{
+  static const CControllerConfigMsg__ControllerActiveConfigChangeResponse init_value = CCONTROLLER_CONFIG_MSG__CONTROLLER_ACTIVE_CONFIG_CHANGE_RESPONSE__INIT;
+  *message = init_value;
+}
+void   ccontroller_config_msg__controller_active_config_msg__init
+                     (CControllerConfigMsg__ControllerActiveConfigMsg         *message)
+{
+  static const CControllerConfigMsg__ControllerActiveConfigMsg init_value = CCONTROLLER_CONFIG_MSG__CONTROLLER_ACTIVE_CONFIG_MSG__INIT;
+  *message = init_value;
+}
+void   ccontroller_config_msg__init
+                     (CControllerConfigMsg         *message)
+{
+  static const CControllerConfigMsg init_value = CCONTROLLER_CONFIG_MSG__INIT;
+  *message = init_value;
+}
+size_t ccontroller_config_msg__get_packed_size
+                     (const CControllerConfigMsg *message)
+{
+  assert(message->base.descriptor == &ccontroller_config_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ccontroller_config_msg__pack
+                     (const CControllerConfigMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ccontroller_config_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ccontroller_config_msg__pack_to_buffer
+                     (const CControllerConfigMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ccontroller_config_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CControllerConfigMsg *
+       ccontroller_config_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CControllerConfigMsg *)
+     protobuf_c_message_unpack (&ccontroller_config_msg__descriptor,
+                                allocator, len, data);
+}
+void   ccontroller_config_msg__free_unpacked
+                     (CControllerConfigMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ccontroller_config_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 static const ProtobufCFieldDescriptor cdiscovery_ping_request__field_descriptors[2] =
 {
   {
@@ -4599,6 +4713,7 @@ const ProtobufCMessageDescriptor cserver_handshake_msg__descriptor =
   (ProtobufCMessageInit) cserver_handshake_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamVersion cauthentication_request_msg__version__default_value = k_EStreamVersionNone;
 static const ProtobufCFieldDescriptor cauthentication_request_msg__field_descriptors[3] =
 {
   {
@@ -4621,7 +4736,7 @@ static const ProtobufCFieldDescriptor cauthentication_request_msg__field_descrip
     offsetof(CAuthenticationRequestMsg, has_version),
     offsetof(CAuthenticationRequestMsg, version),
     &estream_version__descriptor,
-    NULL,
+    &cauthentication_request_msg__version__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -4691,6 +4806,8 @@ const ProtobufCEnumDescriptor cauthentication_response_msg__authentication_resul
   cauthentication_response_msg__authentication_result__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
+static const CAuthenticationResponseMsg__AuthenticationResult cauthentication_response_msg__result__default_value = CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED;
+static const EStreamVersion cauthentication_response_msg__version__default_value = k_EStreamVersionNone;
 static const ProtobufCFieldDescriptor cauthentication_response_msg__field_descriptors[2] =
 {
   {
@@ -4701,7 +4818,7 @@ static const ProtobufCFieldDescriptor cauthentication_response_msg__field_descri
     offsetof(CAuthenticationResponseMsg, has_result),
     offsetof(CAuthenticationResponseMsg, result),
     &cauthentication_response_msg__authentication_result__descriptor,
-    NULL,
+    &cauthentication_response_msg__result__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -4713,7 +4830,7 @@ static const ProtobufCFieldDescriptor cauthentication_response_msg__field_descri
     offsetof(CAuthenticationResponseMsg, has_version),
     offsetof(CAuthenticationResponseMsg, version),
     &estream_version__descriptor,
-    NULL,
+    &cauthentication_response_msg__version__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -4940,7 +5057,7 @@ const ProtobufCMessageDescriptor cstream_video_mode__descriptor =
   (ProtobufCMessageInit) cstream_video_mode__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cstreaming_client_caps__field_descriptors[11] =
+static const ProtobufCFieldDescriptor cstreaming_client_caps__field_descriptors[13] =
 {
   {
     "system_info",
@@ -5074,6 +5191,30 @@ static const ProtobufCFieldDescriptor cstreaming_client_caps__field_descriptors[
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "has_on_screen_keyboard",
+    12,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CStreamingClientCaps, has_has_on_screen_keyboard),
+    offsetof(CStreamingClientCaps, has_on_screen_keyboard),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "supported_colorspaces",
+    13,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(CStreamingClientCaps, n_supported_colorspaces),
+    offsetof(CStreamingClientCaps, supported_colorspaces),
+    &estream_colorspace__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cstreaming_client_caps__field_indices_by_name[] = {
   8,   /* field[8] = disable_amd_hardware_encoding */
@@ -5082,8 +5223,10 @@ static const unsigned cstreaming_client_caps__field_indices_by_name[] = {
   9,   /* field[9] = disable_nvidia_hardware_encoding */
   5,   /* field[5] = disable_steam_store */
   10,   /* field[10] = form_factor */
+  11,   /* field[11] = has_on_screen_keyboard */
   3,   /* field[3] = maximum_burst_bitrate_kbps */
   2,   /* field[2] = maximum_decode_bitrate_kbps */
+  12,   /* field[12] = supported_colorspaces */
   4,   /* field[4] = supports_video_hevc */
   1,   /* field[1] = system_can_suspend */
   0,   /* field[0] = system_info */
@@ -5091,7 +5234,7 @@ static const unsigned cstreaming_client_caps__field_indices_by_name[] = {
 static const ProtobufCIntRange cstreaming_client_caps__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 11 }
+  { 0, 13 }
 };
 const ProtobufCMessageDescriptor cstreaming_client_caps__descriptor =
 {
@@ -5101,7 +5244,7 @@ const ProtobufCMessageDescriptor cstreaming_client_caps__descriptor =
   "CStreamingClientCaps",
   "",
   sizeof(CStreamingClientCaps),
-  11,
+  13,
   cstreaming_client_caps__field_descriptors,
   cstreaming_client_caps__field_indices_by_name,
   1,  cstreaming_client_caps__number_ranges,
@@ -5524,7 +5667,9 @@ const ProtobufCMessageDescriptor cstreaming_server_config__descriptor =
   (ProtobufCMessageInit) cstreaming_server_config__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[6] =
+static const EStreamAudioCodec cnegotiated_config__selected_audio_codec__default_value = k_EStreamAudioCodecNone;
+static const EStreamVideoCodec cnegotiated_config__selected_video_codec__default_value = k_EStreamVideoCodecNone;
+static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[7] =
 {
   {
     "reliable_data",
@@ -5546,7 +5691,7 @@ static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[6] =
     offsetof(CNegotiatedConfig, has_selected_audio_codec),
     offsetof(CNegotiatedConfig, selected_audio_codec),
     &estream_audio_codec__descriptor,
-    NULL,
+    &cnegotiated_config__selected_audio_codec__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -5558,7 +5703,7 @@ static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[6] =
     offsetof(CNegotiatedConfig, has_selected_video_codec),
     offsetof(CNegotiatedConfig, selected_video_codec),
     &estream_video_codec__descriptor,
-    NULL,
+    &cnegotiated_config__selected_video_codec__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -5598,9 +5743,22 @@ static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[6] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "disable_client_cursor",
+    7,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CNegotiatedConfig, has_disable_client_cursor),
+    offsetof(CNegotiatedConfig, disable_client_cursor),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cnegotiated_config__field_indices_by_name[] = {
   3,   /* field[3] = available_video_modes */
+  6,   /* field[6] = disable_client_cursor */
   4,   /* field[4] = enable_remote_hid */
   5,   /* field[5] = enable_touch_input */
   0,   /* field[0] = reliable_data */
@@ -5610,7 +5768,7 @@ static const unsigned cnegotiated_config__field_indices_by_name[] = {
 static const ProtobufCIntRange cnegotiated_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 7 }
 };
 const ProtobufCMessageDescriptor cnegotiated_config__descriptor =
 {
@@ -5620,7 +5778,7 @@ const ProtobufCMessageDescriptor cnegotiated_config__descriptor =
   "CNegotiatedConfig",
   "",
   sizeof(CNegotiatedConfig),
-  6,
+  7,
   cnegotiated_config__field_descriptors,
   cnegotiated_config__field_indices_by_name,
   1,  cnegotiated_config__number_ranges,
@@ -5799,6 +5957,7 @@ const ProtobufCMessageDescriptor cnegotiation_complete_msg__descriptor =
   (ProtobufCMessageInit) cnegotiation_complete_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamAudioCodec cstart_audio_data_msg__codec__default_value = k_EStreamAudioCodecNone;
 static const ProtobufCFieldDescriptor cstart_audio_data_msg__field_descriptors[5] =
 {
   {
@@ -5821,7 +5980,7 @@ static const ProtobufCFieldDescriptor cstart_audio_data_msg__field_descriptors[5
     offsetof(CStartAudioDataMsg, has_codec),
     offsetof(CStartAudioDataMsg, codec),
     &estream_audio_codec__descriptor,
-    NULL,
+    &cstart_audio_data_msg__codec__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -5907,6 +6066,7 @@ const ProtobufCMessageDescriptor cstop_audio_data_msg__descriptor =
   (ProtobufCMessageInit) cstop_audio_data_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamVideoCodec cstart_video_data_msg__codec__default_value = k_EStreamVideoCodecNone;
 static const ProtobufCFieldDescriptor cstart_video_data_msg__field_descriptors[5] =
 {
   {
@@ -5929,7 +6089,7 @@ static const ProtobufCFieldDescriptor cstart_video_data_msg__field_descriptors[5
     offsetof(CStartVideoDataMsg, has_codec),
     offsetof(CStartVideoDataMsg, codec),
     &estream_video_codec__descriptor,
-    NULL,
+    &cstart_video_data_msg__codec__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -6015,6 +6175,7 @@ const ProtobufCMessageDescriptor cstop_video_data_msg__descriptor =
   (ProtobufCMessageInit) cstop_video_data_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamControlMessage crecorded_input__type__default_value = k_EStreamControlAuthenticationRequest;
 static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
 {
   {
@@ -6025,7 +6186,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, has_type),
     offsetof(CRecordedInput, type),
     &estream_control_message__descriptor,
-    NULL,
+    &crecorded_input__type__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -6619,6 +6780,7 @@ const ProtobufCMessageDescriptor cinput_mouse_motion_msg__descriptor =
   (ProtobufCMessageInit) cinput_mouse_motion_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamMouseWheelDirection cinput_mouse_wheel_msg__direction__default_value = k_EStreamMouseWheelUp;
 static const ProtobufCFieldDescriptor cinput_mouse_wheel_msg__field_descriptors[2] =
 {
   {
@@ -6641,7 +6803,7 @@ static const ProtobufCFieldDescriptor cinput_mouse_wheel_msg__field_descriptors[
     0,   /* quantifier_offset */
     offsetof(CInputMouseWheelMsg, direction),
     &estream_mouse_wheel_direction__descriptor,
-    NULL,
+    &cinput_mouse_wheel_msg__direction__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -6670,6 +6832,7 @@ const ProtobufCMessageDescriptor cinput_mouse_wheel_msg__descriptor =
   (ProtobufCMessageInit) cinput_mouse_wheel_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamMouseButton cinput_mouse_down_msg__button__default_value = k_EStreamMouseButtonLeft;
 static const ProtobufCFieldDescriptor cinput_mouse_down_msg__field_descriptors[2] =
 {
   {
@@ -6692,7 +6855,7 @@ static const ProtobufCFieldDescriptor cinput_mouse_down_msg__field_descriptors[2
     0,   /* quantifier_offset */
     offsetof(CInputMouseDownMsg, button),
     &estream_mouse_button__descriptor,
-    NULL,
+    &cinput_mouse_down_msg__button__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -6721,6 +6884,7 @@ const ProtobufCMessageDescriptor cinput_mouse_down_msg__descriptor =
   (ProtobufCMessageInit) cinput_mouse_down_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamMouseButton cinput_mouse_up_msg__button__default_value = k_EStreamMouseButtonLeft;
 static const ProtobufCFieldDescriptor cinput_mouse_up_msg__field_descriptors[2] =
 {
   {
@@ -6743,7 +6907,7 @@ static const ProtobufCFieldDescriptor cinput_mouse_up_msg__field_descriptors[2] 
     0,   /* quantifier_offset */
     offsetof(CInputMouseUpMsg, button),
     &estream_mouse_button__descriptor,
-    NULL,
+    &cinput_mouse_up_msg__button__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -8166,6 +8330,7 @@ const ProtobufCMessageDescriptor cset_gamma_ramp_msg__descriptor =
   (ProtobufCMessageInit) cset_gamma_ramp_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamActivity cset_activity_msg__activity__default_value = k_EStreamActivityIdle;
 static const ProtobufCFieldDescriptor cset_activity_msg__field_descriptors[4] =
 {
   {
@@ -8176,7 +8341,7 @@ static const ProtobufCFieldDescriptor cset_activity_msg__field_descriptors[4] =
     offsetof(CSetActivityMsg, has_activity),
     offsetof(CSetActivityMsg, activity),
     &estream_activity__descriptor,
-    NULL,
+    &cset_activity_msg__activity__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -8413,7 +8578,7 @@ const ProtobufCMessageDescriptor cset_spectator_mode_msg__descriptor =
   (ProtobufCMessageInit) cset_spectator_mode_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cremote_hidmsg__field_descriptors[1] =
+static const ProtobufCFieldDescriptor cremote_hidmsg__field_descriptors[2] =
 {
   {
     "data",
@@ -8427,14 +8592,27 @@ static const ProtobufCFieldDescriptor cremote_hidmsg__field_descriptors[1] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "active_input",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CRemoteHIDMsg, has_active_input),
+    offsetof(CRemoteHIDMsg, active_input),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cremote_hidmsg__field_indices_by_name[] = {
+  1,   /* field[1] = active_input */
   0,   /* field[0] = data */
 };
 static const ProtobufCIntRange cremote_hidmsg__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor cremote_hidmsg__descriptor =
 {
@@ -8444,7 +8622,7 @@ const ProtobufCMessageDescriptor cremote_hidmsg__descriptor =
   "CRemoteHIDMsg",
   "",
   sizeof(CRemoteHIDMsg),
-  1,
+  2,
   cremote_hidmsg__field_descriptors,
   cremote_hidmsg__field_indices_by_name,
   1,  cremote_hidmsg__number_ranges,
@@ -9283,10 +9461,28 @@ const ProtobufCMessageDescriptor cset_bitrate_override_msg__descriptor =
   (ProtobufCMessageInit) cset_bitrate_override_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+#define cshow_on_screen_keyboard_msg__field_descriptors NULL
+#define cshow_on_screen_keyboard_msg__field_indices_by_name NULL
+#define cshow_on_screen_keyboard_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cshow_on_screen_keyboard_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CShowOnScreenKeyboardMsg",
+  "CShowOnScreenKeyboardMsg",
+  "CShowOnScreenKeyboardMsg",
+  "",
+  sizeof(CShowOnScreenKeyboardMsg),
+  0,
+  cshow_on_screen_keyboard_msg__field_descriptors,
+  cshow_on_screen_keyboard_msg__field_indices_by_name,
+  0,  cshow_on_screen_keyboard_msg__number_ranges,
+  (ProtobufCMessageInit) cshow_on_screen_keyboard_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1] =
 {
   {
-    "items",
+    "packets",
     1,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_UINT32,
@@ -9299,7 +9495,7 @@ static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1
   },
 };
 static const unsigned cstream_data_lost_msg__field_indices_by_name[] = {
-  0,   /* field[0] = items */
+  0,   /* field[0] = packets */
 };
 static const ProtobufCIntRange cstream_data_lost_msg__number_ranges[1 + 1] =
 {
@@ -9321,6 +9517,7 @@ const ProtobufCMessageDescriptor cstream_data_lost_msg__descriptor =
   (ProtobufCMessageInit) cstream_data_lost_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EAudioFormat caudio_format__format__default_value = k_EAudioFormatNone;
 static const ProtobufCFieldDescriptor caudio_format__field_descriptors[3] =
 {
   {
@@ -9331,7 +9528,7 @@ static const ProtobufCFieldDescriptor caudio_format__field_descriptors[3] =
     0,   /* quantifier_offset */
     offsetof(CAudioFormat, format),
     &eaudio_format__descriptor,
-    NULL,
+    &caudio_format__format__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9385,6 +9582,7 @@ const ProtobufCMessageDescriptor caudio_format__descriptor =
   (ProtobufCMessageInit) caudio_format__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EVideoFormat cvideo_format__format__default_value = k_EVideoFormatNone;
 static const ProtobufCFieldDescriptor cvideo_format__field_descriptors[3] =
 {
   {
@@ -9395,7 +9593,7 @@ static const ProtobufCFieldDescriptor cvideo_format__field_descriptors[3] =
     0,   /* quantifier_offset */
     offsetof(CVideoFormat, format),
     &evideo_format__descriptor,
-    NULL,
+    &cvideo_format__format__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9449,6 +9647,7 @@ const ProtobufCMessageDescriptor cvideo_format__descriptor =
   (ProtobufCMessageInit) cvideo_format__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamFrameEvent cframe_event__event_id__default_value = k_EStreamInputEventStart;
 static const ProtobufCFieldDescriptor cframe_event__field_descriptors[2] =
 {
   {
@@ -9459,7 +9658,7 @@ static const ProtobufCFieldDescriptor cframe_event__field_descriptors[2] =
     0,   /* quantifier_offset */
     offsetof(CFrameEvent, event_id),
     &estream_frame_event__descriptor,
-    NULL,
+    &cframe_event__event_id__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9500,6 +9699,7 @@ const ProtobufCMessageDescriptor cframe_event__descriptor =
   (ProtobufCMessageInit) cframe_event__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamFrameResult cframe_stats__result__default_value = k_EStreamFrameResultPending;
 static const ProtobufCFieldDescriptor cframe_stats__field_descriptors[12] =
 {
   {
@@ -9546,7 +9746,7 @@ static const ProtobufCFieldDescriptor cframe_stats__field_descriptors[12] =
     0,   /* quantifier_offset */
     offsetof(CFrameStats, result),
     &estream_frame_result__descriptor,
-    NULL,
+    &cframe_stats__result__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9681,6 +9881,7 @@ const ProtobufCMessageDescriptor cframe_stats__descriptor =
   (ProtobufCMessageInit) cframe_stats__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EFrameAccumulatedStat cframe_stat_accumulated_value__stat_type__default_value = k_EFrameStatFPS;
 static const ProtobufCFieldDescriptor cframe_stat_accumulated_value__field_descriptors[4] =
 {
   {
@@ -9691,7 +9892,7 @@ static const ProtobufCFieldDescriptor cframe_stat_accumulated_value__field_descr
     0,   /* quantifier_offset */
     offsetof(CFrameStatAccumulatedValue, stat_type),
     &eframe_accumulated_stat__descriptor,
-    NULL,
+    &cframe_stat_accumulated_value__stat_type__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9758,6 +9959,7 @@ const ProtobufCMessageDescriptor cframe_stat_accumulated_value__descriptor =
   (ProtobufCMessageInit) cframe_stat_accumulated_value__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamingDataType cframe_stats_list_msg__data_type__default_value = k_EStreamingAudioData;
 static const ProtobufCFieldDescriptor cframe_stats_list_msg__field_descriptors[4] =
 {
   {
@@ -9768,7 +9970,7 @@ static const ProtobufCFieldDescriptor cframe_stats_list_msg__field_descriptors[4
     0,   /* quantifier_offset */
     offsetof(CFrameStatsListMsg, data_type),
     &estreaming_data_type__descriptor,
-    NULL,
+    &cframe_stats_list_msg__data_type__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -9988,6 +10190,7 @@ const ProtobufCMessageDescriptor clog_msg__descriptor =
   (ProtobufCMessageInit) clog_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ELogFileType clog_upload_msg__type__default_value = k_ELogFileSystemBoot;
 static const ProtobufCFieldDescriptor clog_upload_msg__field_descriptors[2] =
 {
   {
@@ -9998,7 +10201,7 @@ static const ProtobufCFieldDescriptor clog_upload_msg__field_descriptors[2] =
     offsetof(CLogUploadMsg, has_type),
     offsetof(CLogUploadMsg, type),
     &elog_file_type__descriptor,
-    NULL,
+    &clog_upload_msg__type__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -10232,6 +10435,406 @@ const ProtobufCMessageDescriptor ctransport_signal_msg__descriptor =
   (ProtobufCMessageInit) ctransport_signal_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor ccontroller_config_msg__controller_config_response__field_descriptors[6] =
+{
+  {
+    "appid",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, has_appid),
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, appid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "configURL",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, configurl),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerType",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, has_controllertype),
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, controllertype),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerData",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, controllerdata),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "selectionOrder",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, has_selectionorder),
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, selectionorder),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "actionBlock",
+    6,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, has_actionblock),
+    offsetof(CControllerConfigMsg__ControllerConfigResponse, actionblock),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_config_msg__controller_config_response__field_indices_by_name[] = {
+  5,   /* field[5] = actionBlock */
+  0,   /* field[0] = appid */
+  1,   /* field[1] = configURL */
+  3,   /* field[3] = controllerData */
+  2,   /* field[2] = controllerType */
+  4,   /* field[4] = selectionOrder */
+};
+static const ProtobufCIntRange ccontroller_config_msg__controller_config_response__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 6 }
+};
+const ProtobufCMessageDescriptor ccontroller_config_msg__controller_config_response__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerConfigMsg.ControllerConfigResponse",
+  "ControllerConfigResponse",
+  "CControllerConfigMsg__ControllerConfigResponse",
+  "",
+  sizeof(CControllerConfigMsg__ControllerConfigResponse),
+  6,
+  ccontroller_config_msg__controller_config_response__field_descriptors,
+  ccontroller_config_msg__controller_config_response__field_indices_by_name,
+  1,  ccontroller_config_msg__controller_config_response__number_ranges,
+  (ProtobufCMessageInit) ccontroller_config_msg__controller_config_response__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ccontroller_config_msg__controller_personalization_response__field_descriptors[1] =
+{
+  {
+    "personalizationData",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerPersonalizationResponse, personalizationdata),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_config_msg__controller_personalization_response__field_indices_by_name[] = {
+  0,   /* field[0] = personalizationData */
+};
+static const ProtobufCIntRange ccontroller_config_msg__controller_personalization_response__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor ccontroller_config_msg__controller_personalization_response__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerConfigMsg.ControllerPersonalizationResponse",
+  "ControllerPersonalizationResponse",
+  "CControllerConfigMsg__ControllerPersonalizationResponse",
+  "",
+  sizeof(CControllerConfigMsg__ControllerPersonalizationResponse),
+  1,
+  ccontroller_config_msg__controller_personalization_response__field_descriptors,
+  ccontroller_config_msg__controller_personalization_response__field_indices_by_name,
+  1,  ccontroller_config_msg__controller_personalization_response__number_ranges,
+  (ProtobufCMessageInit) ccontroller_config_msg__controller_personalization_response__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ccontroller_config_msg__controller_active_config_change_response__field_descriptors[4] =
+{
+  {
+    "configURL",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, configurl),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerType",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, has_controllertype),
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, controllertype),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerData",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, controllerdata),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "selectionOrder",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, has_selectionorder),
+    offsetof(CControllerConfigMsg__ControllerActiveConfigChangeResponse, selectionorder),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_config_msg__controller_active_config_change_response__field_indices_by_name[] = {
+  0,   /* field[0] = configURL */
+  2,   /* field[2] = controllerData */
+  1,   /* field[1] = controllerType */
+  3,   /* field[3] = selectionOrder */
+};
+static const ProtobufCIntRange ccontroller_config_msg__controller_active_config_change_response__number_ranges[1 + 1] =
+{
+  { 2, 0 },
+  { 0, 4 }
+};
+const ProtobufCMessageDescriptor ccontroller_config_msg__controller_active_config_change_response__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerConfigMsg.ControllerActiveConfigChangeResponse",
+  "ControllerActiveConfigChangeResponse",
+  "CControllerConfigMsg__ControllerActiveConfigChangeResponse",
+  "",
+  sizeof(CControllerConfigMsg__ControllerActiveConfigChangeResponse),
+  4,
+  ccontroller_config_msg__controller_active_config_change_response__field_descriptors,
+  ccontroller_config_msg__controller_active_config_change_response__field_indices_by_name,
+  1,  ccontroller_config_msg__controller_active_config_change_response__number_ranges,
+  (ProtobufCMessageInit) ccontroller_config_msg__controller_active_config_change_response__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor ccontroller_config_msg__controller_active_config_msg__field_descriptors[4] =
+{
+  {
+    "appid",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, has_appid),
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, appid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "configURL",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, configurl),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerType",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, has_controllertype),
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, controllertype),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerData",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg__ControllerActiveConfigMsg, controllerdata),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_config_msg__controller_active_config_msg__field_indices_by_name[] = {
+  0,   /* field[0] = appid */
+  1,   /* field[1] = configURL */
+  3,   /* field[3] = controllerData */
+  2,   /* field[2] = controllerType */
+};
+static const ProtobufCIntRange ccontroller_config_msg__controller_active_config_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 4 }
+};
+const ProtobufCMessageDescriptor ccontroller_config_msg__controller_active_config_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerConfigMsg.ControllerActiveConfigMsg",
+  "ControllerActiveConfigMsg",
+  "CControllerConfigMsg__ControllerActiveConfigMsg",
+  "",
+  sizeof(CControllerConfigMsg__ControllerActiveConfigMsg),
+  4,
+  ccontroller_config_msg__controller_active_config_msg__field_descriptors,
+  ccontroller_config_msg__controller_active_config_msg__field_indices_by_name,
+  1,  ccontroller_config_msg__controller_active_config_msg__number_ranges,
+  (ProtobufCMessageInit) ccontroller_config_msg__controller_active_config_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const EStreamControllerConfigMsg ccontroller_config_msg__type__default_value = k_EStreamControllerConfigMsg_RequestConfigsForApp;
+static const ProtobufCFieldDescriptor ccontroller_config_msg__field_descriptors[6] =
+{
+  {
+    "type",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg, type),
+    &estream_controller_config_msg__descriptor,
+    &ccontroller_config_msg__type__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controllerPath",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg, controllerpath),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "appid",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CControllerConfigMsg, has_appid),
+    offsetof(CControllerConfigMsg, appid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "personalizationResponse",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg, personalizationresponse),
+    &ccontroller_config_msg__controller_personalization_response__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "configResponse",
+    6,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CControllerConfigMsg, n_configresponse),
+    offsetof(CControllerConfigMsg, configresponse),
+    &ccontroller_config_msg__controller_config_response__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "activeConfigChangeMsg",
+    7,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CControllerConfigMsg, activeconfigchangemsg),
+    &ccontroller_config_msg__controller_active_config_msg__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_config_msg__field_indices_by_name[] = {
+  5,   /* field[5] = activeConfigChangeMsg */
+  2,   /* field[2] = appid */
+  4,   /* field[4] = configResponse */
+  1,   /* field[1] = controllerPath */
+  3,   /* field[3] = personalizationResponse */
+  0,   /* field[0] = type */
+};
+static const ProtobufCIntRange ccontroller_config_msg__number_ranges[2 + 1] =
+{
+  { 1, 0 },
+  { 6, 4 },
+  { 0, 6 }
+};
+const ProtobufCMessageDescriptor ccontroller_config_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerConfigMsg",
+  "CControllerConfigMsg",
+  "CControllerConfigMsg",
+  "",
+  sizeof(CControllerConfigMsg),
+  6,
+  ccontroller_config_msg__field_descriptors,
+  ccontroller_config_msg__field_indices_by_name,
+  2,  ccontroller_config_msg__number_ranges,
+  (ProtobufCMessageInit) ccontroller_config_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCEnumValue estream_channel__enum_values_by_number[5] =
 {
   { "k_EStreamChannelInvalid", "k_EStreamChannelInvalid", -1 },
@@ -10294,7 +10897,7 @@ const ProtobufCEnumDescriptor estream_discovery_message__descriptor =
   estream_discovery_message__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_control_message__enum_values_by_number[88] =
+static const ProtobufCEnumValue estream_control_message__enum_values_by_number[90] =
 {
   { "k_EStreamControlAuthenticationRequest", "k_EStreamControlAuthenticationRequest", 1 },
   { "k_EStreamControlAuthenticationResponse", "k_EStreamControlAuthenticationResponse", 2 },
@@ -10384,15 +10987,18 @@ static const ProtobufCEnumValue estream_control_message__enum_values_by_number[8
   { "k_EStreamControlSetInputTemporarilyDisabled", "k_EStreamControlSetInputTemporarilyDisabled", 133 },
   { "k_EStreamControlSetQualityOverride", "k_EStreamControlSetQualityOverride", 134 },
   { "k_EStreamControlSetBitrateOverride", "k_EStreamControlSetBitrateOverride", 135 },
+  { "k_EStreamControlShowOnScreenKeyboard", "k_EStreamControlShowOnScreenKeyboard", 136 },
+  { "k_EStreamControlControllerConfigMsg", "k_EStreamControlControllerConfigMsg", 137 },
 };
 static const ProtobufCIntRange estream_control_message__value_ranges[] = {
-{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 88}
+{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 90}
 };
-static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[88] =
+static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[90] =
 {
   { "k_EStreamControlAuthenticationRequest", 0 },
   { "k_EStreamControlAuthenticationResponse", 1 },
   { "k_EStreamControlClientHandshake", 5 },
+  { "k_EStreamControlControllerConfigMsg", 89 },
   { "k_EStreamControlDeleteCursor", 28 },
   { "k_EStreamControlDisableHighResCapture", 77 },
   { "k_EStreamControlEnableHighResCapture", 76 },
@@ -10456,6 +11062,7 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlSetTouchConfigData", 64 },
   { "k_EStreamControlSetTouchIconData", 68 },
   { "k_EStreamControlShowCursor", 23 },
+  { "k_EStreamControlShowOnScreenKeyboard", 88 },
   { "k_EStreamControlStartAudioData", 10 },
   { "k_EStreamControlStartMicrophoneData", 59 },
   { "k_EStreamControlStartNetworkTest", 7 },
@@ -10486,9 +11093,9 @@ const ProtobufCEnumDescriptor estream_control_message__descriptor =
   "EStreamControlMessage",
   "EStreamControlMessage",
   "",
-  88,
+  90,
   estream_control_message__enum_values_by_number,
-  88,
+  90,
   estream_control_message__enum_values_by_name,
   7,
   estream_control_message__value_ranges,
@@ -10656,6 +11263,40 @@ const ProtobufCEnumDescriptor estream_bitrate__descriptor =
   estream_bitrate__enum_values_by_name,
   1,
   estream_bitrate__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue estream_colorspace__enum_values_by_number[5] =
+{
+  { "k_EStreamColorspace_Unknown", "k_EStreamColorspace_Unknown", 0 },
+  { "k_EStreamColorspace_BT601", "k_EStreamColorspace_BT601", 1 },
+  { "k_EStreamColorspace_BT601_Full", "k_EStreamColorspace_BT601_Full", 2 },
+  { "k_EStreamColorspace_BT709", "k_EStreamColorspace_BT709", 3 },
+  { "k_EStreamColorspace_BT709_Full", "k_EStreamColorspace_BT709_Full", 4 },
+};
+static const ProtobufCIntRange estream_colorspace__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex estream_colorspace__enum_values_by_name[5] =
+{
+  { "k_EStreamColorspace_BT601", 1 },
+  { "k_EStreamColorspace_BT601_Full", 2 },
+  { "k_EStreamColorspace_BT709", 3 },
+  { "k_EStreamColorspace_BT709_Full", 4 },
+  { "k_EStreamColorspace_Unknown", 0 },
+};
+const ProtobufCEnumDescriptor estream_colorspace__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EStreamColorspace",
+  "EStreamColorspace",
+  "EStreamColorspace",
+  "",
+  5,
+  estream_colorspace__enum_values_by_number,
+  5,
+  estream_colorspace__enum_values_by_name,
+  1,
+  estream_colorspace__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
 static const ProtobufCEnumValue estream_p2_pscope__enum_values_by_number[5] =
@@ -11206,5 +11847,39 @@ const ProtobufCEnumDescriptor elog_file_type__descriptor =
   elog_file_type__enum_values_by_name,
   1,
   elog_file_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue estream_controller_config_msg__enum_values_by_number[5] =
+{
+  { "k_EStreamControllerConfigMsg_RequestConfigsForApp", "k_EStreamControllerConfigMsg_RequestConfigsForApp", 0 },
+  { "k_EStreamControllerConfigMsg_ConfigResponse", "k_EStreamControllerConfigMsg_ConfigResponse", 1 },
+  { "k_EStreamControllerConfigMsg_PersonalizationResponse", "k_EStreamControllerConfigMsg_PersonalizationResponse", 2 },
+  { "k_EStreamControllerConfigMsg_ActiveConfigChange", "k_EStreamControllerConfigMsg_ActiveConfigChange", 3 },
+  { "k_EStreamControllerConfigMsg_RequestActiveConfig", "k_EStreamControllerConfigMsg_RequestActiveConfig", 4 },
+};
+static const ProtobufCIntRange estream_controller_config_msg__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex estream_controller_config_msg__enum_values_by_name[5] =
+{
+  { "k_EStreamControllerConfigMsg_ActiveConfigChange", 3 },
+  { "k_EStreamControllerConfigMsg_ConfigResponse", 1 },
+  { "k_EStreamControllerConfigMsg_PersonalizationResponse", 2 },
+  { "k_EStreamControllerConfigMsg_RequestActiveConfig", 4 },
+  { "k_EStreamControllerConfigMsg_RequestConfigsForApp", 0 },
+};
+const ProtobufCEnumDescriptor estream_controller_config_msg__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EStreamControllerConfigMsg",
+  "EStreamControllerConfigMsg",
+  "EStreamControllerConfigMsg",
+  "",
+  5,
+  estream_controller_config_msg__enum_values_by_number,
+  5,
+  estream_controller_config_msg__enum_values_by_name,
+  1,
+  estream_controller_config_msg__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

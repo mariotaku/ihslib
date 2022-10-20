@@ -51,17 +51,20 @@ struct IHS_Session {
     IHS_Mutex *sendQueueMutex;
     IHS_Queue *sendQueue;
     IHS_Timer *timers;
+    IHS_SessionHIDManager *hidManager;
     struct {
         const IHS_StreamSessionCallbacks *session;
         const IHS_StreamAudioCallbacks *audio;
         const IHS_StreamVideoCallbacks *video;
         const IHS_StreamInputCallbacks *input;
+        const IHS_StreamHIDInterface *hid;
     } callbacks;
     struct {
         void *session;
         void *audio;
         void *video;
         void *input;
+        void *hid;
     } callbackContexts;
 };
 

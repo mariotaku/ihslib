@@ -24,6 +24,7 @@ typedef struct _CMsgRemoteDeviceAuthorizationRequest CMsgRemoteDeviceAuthorizati
 typedef struct _CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket;
 typedef struct _CMsgRemoteDeviceAuthorizationCancelRequest CMsgRemoteDeviceAuthorizationCancelRequest;
 typedef struct _CMsgRemoteDeviceAuthorizationResponse CMsgRemoteDeviceAuthorizationResponse;
+typedef struct _CMsgRemoteDeviceAuthorizationConfirmed CMsgRemoteDeviceAuthorizationConfirmed;
 typedef struct _CMsgRemoteDeviceStreamingRequest CMsgRemoteDeviceStreamingRequest;
 typedef struct _CMsgRemoteDeviceStreamingRequest__ReservedGamepad CMsgRemoteDeviceStreamingRequest__ReservedGamepad;
 typedef struct _CMsgRemoteDeviceStreamingCancelRequest CMsgRemoteDeviceStreamingCancelRequest;
@@ -54,7 +55,8 @@ typedef enum _ERemoteClientBroadcastMsg {
   k_ERemoteDeviceStreamingCancelRequest = 10,
   k_ERemoteClientBroadcastMsgClientIDDeconflict = 11,
   k_ERemoteDeviceStreamTransportSignal = 12,
-  k_ERemoteDeviceStreamingProgress = 13
+  k_ERemoteDeviceStreamingProgress = 13,
+  k_ERemoteDeviceAuthorizationConfirmed = 14
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(EREMOTE_CLIENT_BROADCAST_MSG)
 } ERemoteClientBroadcastMsg;
 typedef enum _ERemoteClientService {
@@ -198,10 +200,14 @@ struct  _CMsgRemoteClientBroadcastStatus
   protobuf_c_boolean remoteplay_active;
   protobuf_c_boolean has_supported_services;
   uint32_t supported_services;
+  protobuf_c_boolean has_steam_deck;
+  protobuf_c_boolean steam_deck;
+  protobuf_c_boolean has_steam_version;
+  uint64_t steam_version;
 };
 #define CMSG_REMOTE_CLIENT_BROADCAST_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_client_broadcast_status__descriptor) \
-    , 0, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0,NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0,NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0,NULL, NULL, 0, 0, 0, 0 }
+    , 0, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0,NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0,NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0,NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 
 struct  _CMsgRemoteClientBroadcastDiscovery
@@ -258,10 +264,12 @@ struct  _CMsgRemoteDeviceAuthorizationRequest
   ProtobufCBinaryData device_token;
   char *device_name;
   ProtobufCBinaryData encrypted_request;
+  protobuf_c_boolean has_auth_key;
+  ProtobufCBinaryData auth_key;
 };
 #define CMSG_REMOTE_DEVICE_AUTHORIZATION_REQUEST__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_authorization_request__descriptor) \
-    , {0,NULL}, NULL, {0,NULL} }
+    , {0,NULL}, NULL, {0,NULL}, 0, {0,NULL} }
 
 
 struct  _CMsgRemoteDeviceAuthorizationCancelRequest
@@ -279,10 +287,24 @@ struct  _CMsgRemoteDeviceAuthorizationResponse
   ERemoteDeviceAuthorizationResult result;
   protobuf_c_boolean has_steamid;
   uint64_t steamid;
+  protobuf_c_boolean has_auth_key;
+  ProtobufCBinaryData auth_key;
+  protobuf_c_boolean has_device_token;
+  ProtobufCBinaryData device_token;
 };
 #define CMSG_REMOTE_DEVICE_AUTHORIZATION_RESPONSE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_authorization_response__descriptor) \
-    , k_ERemoteDeviceAuthorizationSuccess, 0, 0 }
+    , k_ERemoteDeviceAuthorizationSuccess, 0, 0, 0, {0,NULL}, 0, {0,NULL} }
+
+
+struct  _CMsgRemoteDeviceAuthorizationConfirmed
+{
+  ProtobufCMessage base;
+  ERemoteDeviceAuthorizationResult result;
+};
+#define CMSG_REMOTE_DEVICE_AUTHORIZATION_CONFIRMED__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_authorization_confirmed__descriptor) \
+    , k_ERemoteDeviceAuthorizationSuccess }
 
 
 struct  _CMsgRemoteDeviceStreamingRequest__ReservedGamepad
@@ -392,10 +414,12 @@ struct  _CMsgRemoteDeviceProofRequest
   ProtobufCBinaryData challenge;
   protobuf_c_boolean has_request_id;
   uint32_t request_id;
+  protobuf_c_boolean has_update_secret;
+  protobuf_c_boolean update_secret;
 };
 #define CMSG_REMOTE_DEVICE_PROOF_REQUEST__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_proof_request__descriptor) \
-    , {0,NULL}, 0, 0 }
+    , {0,NULL}, 0, 0, 0, 0 }
 
 
 struct  _CMsgRemoteDeviceProofResponse
@@ -404,10 +428,12 @@ struct  _CMsgRemoteDeviceProofResponse
   ProtobufCBinaryData response;
   protobuf_c_boolean has_request_id;
   uint32_t request_id;
+  protobuf_c_boolean has_updated_secret;
+  protobuf_c_boolean updated_secret;
 };
 #define CMSG_REMOTE_DEVICE_PROOF_RESPONSE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_proof_response__descriptor) \
-    , {0,NULL}, 0, 0 }
+    , {0,NULL}, 0, 0, 0, 0 }
 
 
 struct  _CMsgRemoteDeviceStreamTransportSignal
@@ -561,6 +587,25 @@ CMsgRemoteDeviceAuthorizationResponse *
                       const uint8_t       *data);
 void   cmsg_remote_device_authorization_response__free_unpacked
                      (CMsgRemoteDeviceAuthorizationResponse *message,
+                      ProtobufCAllocator *allocator);
+/* CMsgRemoteDeviceAuthorizationConfirmed methods */
+void   cmsg_remote_device_authorization_confirmed__init
+                     (CMsgRemoteDeviceAuthorizationConfirmed         *message);
+size_t cmsg_remote_device_authorization_confirmed__get_packed_size
+                     (const CMsgRemoteDeviceAuthorizationConfirmed   *message);
+size_t cmsg_remote_device_authorization_confirmed__pack
+                     (const CMsgRemoteDeviceAuthorizationConfirmed   *message,
+                      uint8_t             *out);
+size_t cmsg_remote_device_authorization_confirmed__pack_to_buffer
+                     (const CMsgRemoteDeviceAuthorizationConfirmed   *message,
+                      ProtobufCBuffer     *buffer);
+CMsgRemoteDeviceAuthorizationConfirmed *
+       cmsg_remote_device_authorization_confirmed__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   cmsg_remote_device_authorization_confirmed__free_unpacked
+                     (CMsgRemoteDeviceAuthorizationConfirmed *message,
                       ProtobufCAllocator *allocator);
 /* CMsgRemoteDeviceStreamingRequest__ReservedGamepad methods */
 void   cmsg_remote_device_streaming_request__reserved_gamepad__init
@@ -727,6 +772,9 @@ typedef void (*CMsgRemoteDeviceAuthorizationCancelRequest_Closure)
 typedef void (*CMsgRemoteDeviceAuthorizationResponse_Closure)
                  (const CMsgRemoteDeviceAuthorizationResponse *message,
                   void *closure_data);
+typedef void (*CMsgRemoteDeviceAuthorizationConfirmed_Closure)
+                 (const CMsgRemoteDeviceAuthorizationConfirmed *message,
+                  void *closure_data);
 typedef void (*CMsgRemoteDeviceStreamingRequest__ReservedGamepad_Closure)
                  (const CMsgRemoteDeviceStreamingRequest__ReservedGamepad *message,
                   void *closure_data);
@@ -774,6 +822,7 @@ extern const ProtobufCMessageDescriptor cmsg_remote_device_authorization_request
 extern const ProtobufCEnumDescriptor    cmsg_remote_device_authorization_request__ekey_escrow_usage__descriptor;
 extern const ProtobufCMessageDescriptor cmsg_remote_device_authorization_cancel_request__descriptor;
 extern const ProtobufCMessageDescriptor cmsg_remote_device_authorization_response__descriptor;
+extern const ProtobufCMessageDescriptor cmsg_remote_device_authorization_confirmed__descriptor;
 extern const ProtobufCMessageDescriptor cmsg_remote_device_streaming_request__descriptor;
 extern const ProtobufCMessageDescriptor cmsg_remote_device_streaming_request__reserved_gamepad__descriptor;
 extern const ProtobufCMessageDescriptor cmsg_remote_device_streaming_cancel_request__descriptor;

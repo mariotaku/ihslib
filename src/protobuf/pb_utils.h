@@ -29,6 +29,8 @@
 
 #define PROTOBUF_C_SET_VALUE(message, key, value) (message).has_##key = true; (message).key = (value)
 
+#define PROTOBUF_C_P_SET_VALUE(message, key, value) (message)->has_##key = true; (message)->key = (value)
+
 #define IHS_UNPACK_BUFFER(unpack_fn, buffer) unpack_fn(NULL, (buffer)->size, IHS_BufferPointer((buffer)))
 
 #define IHS_UNPACK_BUFFER_SIZE(unpack_fn, buffer, size) unpack_fn(NULL, (size), IHS_BufferPointer((buffer)))

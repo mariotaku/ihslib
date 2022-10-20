@@ -100,6 +100,7 @@ typedef struct _CRemotePlayTogetherGroupUpdateMsg__Player CRemotePlayTogetherGro
 typedef struct _CSetInputTemporarilyDisabledMsg CSetInputTemporarilyDisabledMsg;
 typedef struct _CSetQualityOverrideMsg CSetQualityOverrideMsg;
 typedef struct _CSetBitrateOverrideMsg CSetBitrateOverrideMsg;
+typedef struct _CShowOnScreenKeyboardMsg CShowOnScreenKeyboardMsg;
 typedef struct _CStreamDataLostMsg CStreamDataLostMsg;
 typedef struct _CAudioFormat CAudioFormat;
 typedef struct _CVideoFormat CVideoFormat;
@@ -114,6 +115,11 @@ typedef struct _CLogUploadMsg CLogUploadMsg;
 typedef struct _CTransportSignalMsg CTransportSignalMsg;
 typedef struct _CTransportSignalMsg__WebRTCMessage CTransportSignalMsg__WebRTCMessage;
 typedef struct _CTransportSignalMsg__WebRTCMessage__Candidate CTransportSignalMsg__WebRTCMessage__Candidate;
+typedef struct _CControllerConfigMsg CControllerConfigMsg;
+typedef struct _CControllerConfigMsg__ControllerConfigResponse CControllerConfigMsg__ControllerConfigResponse;
+typedef struct _CControllerConfigMsg__ControllerPersonalizationResponse CControllerConfigMsg__ControllerPersonalizationResponse;
+typedef struct _CControllerConfigMsg__ControllerActiveConfigChangeResponse CControllerConfigMsg__ControllerActiveConfigChangeResponse;
+typedef struct _CControllerConfigMsg__ControllerActiveConfigMsg CControllerConfigMsg__ControllerActiveConfigMsg;
 
 
 /* --- enums --- */
@@ -224,7 +230,9 @@ typedef enum _EStreamControlMessage {
   k_EStreamControlRemotePlayTogetherGroupUpdate = 132,
   k_EStreamControlSetInputTemporarilyDisabled = 133,
   k_EStreamControlSetQualityOverride = 134,
-  k_EStreamControlSetBitrateOverride = 135
+  k_EStreamControlSetBitrateOverride = 135,
+  k_EStreamControlShowOnScreenKeyboard = 136,
+  k_EStreamControlControllerConfigMsg = 137
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESTREAM_CONTROL_MESSAGE)
 } EStreamControlMessage;
 typedef enum _EStreamVersion {
@@ -264,6 +272,14 @@ typedef enum _EStreamBitrate {
   k_EStreamBitrateUnlimited = 0
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESTREAM_BITRATE)
 } EStreamBitrate;
+typedef enum _EStreamColorspace {
+  k_EStreamColorspace_Unknown = 0,
+  k_EStreamColorspace_BT601 = 1,
+  k_EStreamColorspace_BT601_Full = 2,
+  k_EStreamColorspace_BT709 = 3,
+  k_EStreamColorspace_BT709_Full = 4
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESTREAM_COLORSPACE)
+} EStreamColorspace;
 typedef enum _EStreamP2PScope {
   k_EStreamP2PScopeAutomatic = 0,
   k_EStreamP2PScopeDisabled = 1,
@@ -404,6 +420,14 @@ typedef enum _ELogFileType {
   k_ELogFileSystemDebug = 2
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ELOG_FILE_TYPE)
 } ELogFileType;
+typedef enum _EStreamControllerConfigMsg {
+  k_EStreamControllerConfigMsg_RequestConfigsForApp = 0,
+  k_EStreamControllerConfigMsg_ConfigResponse = 1,
+  k_EStreamControllerConfigMsg_PersonalizationResponse = 2,
+  k_EStreamControllerConfigMsg_ActiveConfigChange = 3,
+  k_EStreamControllerConfigMsg_RequestActiveConfig = 4
+    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESTREAM_CONTROLLER_CONFIG_MSG)
+} EStreamControllerConfigMsg;
 
 /* --- messages --- */
 
@@ -572,10 +596,14 @@ struct  _CStreamingClientCaps
   protobuf_c_boolean disable_nvidia_hardware_encoding;
   protobuf_c_boolean has_form_factor;
   int32_t form_factor;
+  protobuf_c_boolean has_has_on_screen_keyboard;
+  protobuf_c_boolean has_on_screen_keyboard;
+  size_t n_supported_colorspaces;
+  EStreamColorspace *supported_colorspaces;
 };
 #define CSTREAMING_CLIENT_CAPS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cstreaming_client_caps__descriptor) \
-    , NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+    , NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,NULL }
 
 
 struct  _CStreamingClientConfig
@@ -664,10 +692,12 @@ struct  _CNegotiatedConfig
   protobuf_c_boolean enable_remote_hid;
   protobuf_c_boolean has_enable_touch_input;
   protobuf_c_boolean enable_touch_input;
+  protobuf_c_boolean has_disable_client_cursor;
+  protobuf_c_boolean disable_client_cursor;
 };
 #define CNEGOTIATED_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cnegotiated_config__descriptor) \
-    , 0, 0, 0, k_EStreamAudioCodecNone, 0, k_EStreamVideoCodecNone, 0,NULL, 0, 0, 0, 0 }
+    , 0, 0, 0, k_EStreamAudioCodecNone, 0, k_EStreamVideoCodecNone, 0,NULL, 0, 0, 0, 0, 0, 0 }
 
 
 struct  _CNegotiationInitMsg
@@ -1380,10 +1410,12 @@ struct  _CRemoteHIDMsg
   ProtobufCMessage base;
   protobuf_c_boolean has_data;
   ProtobufCBinaryData data;
+  protobuf_c_boolean has_active_input;
+  protobuf_c_boolean active_input;
 };
 #define CREMOTE_HIDMSG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cremote_hidmsg__descriptor) \
-    , 0, {0,NULL} }
+    , 0, {0,NULL}, 0, 0 }
 
 
 struct  _CTouchConfigActiveMsg
@@ -1579,6 +1611,15 @@ struct  _CSetBitrateOverrideMsg
 #define CSET_BITRATE_OVERRIDE_MSG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cset_bitrate_override_msg__descriptor) \
     , 0, 0 }
+
+
+struct  _CShowOnScreenKeyboardMsg
+{
+  ProtobufCMessage base;
+};
+#define CSHOW_ON_SCREEN_KEYBOARD_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&cshow_on_screen_keyboard_msg__descriptor) \
+     }
 
 
 struct  _CStreamDataLostMsg
@@ -1790,6 +1831,82 @@ struct  _CTransportSignalMsg
 #define CTRANSPORT_SIGNAL_MSG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&ctransport_signal_msg__descriptor) \
     , NULL, 0,NULL }
+
+
+struct  _CControllerConfigMsg__ControllerConfigResponse
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_appid;
+  uint32_t appid;
+  char *configurl;
+  protobuf_c_boolean has_controllertype;
+  uint32_t controllertype;
+  char *controllerdata;
+  protobuf_c_boolean has_selectionorder;
+  uint32_t selectionorder;
+  protobuf_c_boolean has_actionblock;
+  protobuf_c_boolean actionblock;
+};
+#define CCONTROLLER_CONFIG_MSG__CONTROLLER_CONFIG_RESPONSE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_config_msg__controller_config_response__descriptor) \
+    , 0, 0, NULL, 0, 0, NULL, 0, 0, 0, 0 }
+
+
+struct  _CControllerConfigMsg__ControllerPersonalizationResponse
+{
+  ProtobufCMessage base;
+  char *personalizationdata;
+};
+#define CCONTROLLER_CONFIG_MSG__CONTROLLER_PERSONALIZATION_RESPONSE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_config_msg__controller_personalization_response__descriptor) \
+    , NULL }
+
+
+struct  _CControllerConfigMsg__ControllerActiveConfigChangeResponse
+{
+  ProtobufCMessage base;
+  char *configurl;
+  protobuf_c_boolean has_controllertype;
+  uint32_t controllertype;
+  char *controllerdata;
+  protobuf_c_boolean has_selectionorder;
+  uint32_t selectionorder;
+};
+#define CCONTROLLER_CONFIG_MSG__CONTROLLER_ACTIVE_CONFIG_CHANGE_RESPONSE__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_config_msg__controller_active_config_change_response__descriptor) \
+    , NULL, 0, 0, NULL, 0, 0 }
+
+
+struct  _CControllerConfigMsg__ControllerActiveConfigMsg
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_appid;
+  uint32_t appid;
+  char *configurl;
+  protobuf_c_boolean has_controllertype;
+  uint32_t controllertype;
+  char *controllerdata;
+};
+#define CCONTROLLER_CONFIG_MSG__CONTROLLER_ACTIVE_CONFIG_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_config_msg__controller_active_config_msg__descriptor) \
+    , 0, 0, NULL, 0, 0, NULL }
+
+
+struct  _CControllerConfigMsg
+{
+  ProtobufCMessage base;
+  EStreamControllerConfigMsg type;
+  char *controllerpath;
+  protobuf_c_boolean has_appid;
+  uint32_t appid;
+  CControllerConfigMsg__ControllerPersonalizationResponse *personalizationresponse;
+  size_t n_configresponse;
+  CControllerConfigMsg__ControllerConfigResponse **configresponse;
+  CControllerConfigMsg__ControllerActiveConfigMsg *activeconfigchangemsg;
+};
+#define CCONTROLLER_CONFIG_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_config_msg__descriptor) \
+    , k_EStreamControllerConfigMsg_RequestConfigsForApp, NULL, 0, 0, NULL, 0,NULL, NULL }
 
 
 /* CDiscoveryPingRequest methods */
@@ -3391,6 +3508,25 @@ CSetBitrateOverrideMsg *
 void   cset_bitrate_override_msg__free_unpacked
                      (CSetBitrateOverrideMsg *message,
                       ProtobufCAllocator *allocator);
+/* CShowOnScreenKeyboardMsg methods */
+void   cshow_on_screen_keyboard_msg__init
+                     (CShowOnScreenKeyboardMsg         *message);
+size_t cshow_on_screen_keyboard_msg__get_packed_size
+                     (const CShowOnScreenKeyboardMsg   *message);
+size_t cshow_on_screen_keyboard_msg__pack
+                     (const CShowOnScreenKeyboardMsg   *message,
+                      uint8_t             *out);
+size_t cshow_on_screen_keyboard_msg__pack_to_buffer
+                     (const CShowOnScreenKeyboardMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CShowOnScreenKeyboardMsg *
+       cshow_on_screen_keyboard_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   cshow_on_screen_keyboard_msg__free_unpacked
+                     (CShowOnScreenKeyboardMsg *message,
+                      ProtobufCAllocator *allocator);
 /* CStreamDataLostMsg methods */
 void   cstream_data_lost_msg__init
                      (CStreamDataLostMsg         *message);
@@ -3624,6 +3760,37 @@ CTransportSignalMsg *
                       const uint8_t       *data);
 void   ctransport_signal_msg__free_unpacked
                      (CTransportSignalMsg *message,
+                      ProtobufCAllocator *allocator);
+/* CControllerConfigMsg__ControllerConfigResponse methods */
+void   ccontroller_config_msg__controller_config_response__init
+                     (CControllerConfigMsg__ControllerConfigResponse         *message);
+/* CControllerConfigMsg__ControllerPersonalizationResponse methods */
+void   ccontroller_config_msg__controller_personalization_response__init
+                     (CControllerConfigMsg__ControllerPersonalizationResponse         *message);
+/* CControllerConfigMsg__ControllerActiveConfigChangeResponse methods */
+void   ccontroller_config_msg__controller_active_config_change_response__init
+                     (CControllerConfigMsg__ControllerActiveConfigChangeResponse         *message);
+/* CControllerConfigMsg__ControllerActiveConfigMsg methods */
+void   ccontroller_config_msg__controller_active_config_msg__init
+                     (CControllerConfigMsg__ControllerActiveConfigMsg         *message);
+/* CControllerConfigMsg methods */
+void   ccontroller_config_msg__init
+                     (CControllerConfigMsg         *message);
+size_t ccontroller_config_msg__get_packed_size
+                     (const CControllerConfigMsg   *message);
+size_t ccontroller_config_msg__pack
+                     (const CControllerConfigMsg   *message,
+                      uint8_t             *out);
+size_t ccontroller_config_msg__pack_to_buffer
+                     (const CControllerConfigMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CControllerConfigMsg *
+       ccontroller_config_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ccontroller_config_msg__free_unpacked
+                     (CControllerConfigMsg *message,
                       ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
@@ -3882,6 +4049,9 @@ typedef void (*CSetQualityOverrideMsg_Closure)
 typedef void (*CSetBitrateOverrideMsg_Closure)
                  (const CSetBitrateOverrideMsg *message,
                   void *closure_data);
+typedef void (*CShowOnScreenKeyboardMsg_Closure)
+                 (const CShowOnScreenKeyboardMsg *message,
+                  void *closure_data);
 typedef void (*CStreamDataLostMsg_Closure)
                  (const CStreamDataLostMsg *message,
                   void *closure_data);
@@ -3924,6 +4094,21 @@ typedef void (*CTransportSignalMsg__WebRTCMessage_Closure)
 typedef void (*CTransportSignalMsg_Closure)
                  (const CTransportSignalMsg *message,
                   void *closure_data);
+typedef void (*CControllerConfigMsg__ControllerConfigResponse_Closure)
+                 (const CControllerConfigMsg__ControllerConfigResponse *message,
+                  void *closure_data);
+typedef void (*CControllerConfigMsg__ControllerPersonalizationResponse_Closure)
+                 (const CControllerConfigMsg__ControllerPersonalizationResponse *message,
+                  void *closure_data);
+typedef void (*CControllerConfigMsg__ControllerActiveConfigChangeResponse_Closure)
+                 (const CControllerConfigMsg__ControllerActiveConfigChangeResponse *message,
+                  void *closure_data);
+typedef void (*CControllerConfigMsg__ControllerActiveConfigMsg_Closure)
+                 (const CControllerConfigMsg__ControllerActiveConfigMsg *message,
+                  void *closure_data);
+typedef void (*CControllerConfigMsg_Closure)
+                 (const CControllerConfigMsg *message,
+                  void *closure_data);
 
 /* --- services --- */
 
@@ -3938,6 +4123,7 @@ extern const ProtobufCEnumDescriptor    estream_audio_codec__descriptor;
 extern const ProtobufCEnumDescriptor    estream_video_codec__descriptor;
 extern const ProtobufCEnumDescriptor    estream_quality_preference__descriptor;
 extern const ProtobufCEnumDescriptor    estream_bitrate__descriptor;
+extern const ProtobufCEnumDescriptor    estream_colorspace__descriptor;
 extern const ProtobufCEnumDescriptor    estream_p2_pscope__descriptor;
 extern const ProtobufCEnumDescriptor    estream_host_play_audio_preference__descriptor;
 extern const ProtobufCEnumDescriptor    estreaming_data_type__descriptor;
@@ -3953,6 +4139,7 @@ extern const ProtobufCEnumDescriptor    estream_frame_event__descriptor;
 extern const ProtobufCEnumDescriptor    estream_frame_result__descriptor;
 extern const ProtobufCEnumDescriptor    eframe_accumulated_stat__descriptor;
 extern const ProtobufCEnumDescriptor    elog_file_type__descriptor;
+extern const ProtobufCEnumDescriptor    estream_controller_config_msg__descriptor;
 extern const ProtobufCMessageDescriptor cdiscovery_ping_request__descriptor;
 extern const ProtobufCMessageDescriptor cdiscovery_ping_response__descriptor;
 extern const ProtobufCMessageDescriptor cstreaming_client_handshake_info__descriptor;
@@ -4039,6 +4226,7 @@ extern const ProtobufCMessageDescriptor cremote_play_together_group_update_msg__
 extern const ProtobufCMessageDescriptor cset_input_temporarily_disabled_msg__descriptor;
 extern const ProtobufCMessageDescriptor cset_quality_override_msg__descriptor;
 extern const ProtobufCMessageDescriptor cset_bitrate_override_msg__descriptor;
+extern const ProtobufCMessageDescriptor cshow_on_screen_keyboard_msg__descriptor;
 extern const ProtobufCMessageDescriptor cstream_data_lost_msg__descriptor;
 extern const ProtobufCMessageDescriptor caudio_format__descriptor;
 extern const ProtobufCMessageDescriptor cvideo_format__descriptor;
@@ -4053,6 +4241,11 @@ extern const ProtobufCMessageDescriptor clog_upload_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctransport_signal_msg__descriptor;
 extern const ProtobufCMessageDescriptor ctransport_signal_msg__web_rtcmessage__descriptor;
 extern const ProtobufCMessageDescriptor ctransport_signal_msg__web_rtcmessage__candidate__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_config_msg__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_config_msg__controller_config_response__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_config_msg__controller_personalization_response__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_config_msg__controller_active_config_change_response__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_config_msg__controller_active_config_msg__descriptor;
 
 PROTOBUF_C__END_DECLS
 

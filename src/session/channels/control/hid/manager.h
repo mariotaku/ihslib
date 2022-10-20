@@ -25,4 +25,12 @@
 
 #pragma once
 
-#cmakedefine01 IHSLIB_SDL2_HIDAPI
+#include "ihslib/hid.h"
+
+typedef struct IHS_HIDDevice IHS_HIDDevice;
+
+IHS_HIDDevice *IHS_HIDDeviceManagerOpenDevice(IHS_SessionHIDManager *manager, const char *path);
+
+IHS_HIDDevice *IHS_HIDDeviceManagerFindDevice(IHS_SessionHIDManager *manager, uint32_t id);
+
+void IHS_HIDDeviceManagerCloseDevice(IHS_SessionHIDManager *manager, IHS_HIDDevice *device);

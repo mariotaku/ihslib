@@ -334,6 +334,51 @@ void   cmsg_remote_device_authorization_response__free_unpacked
   assert(message->base.descriptor == &cmsg_remote_device_authorization_response__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cmsg_remote_device_authorization_confirmed__init
+                     (CMsgRemoteDeviceAuthorizationConfirmed         *message)
+{
+  static const CMsgRemoteDeviceAuthorizationConfirmed init_value = CMSG_REMOTE_DEVICE_AUTHORIZATION_CONFIRMED__INIT;
+  *message = init_value;
+}
+size_t cmsg_remote_device_authorization_confirmed__get_packed_size
+                     (const CMsgRemoteDeviceAuthorizationConfirmed *message)
+{
+  assert(message->base.descriptor == &cmsg_remote_device_authorization_confirmed__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cmsg_remote_device_authorization_confirmed__pack
+                     (const CMsgRemoteDeviceAuthorizationConfirmed *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cmsg_remote_device_authorization_confirmed__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cmsg_remote_device_authorization_confirmed__pack_to_buffer
+                     (const CMsgRemoteDeviceAuthorizationConfirmed *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cmsg_remote_device_authorization_confirmed__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CMsgRemoteDeviceAuthorizationConfirmed *
+       cmsg_remote_device_authorization_confirmed__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CMsgRemoteDeviceAuthorizationConfirmed *)
+     protobuf_c_message_unpack (&cmsg_remote_device_authorization_confirmed__descriptor,
+                                allocator, len, data);
+}
+void   cmsg_remote_device_authorization_confirmed__free_unpacked
+                     (CMsgRemoteDeviceAuthorizationConfirmed *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cmsg_remote_device_authorization_confirmed__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cmsg_remote_device_streaming_request__reserved_gamepad__init
                      (CMsgRemoteDeviceStreamingRequest__ReservedGamepad         *message)
 {
@@ -655,6 +700,7 @@ void   cmsg_remote_device_stream_transport_signal__free_unpacked
   assert(message->base.descriptor == &cmsg_remote_device_stream_transport_signal__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+static const ERemoteClientBroadcastMsg cmsg_remote_client_broadcast_header__msg_type__default_value = k_ERemoteClientBroadcastMsgDiscovery;
 static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_header__field_descriptors[5] =
 {
   {
@@ -677,7 +723,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_header__field
     offsetof(CMsgRemoteClientBroadcastHeader, has_msg_type),
     offsetof(CMsgRemoteClientBroadcastHeader, msg_type),
     &eremote_client_broadcast_msg__descriptor,
-    NULL,
+    &cmsg_remote_client_broadcast_header__msg_type__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -797,7 +843,7 @@ const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__user__desc
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const int32_t cmsg_remote_client_broadcast_status__ostype__default_value = 0;
-static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field_descriptors[21] =
+static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field_descriptors[23] =
 {
   {
     "version",
@@ -1051,6 +1097,30 @@ static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "steam_deck",
+    24,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CMsgRemoteClientBroadcastStatus, has_steam_deck),
+    offsetof(CMsgRemoteClientBroadcastStatus, steam_deck),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "steam_version",
+    25,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT64,
+    offsetof(CMsgRemoteClientBroadcastStatus, has_steam_version),
+    offsetof(CMsgRemoteClientBroadcastStatus, steam_version),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_client_broadcast_status__field_indices_by_name[] = {
   14,   /* field[14] = broadcasting_active */
@@ -1069,6 +1139,8 @@ static const unsigned cmsg_remote_client_broadcast_status__field_indices_by_name
   18,   /* field[18] = public_ip_address */
   19,   /* field[19] = remoteplay_active */
   10,   /* field[10] = screen_locked */
+  21,   /* field[21] = steam_deck */
+  22,   /* field[22] = steam_version */
   20,   /* field[20] = supported_services */
   9,   /* field[9] = timestamp */
   7,   /* field[7] = users */
@@ -1080,7 +1152,7 @@ static const ProtobufCIntRange cmsg_remote_client_broadcast_status__number_range
   { 1, 0 },
   { 6, 4 },
   { 11, 8 },
-  { 0, 21 }
+  { 0, 23 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__descriptor =
 {
@@ -1090,7 +1162,7 @@ const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__descriptor
   "CMsgRemoteClientBroadcastStatus",
   "",
   sizeof(CMsgRemoteClientBroadcastStatus),
-  21,
+  23,
   cmsg_remote_client_broadcast_status__field_descriptors,
   cmsg_remote_client_broadcast_status__field_indices_by_name,
   3,  cmsg_remote_client_broadcast_status__number_ranges,
@@ -1186,6 +1258,7 @@ const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_client_iddeconflic
   (ProtobufCMessageInit) cmsg_remote_client_broadcast_client_iddeconflict__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const CMsgRemoteDeviceAuthorizationRequest__EKeyEscrowUsage cmsg_remote_device_authorization_request__ckey_escrow__ticket__usage__default_value = k_EKeyEscrowUsageStreamingDevice;
 static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__ckey_escrow__ticket__field_descriptors[9] =
 {
   {
@@ -1244,7 +1317,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__
     offsetof(CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket, has_usage),
     offsetof(CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket, usage),
     &cmsg_remote_device_authorization_request__ekey_escrow_usage__descriptor,
-    NULL,
+    &cmsg_remote_device_authorization_request__ckey_escrow__ticket__usage__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -1354,7 +1427,7 @@ const ProtobufCEnumDescriptor cmsg_remote_device_authorization_request__ekey_esc
   cmsg_remote_device_authorization_request__ekey_escrow_usage__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__field_descriptors[3] =
+static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__field_descriptors[4] =
 {
   {
     "device_token",
@@ -1392,8 +1465,21 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "auth_key",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(CMsgRemoteDeviceAuthorizationRequest, has_auth_key),
+    offsetof(CMsgRemoteDeviceAuthorizationRequest, auth_key),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_device_authorization_request__field_indices_by_name[] = {
+  3,   /* field[3] = auth_key */
   1,   /* field[1] = device_name */
   0,   /* field[0] = device_token */
   2,   /* field[2] = encrypted_request */
@@ -1401,7 +1487,7 @@ static const unsigned cmsg_remote_device_authorization_request__field_indices_by
 static const ProtobufCIntRange cmsg_remote_device_authorization_request__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 4 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_device_authorization_request__descriptor =
 {
@@ -1411,7 +1497,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_authorization_request__descr
   "CMsgRemoteDeviceAuthorizationRequest",
   "",
   sizeof(CMsgRemoteDeviceAuthorizationRequest),
-  3,
+  4,
   cmsg_remote_device_authorization_request__field_descriptors,
   cmsg_remote_device_authorization_request__field_indices_by_name,
   1,  cmsg_remote_device_authorization_request__number_ranges,
@@ -1436,7 +1522,8 @@ const ProtobufCMessageDescriptor cmsg_remote_device_authorization_cancel_request
   (ProtobufCMessageInit) cmsg_remote_device_authorization_cancel_request__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_response__field_descriptors[2] =
+static const ERemoteDeviceAuthorizationResult cmsg_remote_device_authorization_response__result__default_value = k_ERemoteDeviceAuthorizationSuccess;
+static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_response__field_descriptors[4] =
 {
   {
     "result",
@@ -1446,7 +1533,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_response_
     0,   /* quantifier_offset */
     offsetof(CMsgRemoteDeviceAuthorizationResponse, result),
     &eremote_device_authorization_result__descriptor,
-    NULL,
+    &cmsg_remote_device_authorization_response__result__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -1462,15 +1549,41 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_response_
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "auth_key",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(CMsgRemoteDeviceAuthorizationResponse, has_auth_key),
+    offsetof(CMsgRemoteDeviceAuthorizationResponse, auth_key),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "device_token",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(CMsgRemoteDeviceAuthorizationResponse, has_device_token),
+    offsetof(CMsgRemoteDeviceAuthorizationResponse, device_token),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_device_authorization_response__field_indices_by_name[] = {
+  2,   /* field[2] = auth_key */
+  3,   /* field[3] = device_token */
   0,   /* field[0] = result */
   1,   /* field[1] = steamid */
 };
 static const ProtobufCIntRange cmsg_remote_device_authorization_response__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 4 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_device_authorization_response__descriptor =
 {
@@ -1480,11 +1593,50 @@ const ProtobufCMessageDescriptor cmsg_remote_device_authorization_response__desc
   "CMsgRemoteDeviceAuthorizationResponse",
   "",
   sizeof(CMsgRemoteDeviceAuthorizationResponse),
-  2,
+  4,
   cmsg_remote_device_authorization_response__field_descriptors,
   cmsg_remote_device_authorization_response__field_indices_by_name,
   1,  cmsg_remote_device_authorization_response__number_ranges,
   (ProtobufCMessageInit) cmsg_remote_device_authorization_response__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ERemoteDeviceAuthorizationResult cmsg_remote_device_authorization_confirmed__result__default_value = k_ERemoteDeviceAuthorizationSuccess;
+static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_confirmed__field_descriptors[1] =
+{
+  {
+    "result",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(CMsgRemoteDeviceAuthorizationConfirmed, result),
+    &eremote_device_authorization_result__descriptor,
+    &cmsg_remote_device_authorization_confirmed__result__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cmsg_remote_device_authorization_confirmed__field_indices_by_name[] = {
+  0,   /* field[0] = result */
+};
+static const ProtobufCIntRange cmsg_remote_device_authorization_confirmed__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cmsg_remote_device_authorization_confirmed__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CMsgRemoteDeviceAuthorizationConfirmed",
+  "CMsgRemoteDeviceAuthorizationConfirmed",
+  "CMsgRemoteDeviceAuthorizationConfirmed",
+  "",
+  sizeof(CMsgRemoteDeviceAuthorizationConfirmed),
+  1,
+  cmsg_remote_device_authorization_confirmed__field_descriptors,
+  cmsg_remote_device_authorization_confirmed__field_indices_by_name,
+  1,  cmsg_remote_device_authorization_confirmed__number_ranges,
+  (ProtobufCMessageInit) cmsg_remote_device_authorization_confirmed__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_request__reserved_gamepad__field_descriptors[2] =
@@ -1542,6 +1694,8 @@ static const int32_t cmsg_remote_device_streaming_request__audio_channel_count__
 static const protobuf_c_boolean cmsg_remote_device_streaming_request__enable_video_streaming__default_value = 1;
 static const protobuf_c_boolean cmsg_remote_device_streaming_request__enable_audio_streaming__default_value = 1;
 static const protobuf_c_boolean cmsg_remote_device_streaming_request__enable_input_streaming__default_value = 1;
+static const EStreamDeviceFormFactor cmsg_remote_device_streaming_request__form_factor__default_value = k_EStreamDeviceFormFactorUnknown;
+static const EStreamInterface cmsg_remote_device_streaming_request__stream_interface__default_value = k_EStreamInterfaceDefault;
 static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_request__field_descriptors[20] =
 {
   {
@@ -1732,7 +1886,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_request__fiel
     offsetof(CMsgRemoteDeviceStreamingRequest, has_form_factor),
     offsetof(CMsgRemoteDeviceStreamingRequest, form_factor),
     &estream_device_form_factor__descriptor,
-    NULL,
+    &cmsg_remote_device_streaming_request__form_factor__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -1780,7 +1934,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_request__fiel
     offsetof(CMsgRemoteDeviceStreamingRequest, has_stream_interface),
     offsetof(CMsgRemoteDeviceStreamingRequest, stream_interface),
     &estream_interface__descriptor,
-    NULL,
+    &cmsg_remote_device_streaming_request__stream_interface__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -1916,6 +2070,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_streaming_progress__descript
   (ProtobufCMessageInit) cmsg_remote_device_streaming_progress__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ERemoteDeviceStreamingResult cmsg_remote_device_streaming_response__result__default_value = k_ERemoteDeviceStreamingSuccess;
 static const EStreamTransport cmsg_remote_device_streaming_response__transport__default_value = k_EStreamTransportUDP;
 static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_response__field_descriptors[7] =
 {
@@ -1939,7 +2094,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_streaming_response__fie
     0,   /* quantifier_offset */
     offsetof(CMsgRemoteDeviceStreamingResponse, result),
     &eremote_device_streaming_result__descriptor,
-    NULL,
+    &cmsg_remote_device_streaming_response__result__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -2034,7 +2189,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_streaming_response__descript
   (ProtobufCMessageInit) cmsg_remote_device_streaming_response__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmsg_remote_device_proof_request__field_descriptors[2] =
+static const ProtobufCFieldDescriptor cmsg_remote_device_proof_request__field_descriptors[3] =
 {
   {
     "challenge",
@@ -2060,15 +2215,28 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_proof_request__field_de
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "update_secret",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CMsgRemoteDeviceProofRequest, has_update_secret),
+    offsetof(CMsgRemoteDeviceProofRequest, update_secret),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_device_proof_request__field_indices_by_name[] = {
   0,   /* field[0] = challenge */
   1,   /* field[1] = request_id */
+  2,   /* field[2] = update_secret */
 };
 static const ProtobufCIntRange cmsg_remote_device_proof_request__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_device_proof_request__descriptor =
 {
@@ -2078,14 +2246,14 @@ const ProtobufCMessageDescriptor cmsg_remote_device_proof_request__descriptor =
   "CMsgRemoteDeviceProofRequest",
   "",
   sizeof(CMsgRemoteDeviceProofRequest),
-  2,
+  3,
   cmsg_remote_device_proof_request__field_descriptors,
   cmsg_remote_device_proof_request__field_indices_by_name,
   1,  cmsg_remote_device_proof_request__number_ranges,
   (ProtobufCMessageInit) cmsg_remote_device_proof_request__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmsg_remote_device_proof_response__field_descriptors[2] =
+static const ProtobufCFieldDescriptor cmsg_remote_device_proof_response__field_descriptors[3] =
 {
   {
     "response",
@@ -2111,15 +2279,28 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_proof_response__field_d
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "updated_secret",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CMsgRemoteDeviceProofResponse, has_updated_secret),
+    offsetof(CMsgRemoteDeviceProofResponse, updated_secret),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_device_proof_response__field_indices_by_name[] = {
   1,   /* field[1] = request_id */
   0,   /* field[0] = response */
+  2,   /* field[2] = updated_secret */
 };
 static const ProtobufCIntRange cmsg_remote_device_proof_response__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_device_proof_response__descriptor =
 {
@@ -2129,7 +2310,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_proof_response__descriptor =
   "CMsgRemoteDeviceProofResponse",
   "",
   sizeof(CMsgRemoteDeviceProofResponse),
-  2,
+  3,
   cmsg_remote_device_proof_response__field_descriptors,
   cmsg_remote_device_proof_response__field_indices_by_name,
   1,  cmsg_remote_device_proof_response__number_ranges,
@@ -2187,7 +2368,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_stream_transport_signal__des
   (ProtobufCMessageInit) cmsg_remote_device_stream_transport_signal__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue eremote_client_broadcast_msg__enum_values_by_number[14] =
+static const ProtobufCEnumValue eremote_client_broadcast_msg__enum_values_by_number[15] =
 {
   { "k_ERemoteClientBroadcastMsgDiscovery", "k_ERemoteClientBroadcastMsgDiscovery", 0 },
   { "k_ERemoteClientBroadcastMsgStatus", "k_ERemoteClientBroadcastMsgStatus", 1 },
@@ -2203,17 +2384,19 @@ static const ProtobufCEnumValue eremote_client_broadcast_msg__enum_values_by_num
   { "k_ERemoteClientBroadcastMsgClientIDDeconflict", "k_ERemoteClientBroadcastMsgClientIDDeconflict", 11 },
   { "k_ERemoteDeviceStreamTransportSignal", "k_ERemoteDeviceStreamTransportSignal", 12 },
   { "k_ERemoteDeviceStreamingProgress", "k_ERemoteDeviceStreamingProgress", 13 },
+  { "k_ERemoteDeviceAuthorizationConfirmed", "k_ERemoteDeviceAuthorizationConfirmed", 14 },
 };
 static const ProtobufCIntRange eremote_client_broadcast_msg__value_ranges[] = {
-{0, 0},{0, 14}
+{0, 0},{0, 15}
 };
-static const ProtobufCEnumValueIndex eremote_client_broadcast_msg__enum_values_by_name[14] =
+static const ProtobufCEnumValueIndex eremote_client_broadcast_msg__enum_values_by_name[15] =
 {
   { "k_ERemoteClientBroadcastMsgClientIDDeconflict", 11 },
   { "k_ERemoteClientBroadcastMsgDiscovery", 0 },
   { "k_ERemoteClientBroadcastMsgOffline", 2 },
   { "k_ERemoteClientBroadcastMsgStatus", 1 },
   { "k_ERemoteDeviceAuthorizationCancelRequest", 9 },
+  { "k_ERemoteDeviceAuthorizationConfirmed", 14 },
   { "k_ERemoteDeviceAuthorizationRequest", 3 },
   { "k_ERemoteDeviceAuthorizationResponse", 4 },
   { "k_ERemoteDeviceProofRequest", 7 },
@@ -2231,9 +2414,9 @@ const ProtobufCEnumDescriptor eremote_client_broadcast_msg__descriptor =
   "ERemoteClientBroadcastMsg",
   "ERemoteClientBroadcastMsg",
   "",
-  14,
+  15,
   eremote_client_broadcast_msg__enum_values_by_number,
-  14,
+  15,
   eremote_client_broadcast_msg__enum_values_by_name,
   1,
   eremote_client_broadcast_msg__value_ranges,

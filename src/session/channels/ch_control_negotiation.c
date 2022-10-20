@@ -38,6 +38,8 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
 static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiationSetConfigMsg *message,
                                    uint16_t packetId);
 
+static void OnConnected(IHS_SessionChannel *channel);
+
 void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
                                             IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     switch (type) {
@@ -159,10 +161,14 @@ static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiati
     CNegotiationCompleteMsg response = CNEGOTIATION_COMPLETE_MSG__INIT;
     IHS_SessionChannelControlSend(channel, k_EStreamControlNegotiationComplete,
                                   (const ProtobufCMessage *) &response, IHS_PACKET_ID_NEXT);
-    IHS_SessionChannelControlStartHeartbeat(channel);
+    OnConnected(channel);
+}
 
+static void OnConnected(IHS_SessionChannel *channel) {
+    IHS_SessionChannelControlStartHeartbeat(channel);
     IHS_Session *session = channel->session;
     if (session->callbacks.session && session->callbacks.session->connected) {
         session->callbacks.session->connected(session, session->callbackContexts.session);
     }
+
 }

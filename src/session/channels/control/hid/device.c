@@ -22,7 +22,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "device.h"
 
-#pragma once
-
-#cmakedefine01 IHSLIB_SDL2_HIDAPI
+void IHS_HIDDeviceClose(IHS_HIDDevice *device) {
+    device->cls->Close(device);
+}

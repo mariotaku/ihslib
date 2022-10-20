@@ -295,9 +295,10 @@ void   chidmessage_from_remote__free_unpacked
   assert(message->base.descriptor == &chidmessage_from_remote__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+static const EHIDDeviceLocation chiddevice_info__location__default_value = k_EDeviceLocationLocal;
 static const int32_t chiddevice_info__interface_number__default_value = -1;
 static const int32_t chiddevice_info__ostype__default_value = -1;
-static const uint32_t chiddevice_info__e_controller_type__default_value = 0u;
+static const uint32_t chiddevice_info__e_controller_type_obsolete__default_value = 0u;
 static const protobuf_c_boolean chiddevice_info__is_xinput_device__default_value = 0;
 static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
 {
@@ -309,7 +310,7 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
     offsetof(CHIDDeviceInfo, has_location),
     offsetof(CHIDDeviceInfo, location),
     &ehiddevice_location__descriptor,
-    NULL,
+    &chiddevice_info__location__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -494,14 +495,14 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "eControllerType",
+    "eControllerType_obsolete",
     17,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(CHIDDeviceInfo, has_econtrollertype),
-    offsetof(CHIDDeviceInfo, econtrollertype),
+    offsetof(CHIDDeviceInfo, has_econtrollertype_obsolete),
+    offsetof(CHIDDeviceInfo, econtrollertype_obsolete),
     NULL,
-    &chiddevice_info__e_controller_type__default_value,
+    &chiddevice_info__e_controller_type_obsolete__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -532,7 +533,7 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
 };
 static const unsigned chiddevice_info__field_indices_by_name[] = {
   14,   /* field[14] = caps_bits */
-  16,   /* field[16] = eControllerType */
+  16,   /* field[16] = eControllerType_obsolete */
   10,   /* field[10] = interface_number */
   12,   /* field[12] = is_generic_gamepad */
   13,   /* field[13] = is_generic_joystick */
@@ -1157,6 +1158,7 @@ const ProtobufCMessageDescriptor chidmessage_to_remote__device_request_full_repo
   (ProtobufCMessageInit) chidmessage_to_remote__device_request_full_report__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EHIDDeviceDisconnectMethod chidmessage_to_remote__device_disconnect__disconnect_method__default_value = k_EDeviceDisconnectMethodUnknown;
 static const ProtobufCFieldDescriptor chidmessage_to_remote__device_disconnect__field_descriptors[3] =
 {
   {
@@ -1179,7 +1181,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__device_disconnect__
     offsetof(CHIDMessageToRemote__DeviceDisconnect, has_disconnectmethod),
     offsetof(CHIDMessageToRemote__DeviceDisconnect, disconnectmethod),
     &ehiddevice_disconnect_method__descriptor,
-    NULL,
+    &chidmessage_to_remote__device_disconnect__disconnect_method__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },

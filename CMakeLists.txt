@@ -18,6 +18,7 @@ option(IHSLIB_SANITIZE_ADDRESS "Link Address Sanitizer" OFF)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SDL2 sdl2)
+pkg_check_modules(HIDAPI hidapi-hidraw)
 
 if (NOT PROTOBUF_C_FOUND)
     pkg_check_modules(PROTOBUF_C libprotobuf-c REQUIRED)
@@ -64,8 +65,21 @@ add_library(ihslib
         src/session/channels/control/control_cursor.c
         src/session/channels/control/control_input.c
         src/session/channels/control/control_hid.c
+        src/session/channels/control/hid/device.c
+        src/session/channels/control/hid/manager.c
         src/session/channels/ch_stats.c
         )
+
+if (SDL2_VERSION VERSION_GREATER_EQUAL 2.0.18)
+    set(IHSLIB_SDL2_HIDAPI 1)
+    target_compile_definitions(ihslib PUBLIC IHSLIB_SDL2_HIDAPI)
+endif()
+
+if (HIDAPI_FOUND)
+    set(IHSLIB_HIDAPI 1)
+    target_compile_definitions(ihslib PUBLIC IHSLIB_HIDAPI)
+endif()
+
 configure_file(src/config.h.in config.h @ONLY)
 
 target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
@@ -74,6 +88,7 @@ add_subdirectory(src/protobuf)
 target_link_libraries(ihslib PRIVATE ihs-protobuf)
 
 add_subdirectory(src/platforms)
+target_include_directories(ihs-platforms PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(ihslib PRIVATE ihs-platforms)
 
 if (MBEDTLS_FOUND)

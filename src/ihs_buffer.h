@@ -32,6 +32,8 @@
 #include "ihslib/buffer.h"
 #include "endianness.h"
 
+#define IHS_BUFFER_INIT(initCap, maxCap) {.initialCapacity = (initCap), .maxCapacity = (maxCap)}
+
 void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity);
 
 /*

@@ -178,6 +178,13 @@ void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCal
     IHS_BaseUnlock(&session->base);
 }
 
+void IHS_SessionSetHIDInterface(IHS_Session *session, const IHS_StreamHIDInterface *iface, void *context) {
+    IHS_BaseLock(&session->base);
+    session->callbacks.hid = iface;
+    session->callbackContexts.hid = context;
+    IHS_BaseUnlock(&session->base);
+}
+
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {
     IHS_BaseSetLogFunction(&session->base, logFunction);
 }

@@ -88,8 +88,8 @@ struct  _CHIDDeviceInfo
   uint32_t caps_bits;
   protobuf_c_boolean has_session_id;
   uint32_t session_id;
-  protobuf_c_boolean has_econtrollertype;
-  uint32_t econtrollertype;
+  protobuf_c_boolean has_econtrollertype_obsolete;
+  uint32_t econtrollertype_obsolete;
   protobuf_c_boolean has_is_xinput_device;
   protobuf_c_boolean is_xinput_device;
   protobuf_c_boolean has_session_remote_play_together_appid;

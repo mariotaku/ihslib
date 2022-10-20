@@ -29,6 +29,7 @@
 #include "audio.h"
 #include "video.h"
 #include "input.h"
+#include "hid.h"
 
 typedef struct IHS_Session IHS_Session;
 
@@ -111,6 +112,8 @@ void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCal
 void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context);
 
 void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context);
+
+void IHS_SessionSetHIDInterface(IHS_Session *session, const IHS_StreamHIDInterface *iface, void *context);
 
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 
