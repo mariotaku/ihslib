@@ -26,6 +26,7 @@
 #include <assert.h>
 
 #include "ihslib/hid.h"
+#include "ihslib/hid/sdl.h"
 
 #include "ihs_enumeration.h"
 
@@ -34,6 +35,9 @@
 #include "hid/device.h"
 
 int main(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
     SDL_Init(SDL_INIT_GAMECONTROLLER);
     int indices[8];
     indices[0] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
@@ -59,12 +63,42 @@ int main(int argc, char *argv[]) {
         printf("Device: %s\n", info.path);
     }
     assert(IHS_EnumerationNext(enumeration) == NULL);
+    IHS_EnumerationFree(enumeration);
+
     assert(IHS_HIDManagerOpenDevice(manager, "bad://1") == NULL);
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://1") == NULL);
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://aaaa") == NULL);
 
     IHS_HIDDevice *device = IHS_HIDManagerOpenDevice(manager, "sdl://0");
     assert(device != NULL);
+
+    const static uint8_t maxRumble[21] = {0x1, 0xff, 0xff, 0xff, 0xff, 0x88, 0x13,};
+    IHS_HIDDeviceWrite(device, maxRumble, 21);
+
+    const static uint8_t setPlayerIndexTo7[21] = {0xb, 0x7,};
+    IHS_HIDDeviceWrite(device, setPlayerIndexTo7, 21);
+    assert(SDL_JoystickGetDevicePlayerIndex(0) == 7);
+
+    const static uint8_t setLedRed[21] = {0x5, 0xff, 0x0, 0x0,};
+    IHS_HIDDeviceWrite(device, setLedRed, 21);
+
+    const static uint8_t unrecognized[21] = {0xff,};
+    assert(IHS_HIDDeviceWrite(device, unrecognized, 21) == -1);
+
+    const static uint8_t shortWrite[8] = {0x0,};
+    assert(IHS_HIDDeviceWrite(device, shortWrite, 8) == -1);
+
+    IHS_Buffer buffer = IHS_BUFFER_INIT(256, 256);
+
+    const static uint8_t getDeviceReport[21] = {0x04};
+    IHS_HIDDeviceGetFeatureReport(device, getDeviceReport, 21, &buffer, 65);
+
+    const uint8_t *report = IHS_BufferPointerAt(&buffer, 1);
+    assert(report[0] == true);
+    assert(report[1] == false);
+
+    IHS_BufferClear(&buffer, true);
+
     IHS_HIDDeviceClose(device);
 
     IHS_HIDProviderSDLDestroy(provider);

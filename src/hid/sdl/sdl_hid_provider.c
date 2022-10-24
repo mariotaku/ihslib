@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "ihslib/hid.h"
+#include "sdl_hid_common.h"
 #include "hid/provider.h"
 
 #include <SDL2/SDL.h>
@@ -46,8 +47,6 @@ static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider);
 
 static void ProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
                                IHS_StreamHIDDeviceInfo *info);
-
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
 
 static const IHS_StreamHIDProviderClass ProviderClass = {
         .alloc = ProviderAlloc,

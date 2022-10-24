@@ -130,8 +130,3 @@ typedef struct IHS_StreamHIDProviderClass {
 
 bool IHS_SessionHIDNotifyChange(IHS_Session *session);
 
-IHS_HIDProvider *IHS_StreamHIDProviderGetBuiltin(const char *name);
-
-IHS_HIDProvider *IHS_HIDProviderSDLCreate();
-
-void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);

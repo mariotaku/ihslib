@@ -23,36 +23,22 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
-#include "ihs_enumeration.h"
+#pragma once
 
-IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls) {
-    IHS_Enumeration *enumeration = cls->alloc(cls);
-    assert(enumeration->cls == cls);
-    return enumeration;
-}
+#include <stdint.h>
 
-void IHS_EnumerationReset(IHS_Enumeration *enumeration) {
-    enumeration->cls->reset(enumeration);
-}
+#include <SDL2/SDL.h>
 
-bool IHS_EnumerationEnded(IHS_Enumeration *enumeration) {
-    return enumeration->cls->ended(enumeration);
-}
+#include "hid/device.h"
 
-void *IHS_EnumerationGet(const IHS_Enumeration *enumeration) {
-    return enumeration->cls->get(enumeration);
-}
+typedef struct IHS_HIDDeviceSDL {
+    IHS_HIDDevice base;
+    SDL_GameController *controller;
+} IHS_HIDDeviceSDL;
 
-void *IHS_EnumerationNext(IHS_Enumeration *enumeration) {
-    return enumeration->cls->next(enumeration);
-}
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
 
-size_t IHS_EnumerationCount(const IHS_Enumeration *enumeration) {
-    return enumeration->cls->count(enumeration);
-}
+int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
-void IHS_EnumerationFree(IHS_Enumeration *enumeration) {
-    enumeration->cls->free(enumeration);
-}
+int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
+                                     IHS_Buffer *dest, size_t length);

@@ -80,6 +80,7 @@ static void EnumerationLLFree(IHS_Enumeration *enumeration) {
     if (ll->llFree != NULL) {
         ll->llFree(ll->head);
     }
+    free(enumeration);
 }
 
 static size_t EnumerationLLCount(const IHS_Enumeration *enumeration) {

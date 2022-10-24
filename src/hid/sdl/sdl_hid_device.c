@@ -26,6 +26,7 @@
 #include "ihs_buffer.h"
 #include "ihslib/hid.h"
 #include "hid/device.h"
+#include "sdl_hid_common.h"
 
 #include <SDL2/SDL.h>
 
@@ -35,21 +36,28 @@ static void DeviceFree(IHS_HIDDevice *device);
 
 static void DeviceClose(IHS_HIDDevice *device);
 
-static int DeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
 static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-} IHS_HIDDeviceSDL;
+static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
+
+static int DeviceVendorString(IHS_HIDDevice *device, IHS_Buffer *dest);
+
+static int DeviceProductString(IHS_HIDDevice *device, IHS_Buffer *dest);
+
+static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest);
+
 
 static const IHS_HIDDeviceClass DeviceClass = {
         .alloc = DeviceAlloc,
         .free = DeviceFree,
         .close = DeviceClose,
-        .write = DeviceWrite,
+        .write = IHS_HIDDeviceSDLWrite,
         .read = DeviceRead,
+        .sendFeatureReport = DeviceSendFeatureReport,
+        .getFeatureReport = IHS_HIDDeviceSDLGetFeatureReport,
+        .getVendorString = DeviceVendorString,
+        .getProductString = DeviceProductString,
+        .getSerialNumberString = DeviceSerialNumber,
 };
 
 IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
@@ -81,14 +89,36 @@ static void DeviceClose(IHS_HIDDevice *device) {
     deviceSdl->controller = NULL;
 }
 
-static int DeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
-    return 0;
-}
-
 static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs) {
     (void) device;
     (void) timeoutMs;
     uint8_t *pointer = IHS_BufferPointerForAppend(dest, length);
     memset(pointer, 0, length);
     return (int) length;
+}
+
+static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
+    return 0;
+}
+
+static int DeviceVendorString(IHS_HIDDevice *device, IHS_Buffer *dest) {
+    IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
+    return 0;
+}
+
+static int DeviceProductString(IHS_HIDDevice *device, IHS_Buffer *dest) {
+    IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
+    return 0;
+}
+
+static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    const char *serial = SDL_GameControllerGetSerial(sdl->controller);
+    if (serial != NULL) {
+        IHS_BufferWriteMem(dest, 0, (const unsigned char *) serial, strlen(serial));
+    }
+#endif
+    IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
+    return 0;
 }

@@ -79,6 +79,7 @@ static void EnumerationArrayFree(IHS_Enumeration *enumeration) {
     if (ll->arrFree != NULL) {
         ll->arrFree(ll->array);
     }
+    free(enumeration);
 }
 
 static size_t EnumerationArrayCount(const IHS_Enumeration *enumeration) {

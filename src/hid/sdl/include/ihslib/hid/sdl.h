@@ -23,36 +23,10 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
-#include "ihs_enumeration.h"
+#pragma once
 
-IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls) {
-    IHS_Enumeration *enumeration = cls->alloc(cls);
-    assert(enumeration->cls == cls);
-    return enumeration;
-}
+#include "ihslib/hid.h"
 
-void IHS_EnumerationReset(IHS_Enumeration *enumeration) {
-    enumeration->cls->reset(enumeration);
-}
+IHS_HIDProvider *IHS_HIDProviderSDLCreate();
 
-bool IHS_EnumerationEnded(IHS_Enumeration *enumeration) {
-    return enumeration->cls->ended(enumeration);
-}
-
-void *IHS_EnumerationGet(const IHS_Enumeration *enumeration) {
-    return enumeration->cls->get(enumeration);
-}
-
-void *IHS_EnumerationNext(IHS_Enumeration *enumeration) {
-    return enumeration->cls->next(enumeration);
-}
-
-size_t IHS_EnumerationCount(const IHS_Enumeration *enumeration) {
-    return enumeration->cls->count(enumeration);
-}
-
-void IHS_EnumerationFree(IHS_Enumeration *enumeration) {
-    enumeration->cls->free(enumeration);
-}
+void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);

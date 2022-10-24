@@ -104,6 +104,8 @@ int main(int argc, char *argv[]) {
     IHS_HIDDeviceGetSerialNumberString(device, &str);
     assert(strcmp("0123456789abcdef", (const char *) IHS_BufferPointer(&str)) == 0);
 
+
+
     IHS_Buffer buffer = IHS_BUFFER_INIT(256, 256);
     IHS_HIDDeviceRead(device, &buffer, 64, 5);
     IHS_HIDDeviceWrite(device, IHS_BufferPointer(&buffer), 64);
@@ -114,6 +116,9 @@ int main(int argc, char *argv[]) {
     assert(manager->providers.size == 0);
     IHS_SessionHIDProviderDestroy(provider);
     IHS_HIDManagerDestroy(manager);
+
+    IHS_BufferClear(&str, true);
+    IHS_BufferClear(&buffer, true);
     return 0;
 }
 
