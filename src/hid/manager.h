@@ -22,3 +22,30 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+#pragma once
+
+#include "ihslib/hid.h"
+#include "ihs_arraylist.h"
+
+typedef struct IHS_HIDDevice IHS_HIDDevice;
+
+struct IHS_HIDManager {
+    IHS_ArrayList devices;
+    IHS_ArrayList providers;
+    uint32_t lastDeviceId;
+};
+
+IHS_HIDManager *IHS_HIDManagerCreate();
+
+void IHS_HIDManagerDestroy(IHS_HIDManager *manager);
+
+IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path);
+
+IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, uint32_t id);
+
+void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDDevice *device);
+
+void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider);
+
+void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider);

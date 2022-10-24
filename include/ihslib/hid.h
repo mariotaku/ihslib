@@ -29,16 +29,17 @@
 #include <stdint.h>
 #include <wchar.h>
 
+#include "buffer.h"
+#include "enumeration.h"
+
 typedef struct IHS_Session IHS_Session;
 
-typedef struct IHS_StreamHIDDeviceEnumeration IHS_StreamHIDDeviceEnumeration;
 typedef struct IHS_StreamHIDDevice IHS_StreamHIDDevice;
 
-typedef struct IHS_SessionHIDManager IHS_SessionHIDManager;
+typedef struct IHS_HIDManager IHS_HIDManager;
 
-/** hidapi info structure 
- *  @brief  Information about a connected HID device
- */
+typedef struct IHS_StreamHIDDeviceInfo IHS_StreamHIDDeviceInfo;
+
 typedef struct IHS_StreamHIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
@@ -46,68 +47,91 @@ typedef struct IHS_StreamHIDDeviceInfo {
     uint16_t vendor_id;
     /** Device Product ID */
     uint16_t product_id;
-    /** Serial Number */
-    const wchar_t *serial_number;
-    /** Device Release Number in binary-coded decimal,
-        also known as Device Version Number */
-    uint16_t release_number;
-    /** Manufacturer String */
-    const wchar_t *manufacturer_string;
-    /** Product string */
-    const wchar_t *product_string;
-    /** Usage Page for this Device/Interface
-        (Windows/Mac only). */
-    uint16_t usage_page;
-    /** Usage for this Device/Interface
-        (Windows/Mac only).*/
-    uint16_t usage;
-    /** The USB interface which this logical device
-        represents.
-
-        * Valid on both Linux implementations in all cases.
-        * Valid on the Windows implementation only if the device
-          contains more than one interface. */
-    int interface_number;
-
-    /** Additional information about the USB interface.
-        Valid on libusb and Android implementations. */
-    int interface_class;
-    int interface_subclass;
-    int interface_protocol;
 } IHS_StreamHIDDeviceInfo;
 
-typedef struct IHS_StreamHIDInterface {
-    IHS_StreamHIDDeviceEnumeration *(*enumerate)(uint16_t vendor_id, uint16_t product_id, void *context);
+typedef struct IHS_HIDDevice {
+    const struct IHS_HIDDeviceClass *cls;
+    IHS_HIDManager *manager;
+    uint32_t id;
+} IHS_HIDDevice;
 
-    int (*enumeration_length)(IHS_StreamHIDDeviceEnumeration *devices, void *context);
+typedef struct IHS_HIDDeviceClass {
+    IHS_HIDDevice *(*alloc)(const struct IHS_HIDDeviceClass *cls);
 
-    IHS_StreamHIDDeviceEnumeration *(*enumeration_next)(IHS_StreamHIDDeviceEnumeration *devices, void *context);
+    void (*free)(IHS_HIDDevice *device);
 
-    void (*enumeration_getinfo)(const IHS_StreamHIDDeviceEnumeration *devices, IHS_StreamHIDDeviceInfo *info,
-                                void *context);
+    /**
+     * Close underlying resources
+     * @param device Device instance
+     */
+    void (*close)(IHS_HIDDevice *device);
 
-    void (*free_enumeration)(IHS_StreamHIDDeviceEnumeration *devices, void *context);
+    int (*write)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
-    IHS_StreamHIDDevice *(*open)(uint16_t vendor_id, uint16_t product_id, const char *serial_number, void *context);
+    int (*read)(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
 
-    IHS_StreamHIDDevice *(*open_path)(const char *path, int bExclusive, void *context);
+    int (*sendFeatureReport)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
-    int (*write)(IHS_StreamHIDDevice *dev, const unsigned char *data, size_t length, void *context);
+    int (*getFeatureReport)(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
+                            IHS_Buffer *dest, size_t length);
 
-    int (*read_timeout)(IHS_StreamHIDDevice *dev, unsigned char *data, size_t length, int milliseconds, void *context);
+    /**
+     *
+     * @param device HID device
+     * @param out Buffer to write value to
+     * @return 0 If succeed, -1 if anything wrong happened
+     */
+    int (*getVendorString)(IHS_HIDDevice *device, IHS_Buffer *out);
 
-    int (*read)(IHS_StreamHIDDevice *dev, unsigned char *data, size_t length, void *context);
+    /**
+     *
+     * @param device HID device
+     * @param out Buffer to write value to
+     * @return 0 If succeed, -1 if anything wrong happened
+     */
+    int (*getProductString)(IHS_HIDDevice *device, IHS_Buffer *out);
 
-    int (*set_nonblocking)(IHS_StreamHIDDevice *dev, int nonblock, void *context);
+    /**
+     *
+     * @param device HID device
+     * @param out Buffer to write value to
+     * @return 0 If succeed, -1 if anything wrong happened
+     */
+    int (*getSerialNumberString)(IHS_HIDDevice *device, IHS_Buffer *out);
 
-    int (*send_feature_report)(IHS_StreamHIDDevice *dev, const unsigned char *data, size_t length, void *context);
+    int (*startInputReports)(IHS_HIDDevice *device, size_t length);
 
-    int (*get_feature_report)(IHS_StreamHIDDevice *dev, unsigned char *data, size_t length, void *context);
+    int (*requestFullReport)(IHS_HIDDevice *device);
 
-    void (*close)(IHS_StreamHIDDevice *dev, void *context);
-} IHS_StreamHIDInterface;
+    int (*requestDisconnect)(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
+
+} IHS_HIDDeviceClass;
+
+typedef struct IHS_StreamHIDProvider {
+    const struct IHS_StreamHIDProviderClass *cls;
+} IHS_HIDProvider;
+
+typedef struct IHS_StreamHIDProviderClass {
+    IHS_HIDProvider *(*alloc)(const struct IHS_StreamHIDProviderClass *cls);
+
+    void (*free)(IHS_HIDProvider *provider);
+
+    bool (*supportsDevice)(IHS_HIDProvider *provider, const char *path);
+
+    IHS_HIDDevice *(*openDevice)(IHS_HIDProvider *provider, const char *path);
+
+    bool (*hasChange)(IHS_HIDProvider *provider);
+
+    IHS_Enumeration *(*enumerateDevices)(IHS_HIDProvider *provider);
+
+    void (*deviceInfo)(IHS_HIDProvider *provider, IHS_Enumeration *enumeration, IHS_StreamHIDDeviceInfo *info);
+} IHS_StreamHIDProviderClass;
+
 
 bool IHS_SessionHIDNotifyChange(IHS_Session *session);
 
-void IHS_SessionSetHIDManager(IHS_Session *session, const IHS_SessionHIDManager *manager);
+IHS_HIDProvider *IHS_StreamHIDProviderGetBuiltin(const char *name);
 
+IHS_HIDProvider *IHS_HIDProviderSDLCreate();
+
+void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);

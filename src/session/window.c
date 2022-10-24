@@ -83,7 +83,7 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPa
     if (tailOffset < 0 && -tailOffset > IHS_SessionPacketsWindowSize(window)) {
         return true;
     }
-    /* Not sure why but the offset is significantly larger than window capacity. Ignore it first */
+    /* Not sure why but the offset is significantly larger than window capacity. Ignore it reset */
     if (tailOffset > window->capacity) {
         return true;
     }
@@ -161,7 +161,7 @@ uint16_t IHS_SessionPacketsWindowDiscard(IHS_SessionPacketsWindow *window, uint3
     if (tailPkt->header.sendTimestamp < diff) return 0;
     /* Should discard all frames older than discardBefore */
     uint32_t discardBefore = tailPkt->header.sendTimestamp - diff;
-    /* Find first valid index after discardBefore */
+    /* Find reset valid index after discardBefore */
     int firstValid = -1;
     for (int i = window->head.pos, j = window->head.pos + size; i < j; i++) {
         const IHS_SessionWindowItem *item = &window->data[i % window->capacity];

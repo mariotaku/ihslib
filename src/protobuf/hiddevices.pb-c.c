@@ -713,8 +713,8 @@ static const ProtobufCIntRange chidmessage_to_remote__device_close__number_range
 const ProtobufCMessageDescriptor chidmessage_to_remote__device_close__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "CHIDMessageToRemote.DeviceClose",
-  "DeviceClose",
+  "CHIDMessageToRemote.DeviceCloseAndFree",
+  "DeviceCloseAndFree",
   "CHIDMessageToRemote__DeviceClose",
   "",
   sizeof(CHIDMessageToRemote__DeviceClose),

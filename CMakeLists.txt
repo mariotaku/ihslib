@@ -39,6 +39,10 @@ add_library(ihslib
         src/ihs_ip.c
         src/ihs_buffer.c
         src/ihs_queue.c
+        src/ihs_arraylist.c
+        src/ihs_enumeration.c
+        src/ihs_enumeration_ll.c
+        src/ihs_enumeration_array.c
         src/client/client.c
         src/client/discovery.c
         src/client/authorization.c
@@ -65,9 +69,10 @@ add_library(ihslib
         src/session/channels/control/control_cursor.c
         src/session/channels/control/control_input.c
         src/session/channels/control/control_hid.c
-        src/session/channels/control/hid/device.c
-        src/session/channels/control/hid/manager.c
         src/session/channels/ch_stats.c
+        src/hid/device.c
+        src/hid/provider.c
+        src/hid/manager.c
         )
 
 if (SDL2_VERSION VERSION_GREATER_EQUAL 2.0.18)
@@ -98,6 +103,8 @@ if (MBEDTLS_FOUND)
 elseif (OPENSSL_FOUND)
     target_sources(ihslib PRIVATE src/crypto/impl_openssl.c)
 endif ()
+
+add_subdirectory(src/hid)
 
 if (IHSLIB_SANITIZE_ADDRESS)
     add_compile_definitions(IHSLIB_SANITIZE_ADDRESS)

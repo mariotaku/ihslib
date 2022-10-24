@@ -1,0 +1,94 @@
+/*
+ *  _____  _   _  _____  _  _  _     
+ * |_   _|| | | |/  ___|| |(_)| |     Steam    
+ *   | |  | |_| |\ `--. | | _ | |__     In-Home
+ *   | |  |  _  | `--. \| || || '_ \      Streaming
+ *  _| |_ | | | |/\__/ /| || || |_) |       Library
+ *  \___/ \_| |_/\____/ |_||_||_.__/
+ *
+ * Copyright (c) 2022 Ningyuan Li <https://github.com/mariotaku>.
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include "ihs_buffer.h"
+#include "ihslib/hid.h"
+#include "hid/device.h"
+
+#include <SDL2/SDL.h>
+
+static IHS_HIDDevice *DeviceAlloc(const struct IHS_HIDDeviceClass *cls);
+
+static void DeviceFree(IHS_HIDDevice *device);
+
+static void DeviceClose(IHS_HIDDevice *device);
+
+static int DeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
+
+static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
+
+typedef struct IHS_HIDDeviceSDL {
+    IHS_HIDDevice base;
+    SDL_GameController *controller;
+} IHS_HIDDeviceSDL;
+
+static const IHS_HIDDeviceClass DeviceClass = {
+        .alloc = DeviceAlloc,
+        .free = DeviceFree,
+        .close = DeviceClose,
+        .write = DeviceWrite,
+        .read = DeviceRead,
+};
+
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDDeviceCreate(&DeviceClass);
+    device->controller = controller;
+    return (IHS_HIDDevice *) device;
+}
+
+void IHS_HIDDeviceReportEvent(SDL_Event *event) {
+    switch (event->type) {
+        case SDL_CONTROLLERBUTTONDOWN:
+            break;
+    }
+}
+
+static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
+    IHS_HIDDeviceSDL *device = calloc(1, sizeof(IHS_HIDDeviceSDL));
+    device->base.cls = cls;
+    return (IHS_HIDDevice *) device;
+}
+
+static void DeviceFree(IHS_HIDDevice *device) {
+    free(device);
+}
+
+static void DeviceClose(IHS_HIDDevice *device) {
+    IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
+    SDL_GameControllerClose(deviceSdl->controller);
+    deviceSdl->controller = NULL;
+}
+
+static int DeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
+    return 0;
+}
+
+static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs) {
+    (void) device;
+    (void) timeoutMs;
+    uint8_t *pointer = IHS_BufferPointerForAppend(dest, length);
+    memset(pointer, 0, length);
+    return (int) length;
+}

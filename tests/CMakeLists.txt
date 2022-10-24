@@ -8,4 +8,13 @@ function(ihs_add_test NAME SOURCES)
     target_link_libraries(${TEST_EXE} PRIVATE ihslib)
 endfunction()
 
+function(ihs_test_link_libraries NAME LIBRARIES)
+    set(TEST_EXE "ihstest_${NAME}")
+    target_link_libraries(${TEST_EXE} PRIVATE ${LIBRARIES})
+endfunction()
+
+ihs_add_test(arraylist test_arraylist.c)
+ihs_add_test(enumeration test_enumeration.c)
+
+add_subdirectory(hid)
 add_subdirectory(session)

@@ -40,7 +40,7 @@ void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapaci
 }
 
 /*
- * Read functions
+ * read functions
  */
 
 uint8_t *IHS_BufferPointer(const IHS_Buffer *buffer) {
@@ -97,7 +97,7 @@ void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
 }
 
 /*
- * Write functions: Enough write space will be ensured
+ * write functions: Enough write space will be ensured
  */
 
 void IHS_BufferClear(IHS_Buffer *buffer, bool freeData) {

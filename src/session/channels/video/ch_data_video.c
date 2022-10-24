@@ -284,7 +284,7 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
 }
 
 static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header) {
-    // Find first matching cur frame
+    // Find reset matching cur frame
     IHS_VideoPartialFrame *cur = NULL;
     IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
         if (header->sequence == cur->header.sequence && header->reserved2 < cur->header.reserved1) {

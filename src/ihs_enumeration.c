@@ -22,8 +22,38 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "device.h"
 
-void IHS_HIDDeviceClose(IHS_HIDDevice *device) {
-    device->cls->Close(device);
+#include <stdlib.h>
+#include <assert.h>
+#include "ihs_enumeration.h"
+
+IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls) {
+    IHS_Enumeration *enumeration = cls->alloc(cls);
+    assert(enumeration->cls == cls);
+    return enumeration;
+}
+
+void IHS_EnumerationReset(IHS_Enumeration *enumeration) {
+    enumeration->cls->reset(enumeration);
+}
+
+bool IHS_EnumerationEnded(IHS_Enumeration *enumeration) {
+    return enumeration->cls->ended(enumeration);
+}
+
+void *IHS_EnumerationGet(const IHS_Enumeration *enumeration) {
+    return enumeration->cls->get(enumeration);
+}
+
+void *IHS_EnumerationNext(IHS_Enumeration *enumeration) {
+    return enumeration->cls->next(enumeration);
+}
+
+size_t IHS_EnumerationCount(const IHS_Enumeration *enumeration) {
+    return enumeration->cls->count(enumeration);
+}
+
+void IHS_EnumerationFree(IHS_Enumeration *enumeration) {
+    enumeration->cls->free(enumeration);
+    free(enumeration);
 }

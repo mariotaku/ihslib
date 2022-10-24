@@ -113,8 +113,6 @@ void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCal
 
 void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context);
 
-void IHS_SessionSetHIDInterface(IHS_Session *session, const IHS_StreamHIDInterface *iface, void *context);
-
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 
 const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session);

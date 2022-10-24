@@ -31,8 +31,6 @@
 #include "stream.h"
 #include "common.h"
 
-#include "hidapi/hidapi.h"
-
 static void InterruptHandler(int sig);
 
 static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
@@ -56,13 +54,6 @@ static IHS_StreamSessionCallbacks SessionCallbacks = {
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
-    hid_init();
-
-    struct hid_device_info *dev = hid_enumerate(0, 0);
-    for (struct hid_device_info *cur = dev; cur != NULL; cur = cur->next) {
-        printf("HID device %04x:%04x: %ls\n", cur->vendor_id, cur->product_id, cur->product_string);
-    }
-    hid_free_enumeration(dev);
 
     IHS_Init();
     VideoInit(argc, argv);
@@ -84,7 +75,6 @@ int main(int argc, char *argv[]) {
     IHS_SessionSetAudioCallbacks(session, &AudioCallbacks, NULL);
     IHS_SessionSetVideoCallbacks(session, &VideoCallbacks, NULL);
     IHS_SessionSetInputCallbacks(session, &InputCallbacks, NULL);
-    IHS_SessionSetHIDInterface(session, IHS_StreamHIDInterfaceHIDAPI(), NULL);
     if (!IHS_SessionConnect(session)) {
         fprintf(stderr, "Failed to start session\n");
         goto sessionExit;
@@ -97,7 +87,6 @@ int main(int argc, char *argv[]) {
 
     VideoDeinit();
     IHS_Quit();
-    hid_exit();
     return 0;
 }
 

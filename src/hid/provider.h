@@ -27,10 +27,17 @@
 
 #include "ihslib/hid.h"
 
-typedef struct IHS_HIDDevice IHS_HIDDevice;
+IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_StreamHIDProviderClass *cls);
 
-IHS_HIDDevice *IHS_HIDDeviceManagerOpenDevice(IHS_SessionHIDManager *manager, const char *path);
+void IHS_SessionHIDProviderDestroy(IHS_HIDProvider *);
 
-IHS_HIDDevice *IHS_HIDDeviceManagerFindDevice(IHS_SessionHIDManager *manager, uint32_t id);
+bool IHS_HIDProviderSupportsDevice(IHS_HIDProvider *provider, const char *path);
 
-void IHS_HIDDeviceManagerCloseDevice(IHS_SessionHIDManager *manager, IHS_HIDDevice *device);
+IHS_HIDDevice *IHS_HIDProviderOpenDevice(IHS_HIDProvider *provider, const char *path);
+
+bool IHS_SessionHIDProviderHasChange(IHS_HIDProvider *provider);
+
+IHS_Enumeration *IHS_HIDProviderEnumerateDevices(IHS_HIDProvider *provider);
+
+void IHS_HIDProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
+                               IHS_StreamHIDDeviceInfo *info);

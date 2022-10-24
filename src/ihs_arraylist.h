@@ -23,18 +23,30 @@
  *
  */
 
-#include "manager.h"
-#include "device.h"
+#pragma once
 
-#include "ihslib/hid.h"
+#include <stdbool.h>
+#include <stddef.h>
 
-IHS_HIDDevice *IHS_HIDDeviceManagerOpenDevice(IHS_SessionHIDManager *manager, const char *path) {
+typedef struct IHS_ArrayList {
+    void *data;
+    size_t itemSize;
+    size_t size;
+    size_t capacity;
+} IHS_ArrayList;
 
-}
-IHS_HIDDevice *IHS_HIDDeviceManagerFindDevice(IHS_SessionHIDManager *manager, uint32_t id) {
+typedef int (*IHS_ArrayListSearchFn)(const void *searchValue, const void *item);
 
-}
+IHS_ArrayList *IHS_ArrayListCreate(size_t itemSize);
 
-void IHS_HIDDeviceManagerCloseDevice(IHS_SessionHIDManager *manager, IHS_HIDDevice *device) {
+void IHS_ArrayListInit(IHS_ArrayList *list, size_t itemSize);
 
-}
+void IHS_ArrayListDeinit(IHS_ArrayList *list);
+
+void IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr);
+
+bool IHS_ArrayListRemoveFirst(IHS_ArrayList *list, const void *itemPtr);
+
+void *IHS_ArrayListGet(IHS_ArrayList *list, size_t index);
+
+int IHS_ArrayListBinarySearch(IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn);

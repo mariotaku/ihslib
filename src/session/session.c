@@ -30,12 +30,16 @@
 #include "ihslib/common.h"
 #include "base.h"
 #include "packet.h"
+#include "crypto.h"
+
 #include "session_pri.h"
+
 #include "session/channels/channel.h"
 #include "session/channels/ch_discovery.h"
 #include "session/channels/ch_control.h"
 #include "session/channels/ch_stats.h"
-#include "crypto.h"
+
+#include "hid/manager.h"
 
 typedef struct IHS_QueueItem {
     IHS_SessionPacket packet;
@@ -65,6 +69,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->sendQueueCond = IHS_CondCreate();
     session->sendQueue = IHS_QueueCreate(sizeof(QueuedPacket));
     session->timers = IHS_TimerCreate();
+    session->hidManager = IHS_HIDManagerCreate();
 
     session->numChannels = 3;
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
@@ -175,13 +180,6 @@ void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCal
     IHS_BaseLock(&session->base);
     session->callbacks.input = callbacks;
     session->callbackContexts.input = context;
-    IHS_BaseUnlock(&session->base);
-}
-
-void IHS_SessionSetHIDInterface(IHS_Session *session, const IHS_StreamHIDInterface *iface, void *context) {
-    IHS_BaseLock(&session->base);
-    session->callbacks.hid = iface;
-    session->callbackContexts.hid = context;
     IHS_BaseUnlock(&session->base);
 }
 

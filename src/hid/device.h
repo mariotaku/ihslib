@@ -26,16 +26,9 @@
 #pragma once
 
 #include "ihs_buffer.h"
+#include "ihslib/hid.h"
 
-typedef struct IHS_HIDDevice {
-    struct IHS_HIDDeviceClass *cls;
-    struct IHS_SessionHIDManager *manager;
-    uint32_t id;
-} IHS_HIDDevice;
-
-typedef struct IHS_HIDDeviceClass {
-    void (*Close)(IHS_HIDDevice *device);
-} IHS_HIDDeviceClass;
+IHS_HIDDevice * IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls);
 
 void IHS_HIDDeviceClose(IHS_HIDDevice *device);
 

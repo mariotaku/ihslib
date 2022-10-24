@@ -2,16 +2,10 @@ add_library(ihs-platforms STATIC)
 target_include_directories(ihs-platforms PRIVATE ../ ../../include)
 
 if (SDL2_FOUND)
-    target_sources(ihs-platforms PRIVATE ihs_thread_sdl.c hid/sdl/ihs_hid_sdl.c)
+    target_sources(ihs-platforms PRIVATE ihs_thread_sdl.c)
     target_include_directories(ihs-platforms PRIVATE SYSTEM ${SDL2_INCLUDE_DIRS})
     target_link_libraries(ihs-platforms PUBLIC ${SDL2_LIBRARIES})
 endif ()
-
-if (HIDAPI_FOUND)
-    target_sources(ihs-platforms PRIVATE ihs_hid_hidapi.c)
-    target_include_directories(ihs-platforms PRIVATE SYSTEM ${HIDAPI_INCLUDE_DIRS})
-    target_link_libraries(ihs-platforms PUBLIC ${HIDAPI_LIBRARIES})
-endif()
 
 if (UNIX)
     target_sources(ihs-platforms PRIVATE ihs_ip_posix.c ihs_udp_posix.c)

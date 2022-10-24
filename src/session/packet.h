@@ -98,7 +98,7 @@ typedef struct IHS_SessionPacket {
 size_t IHS_SessionPacketHeaderParse(IHS_SessionPacketHeader *header, const uint8_t *src);
 
 /**
- * Write packet header to start of the buffer
+ * write packet header to start of the buffer
  * @param header Packet header
  * @param dest Destination buffer
  */

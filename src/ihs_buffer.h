@@ -37,7 +37,7 @@
 void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity);
 
 /*
- * Read functions
+ * read functions
  */
 
 static inline size_t IHS_BufferMaxSize(const IHS_Buffer *buffer) {
@@ -65,7 +65,7 @@ void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize);
 void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
 
 /*
- * Write functions: Enough write space will be ensured
+ * write functions: Enough write space will be ensured
  */
 
 /**

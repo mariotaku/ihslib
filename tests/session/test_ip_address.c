@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include "ihslib.h"
 
 int main(int argc, char *argv[]) {
@@ -36,6 +37,7 @@ int main(int argc, char *argv[]) {
     assert(ret);
     actual = IHS_IPAddressToString(&address);
     assert(strcmp("127.0.0.1", actual) == 0);
+    free(actual);
 
     ret = IHS_IPAddressFromString(&address, "114514");
     assert(!ret);
@@ -50,6 +52,7 @@ int main(int argc, char *argv[]) {
     assert(ret);
     actual = IHS_IPAddressToString(&address);
     assert(strcmp("2001:db8::1234:5678", actual) == 0);
+    free(actual);
 
     IHS_IPAddress a, b;
     IHS_IPAddressFromString(&a, "2001:db8:0:0:0:0:2:1");

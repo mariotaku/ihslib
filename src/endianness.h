@@ -24,7 +24,7 @@
  */
 /**
  * @file endianness.h
- * @brief Read/write numbers in correct endianness
+ * @brief read/write numbers in correct endianness
  * @todo Big endian support
  */
 #pragma once
