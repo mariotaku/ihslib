@@ -73,10 +73,19 @@ void *IHS_ArrayListGet(IHS_ArrayList *list, size_t index) {
     return list->data + index * list->itemSize;
 }
 
-int IHS_ArrayListBinarySearch(IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn) {
+int IHS_ArrayListBinarySearch(const IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn) {
     void *itemPtr = bsearch(value, list->data, list->size, list->itemSize, searchFn);
     if (itemPtr == NULL) {
         return -1;
     }
     return (int) ((itemPtr - list->data) / list->itemSize);
+}
+
+int IHS_ArrayListLinearSearch(const IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn) {
+    for (size_t i = 0, j = list->size; i < j; ++i) {
+        if (searchFn(value, list->data + i * list->itemSize) == 0) {
+            return (int) i;
+        }
+    }
+    return -1;
 }

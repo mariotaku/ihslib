@@ -49,4 +49,22 @@ bool IHS_ArrayListRemoveFirst(IHS_ArrayList *list, const void *itemPtr);
 
 void *IHS_ArrayListGet(IHS_ArrayList *list, size_t index);
 
-int IHS_ArrayListBinarySearch(IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn);
+/**
+ * Binary search
+ *
+ * @param list
+ * @param value
+ * @param searchFn
+ * @return
+ */
+int IHS_ArrayListBinarySearch(const IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn);
+
+/**
+ * Linear search
+ *
+ * @param list
+ * @param value
+ * @param searchFn
+ * @return
+ */
+int IHS_ArrayListLinearSearch(const IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn);

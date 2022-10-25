@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
     IHS_HIDDevice *device = IHS_HIDManagerOpenDevice(manager, "test://0");
     assert(device != NULL);
     assert(device->id == 1);
-    assert(device == IHS_HIDManagerFindDevice(manager, 1));
-    assert(IHS_HIDManagerFindDevice(manager, 114514) == NULL);
+    assert(device == IHS_HIDManagerFindDeviceByID(manager, 1));
+    assert(IHS_HIDManagerFindDeviceByID(manager, 114514) == NULL);
 
     IHS_Buffer str = IHS_BUFFER_INIT(256, 256);
 
@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
 
     IHS_HIDDeviceGetSerialNumberString(device, &str);
     assert(strcmp("0123456789abcdef", (const char *) IHS_BufferPointer(&str)) == 0);
-
 
 
     IHS_Buffer buffer = IHS_BUFFER_INIT(256, 256);

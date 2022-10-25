@@ -23,14 +23,27 @@
  *
  */
 
-#pragma once
+#include "ihslib/hid/sdl.h"
 
-#include "ihslib/hid.h"
+#include "hid/manager.h"
 
-#include <SDL2/SDL_events.h>
+#include "session/session_pri.h"
 
-IHS_HIDProvider *IHS_HIDProviderSDLCreate();
+static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event);
 
-void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);
+bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
+    switch (event->type) {
+        case SDL_CONTROLLERDEVICEADDED:
+            break;
+        case SDL_CONTROLLERDEVICEREMOVED:
+            break;
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP: {
+            return HandleCButtonEvent(session->hidManager, &event->cbutton);
+        }
+    }
+    return false;
+}
 
-bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event);
+static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event) {
+}

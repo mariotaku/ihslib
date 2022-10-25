@@ -31,7 +31,7 @@
 
 #include "ihslib/hid.h"
 
-static int CompareDeviceID(const void *id, const void *device);
+static int CompareDeviceID(const uint32_t *id, const IHS_HIDDevice **device);
 
 IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_HIDManager *manager = calloc(1, sizeof(IHS_HIDManager));
@@ -63,8 +63,17 @@ IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *pat
     return NULL;
 }
 
-IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, uint32_t id) {
-    int index = IHS_ArrayListBinarySearch(&manager->devices, &id, CompareDeviceID);
+IHS_HIDDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id) {
+    int index = IHS_ArrayListBinarySearch(&manager->devices, &id, (IHS_ArrayListSearchFn) CompareDeviceID);
+    if (index < 0) {
+        return NULL;
+    }
+    IHS_HIDDevice **itemPtr = IHS_ArrayListGet(&manager->devices, index);
+    return *itemPtr;
+}
+
+IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate, const void *value) {
+    int index = IHS_ArrayListLinearSearch(&manager->devices, value, (IHS_ArrayListSearchFn) predicate);
     if (index < 0) {
         return NULL;
     }
@@ -73,7 +82,7 @@ IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, uint32_t id) {
 }
 
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDDevice *device) {
-    int index = IHS_ArrayListBinarySearch(&manager->devices, &device->id, CompareDeviceID);
+    int index = IHS_ArrayListBinarySearch(&manager->devices, &device->id, (IHS_ArrayListSearchFn) CompareDeviceID);
     assert(index >= 0);
 }
 
@@ -86,6 +95,6 @@ void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *prov
     assert(removed);
 }
 
-static int CompareDeviceID(const void *id, const void *device) {
-    return (int) (*((const uint32_t *) id) - (*((const IHS_HIDDevice **) device))->id);
+static int CompareDeviceID(const uint32_t *id, const IHS_HIDDevice **device) {
+    return (int) (*id - (*device)->id);
 }

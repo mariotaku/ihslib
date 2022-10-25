@@ -66,13 +66,6 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
     return (IHS_HIDDevice *) device;
 }
 
-void IHS_HIDDeviceReportEvent(SDL_Event *event) {
-    switch (event->type) {
-        case SDL_CONTROLLERBUTTONDOWN:
-            break;
-    }
-}
-
 static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
     IHS_HIDDeviceSDL *device = calloc(1, sizeof(IHS_HIDDeviceSDL));
     device->base.cls = cls;

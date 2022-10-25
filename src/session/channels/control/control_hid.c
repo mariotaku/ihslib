@@ -56,20 +56,20 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_CLOSE: {
             CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceClose(device);
             // TODO send response?
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_WRITE: {
             CHIDMessageToRemote__DeviceWrite *cmd = message->device_write;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceWrite(device, cmd->data.data, cmd->data.len);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_READ: {
             CHIDMessageToRemote__DeviceRead *cmd = message->device_read;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
             int result = IHS_HIDDeviceRead(device, &str, cmd->length, cmd->timeout_ms);
 
@@ -84,13 +84,13 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_SEND_FEATURE_REPORT: {
             CHIDMessageToRemote__DeviceSendFeatureReport *cmd = message->device_send_feature_report;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceSendFeatureReport(device, cmd->data.data, cmd->data.len);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_FEATURE_REPORT: {
             CHIDMessageToRemote__DeviceGetFeatureReport *cmd = message->device_get_feature_report;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
             int result = IHS_HIDDeviceGetFeatureReport(device, cmd->report_number.data, cmd->report_number.len,
                                                        &str, cmd->length);
@@ -106,7 +106,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_VENDOR_STRING: {
             CHIDMessageToRemote__DeviceGetVendorString *cmd = message->device_get_vendor_string;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_Buffer str = IHS_BUFFER_INIT(0, 255);
             int result = IHS_HIDDeviceGetVendorString(device, &str);
 
@@ -121,7 +121,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_PRODUCT_STRING: {
             CHIDMessageToRemote__DeviceGetProductString *cmd = message->device_get_product_string;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_Buffer str = IHS_BUFFER_INIT(0, 255);
             int result = IHS_HIDDeviceGetProductString(device, &str);
 
@@ -136,7 +136,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_SERIAL_NUMBER_STRING: {
             CHIDMessageToRemote__DeviceGetSerialNumberString *cmd = message->device_get_serial_number_string;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_Buffer str = IHS_BUFFER_INIT(0, 255);
             int result = IHS_HIDDeviceGetSerialNumberString(device, &str);
 
@@ -151,21 +151,21 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_START_INPUT_REPORTS: {
             CHIDMessageToRemote__DeviceStartInputReports *cmd = message->device_start_input_reports;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceStartInputReports(device, cmd->length);
             // TODO send response
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_REQUEST_FULL_REPORT: {
             CHIDMessageToRemote__DeviceRequestFullReport *cmd = message->device_request_full_report;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceRequestFullReport(device);
             // TODO send response
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_DISCONNECT: {
             CHIDMessageToRemote__DeviceDisconnect *cmd = message->device_disconnect;
-            IHS_HIDDevice *device = IHS_HIDManagerFindDevice(manager, cmd->device);
+            IHS_HIDDevice *device = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceRequestDisconnect(device, cmd->disconnectmethod, cmd->data.data, cmd->data.len);
             // TODO send response
             break;

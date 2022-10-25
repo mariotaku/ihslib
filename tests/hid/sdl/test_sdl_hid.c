@@ -33,6 +33,9 @@
 #include "hid/manager.h"
 #include "hid/provider.h"
 #include "hid/device.h"
+#include "hid/sdl/sdl_hid_common.h"
+
+static int DeviceJoystickIDPredicate(const SDL_JoystickID *joystickID, const IHS_HIDDevice **deviceArrayPtr);
 
 int main(int argc, char *argv[]) {
     (void) argc;
@@ -72,6 +75,11 @@ int main(int argc, char *argv[]) {
     IHS_HIDDevice *device = IHS_HIDManagerOpenDevice(manager, "sdl://0");
     assert(device != NULL);
 
+    SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
+    assert(IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) DeviceJoystickIDPredicate, &id) == device);
+    id = 99999;
+    assert(IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) DeviceJoystickIDPredicate, &id) == NULL);
+
     const static uint8_t maxRumble[21] = {0x1, 0xff, 0xff, 0xff, 0xff, 0x88, 0x13,};
     IHS_HIDDeviceWrite(device, maxRumble, 21);
 
@@ -107,4 +115,10 @@ int main(int argc, char *argv[]) {
 
     SDL_Quit();
     return 0;
+}
+
+static int DeviceJoystickIDPredicate(const SDL_JoystickID *joystickID, const IHS_HIDDevice **deviceArrayPtr) {
+    SDL_GameController *controller = (*((const IHS_HIDDeviceSDL **) deviceArrayPtr))->controller;
+    SDL_JoystickID deviceJoystickID = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+    return *joystickID - deviceJoystickID;
 }

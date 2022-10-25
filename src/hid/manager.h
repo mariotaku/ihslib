@@ -36,13 +36,23 @@ struct IHS_HIDManager {
     uint32_t lastDeviceId;
 };
 
+/**
+ * @param value Value to compare
+ * @param device Pointer to the entry in devices list
+ * @return 0 if matched
+ */
+typedef int(*IHS_HIDDeviceComparator)(const void *value, const IHS_HIDDevice **device);
+
 IHS_HIDManager *IHS_HIDManagerCreate();
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager);
 
 IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path);
 
-IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, uint32_t id);
+IHS_HIDDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id);
+
+IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
+                                        const void *value);
 
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDDevice *device);
 

@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
     value = 7;
     index = IHS_ArrayListBinarySearch(&list, &value, IntFindFn);
     assert(index == 3);
+    index = IHS_ArrayListLinearSearch(&list, &value, IntFindFn);
+    assert(index == 3);
 
     value = 0;
     // Nothing should be removed
