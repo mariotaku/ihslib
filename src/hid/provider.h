@@ -27,7 +27,7 @@
 
 #include "ihslib/hid.h"
 
-IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_StreamHIDProviderClass *cls);
+IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls);
 
 void IHS_SessionHIDProviderDestroy(IHS_HIDProvider *);
 
@@ -40,4 +40,4 @@ bool IHS_SessionHIDProviderHasChange(IHS_HIDProvider *provider);
 IHS_Enumeration *IHS_HIDProviderEnumerateDevices(IHS_HIDProvider *provider);
 
 void IHS_HIDProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
-                               IHS_StreamHIDDeviceInfo *info);
+                               IHS_HIDDeviceInfo *info);

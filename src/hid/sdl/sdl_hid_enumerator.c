@@ -68,7 +68,7 @@ IHS_Enumeration *IHS_HIDDeviceSDLEnumerate() {
     return IHS_EnumerationCreate(&GameControllerEnumerationClass);
 }
 
-void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_StreamHIDDeviceInfo *info) {
+void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info) {
     GameControllerEnumeration *gce = (GameControllerEnumeration *) enumeration;
     int index = gce->joystickIndex;
     snprintf(gce->temp.path, 16, "sdl://%d", index);

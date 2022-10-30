@@ -36,7 +36,7 @@
 
 #include <stdlib.h>
 
-static void InfoFromHID(CHIDDeviceInfo *info, const IHS_StreamHIDDeviceInfo *hid);
+static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid);
 
 static void SendRequestResponse(IHS_SessionChannel *channel, CHIDMessageFromRemote__RequestResponse *response);
 
@@ -188,7 +188,7 @@ bool IHS_SessionChannelControlSendHIDMsg(IHS_SessionChannel *channel, const CHID
     return ret;
 }
 
-bool IHS_SessionHIDNotifyChange(IHS_Session *session) {
+bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
     IHS_HIDManager *manager = session->hidManager;
     CHIDMessageFromRemote hidMessage = CHIDMESSAGE_FROM_REMOTE__INIT;
     CHIDMessageFromRemote__UpdateDeviceList updateDeviceList = CHIDMESSAGE_FROM_REMOTE__UPDATE_DEVICE_LIST__INIT;
@@ -202,7 +202,7 @@ bool IHS_SessionHIDNotifyChange(IHS_Session *session) {
         if (numDevices != 0) {
             allDevices = realloc(allDevices, numAllDevices + numDevices);
             for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
-                IHS_StreamHIDDeviceInfo hid;
+                IHS_HIDDeviceInfo hid;
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
                 numAllDevices++;
@@ -258,7 +258,7 @@ static void SendReport(IHS_SessionChannel *channel, IHS_HIDDevice *device) {
     IHS_SessionChannelControlSendHIDMsg(channel, &outMessage);
 }
 
-static void InfoFromHID(CHIDDeviceInfo *info, const IHS_StreamHIDDeviceInfo *hid) {
+static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     chiddevice_info__init(info);
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationRemote);
     info->path = strdup(hid->path);

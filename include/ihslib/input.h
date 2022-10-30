@@ -68,10 +68,10 @@ typedef enum IHS_StreamInputControllerType {
     IHS_CONTROLLER_TYPE_PS5 = 0x2d,
 } IHS_StreamInputControllerType;
 
-typedef struct IHS_StreamHIDPeripheralInfo {
+typedef struct IHS_HIDPeripheralInfo {
     uint16_t vid, pid;
     bool xinput;
-} IHS_StreamHIDPeripheralInfo;
+} IHS_HIDPeripheralInfo;
 
 typedef struct IHS_StreamInputCallbacks {
     /**

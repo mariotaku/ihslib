@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     IHS_Enumeration *enumeration = IHS_HIDProviderEnumerateDevices(provider);
     assert(IHS_EnumerationCount(enumeration) == 4);
     for (IHS_EnumerationReset(enumeration); !IHS_EnumerationEnded(enumeration); IHS_EnumerationNext(enumeration)) {
-        IHS_StreamHIDDeviceInfo info;
+        IHS_HIDDeviceInfo info;
         IHS_HIDProviderDeviceInfo(provider, enumeration, &info);
         printf("Device: %s\n", info.path);
     }

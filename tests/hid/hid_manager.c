@@ -31,7 +31,7 @@
 #include "hid/device.h"
 #include "ihs_enumeration.h"
 
-static IHS_HIDProvider *ProviderAlloc(const IHS_StreamHIDProviderClass *cls);
+static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls);
 
 static void ProviderFree(IHS_HIDProvider *provider);
 
@@ -41,7 +41,7 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
 
 static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider);
 
-static const IHS_StreamHIDProviderClass ProviderClass = {
+static const IHS_HIDProviderClass ProviderClass = {
         .alloc = ProviderAlloc,
         .free = ProviderFree,
         .supportsDevice = ProviderSupportsDevice,
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-static IHS_HIDProvider *ProviderAlloc(const IHS_StreamHIDProviderClass *cls) {
+static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = calloc(1, sizeof(IHS_HIDProvider));
     provider->cls = cls;
     return provider;

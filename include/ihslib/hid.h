@@ -34,20 +34,20 @@
 
 typedef struct IHS_Session IHS_Session;
 
-typedef struct IHS_StreamHIDDevice IHS_StreamHIDDevice;
+typedef struct IHS_HIDDevice IHS_HIDDevice;
 
 typedef struct IHS_HIDManager IHS_HIDManager;
 
-typedef struct IHS_StreamHIDDeviceInfo IHS_StreamHIDDeviceInfo;
+typedef struct IHS_HIDDeviceInfo IHS_HIDDeviceInfo;
 
-typedef struct IHS_StreamHIDDeviceInfo {
+typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
     /** Device Vendor ID */
     uint16_t vendor_id;
     /** Device Product ID */
     uint16_t product_id;
-} IHS_StreamHIDDeviceInfo;
+} IHS_HIDDeviceInfo;
 
 typedef struct IHS_HIDDevice {
     const struct IHS_HIDDeviceClass *cls;
@@ -109,12 +109,12 @@ typedef struct IHS_HIDDeviceClass {
 
 } IHS_HIDDeviceClass;
 
-typedef struct IHS_StreamHIDProvider {
-    const struct IHS_StreamHIDProviderClass *cls;
+typedef struct IHS_HIDProvider {
+    const struct IHS_HIDProviderClass *cls;
 } IHS_HIDProvider;
 
-typedef struct IHS_StreamHIDProviderClass {
-    IHS_HIDProvider *(*alloc)(const struct IHS_StreamHIDProviderClass *cls);
+typedef struct IHS_HIDProviderClass {
+    IHS_HIDProvider *(*alloc)(const struct IHS_HIDProviderClass *cls);
 
     void (*free)(IHS_HIDProvider *provider);
 
@@ -126,9 +126,9 @@ typedef struct IHS_StreamHIDProviderClass {
 
     IHS_Enumeration *(*enumerateDevices)(IHS_HIDProvider *provider);
 
-    void (*deviceInfo)(IHS_HIDProvider *provider, IHS_Enumeration *enumeration, IHS_StreamHIDDeviceInfo *info);
-} IHS_StreamHIDProviderClass;
+    void (*deviceInfo)(IHS_HIDProvider *provider, IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
+} IHS_HIDProviderClass;
 
+bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session);
 
-bool IHS_SessionHIDNotifyChange(IHS_Session *session);
-
+void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider);

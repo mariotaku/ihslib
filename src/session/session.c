@@ -183,6 +183,12 @@ void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCal
     IHS_BaseUnlock(&session->base);
 }
 
+void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider) {
+    IHS_BaseLock(&session->base);
+    IHS_HIDManagerAddProvider(session->hidManager, provider);
+    IHS_BaseUnlock(&session->base);
+}
+
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {
     IHS_BaseSetLogFunction(&session->base, logFunction);
 }

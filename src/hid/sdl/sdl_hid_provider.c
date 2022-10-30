@@ -33,7 +33,7 @@
 
 #include <SDL2/SDL.h>
 
-static IHS_HIDProvider *ProviderAlloc(const IHS_StreamHIDProviderClass *cls);
+static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls);
 
 static void ProviderFree(IHS_HIDProvider *provider);
 
@@ -46,9 +46,9 @@ static bool ProviderHasChange(IHS_HIDProvider *provider);
 static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider);
 
 static void ProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
-                               IHS_StreamHIDDeviceInfo *info);
+                               IHS_HIDDeviceInfo *info);
 
-static const IHS_StreamHIDProviderClass ProviderClass = {
+static const IHS_HIDProviderClass ProviderClass = {
         .alloc = ProviderAlloc,
         .free = ProviderFree,
         .supportsDevice = ProviderSupportsDevice,
@@ -60,7 +60,7 @@ static const IHS_StreamHIDProviderClass ProviderClass = {
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerate();
 
-void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_StreamHIDDeviceInfo *info);
+void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
 
 IHS_HIDProvider *IHS_HIDProviderSDLCreate() {
     return IHS_SessionHIDProviderCreate(&ProviderClass);
@@ -70,7 +70,7 @@ void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
     IHS_SessionHIDProviderDestroy(provider);
 }
 
-static IHS_HIDProvider *ProviderAlloc(const IHS_StreamHIDProviderClass *cls) {
+static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = calloc(1, sizeof(IHS_HIDProvider));
     provider->cls = cls;
     return provider;
@@ -113,7 +113,7 @@ static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider) {
 }
 
 static void ProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
-                               IHS_StreamHIDDeviceInfo *info) {
+                               IHS_HIDDeviceInfo *info) {
     (void) provider;
     IHS_HIDDeviceSDLDeviceInfo(enumeration, info);
 }

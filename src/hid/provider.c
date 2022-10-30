@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include "provider.h"
 
-IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_StreamHIDProviderClass *cls) {
+IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = cls->alloc(cls);
     assert(provider->cls == cls);
     return provider;
@@ -54,6 +54,6 @@ IHS_Enumeration *IHS_HIDProviderEnumerateDevices(IHS_HIDProvider *provider) {
 }
 
 void IHS_HIDProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
-                               IHS_StreamHIDDeviceInfo *info) {
+                               IHS_HIDDeviceInfo *info) {
     provider->cls->deviceInfo(provider, enumeration, info);
 }
