@@ -1534,7 +1534,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__device_input_repo
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "reports",
+    "states",
     2,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_MESSAGE,
@@ -1548,7 +1548,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__device_input_repo
 };
 static const unsigned chidmessage_from_remote__device_input_reports__device_input_report__field_indices_by_name[] = {
   0,   /* field[0] = device */
-  1,   /* field[1] = reports */
+  1,   /* field[1] = states */
 };
 static const ProtobufCIntRange chidmessage_from_remote__device_input_reports__device_input_report__number_ranges[1 + 1] =
 {
@@ -1691,7 +1691,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "reports",
+    "states",
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
@@ -1730,7 +1730,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
 static const unsigned chidmessage_from_remote__field_indices_by_name[] = {
   4,   /* field[4] = close_all_devices */
   3,   /* field[3] = close_device */
-  2,   /* field[2] = reports */
+  2,   /* field[2] = states */
   1,   /* field[1] = response */
   0,   /* field[0] = update_device_list */
 };

@@ -1,3 +1,7 @@
+#include <assert.h>
+#include <string.h>
+#include "hid/report.h"
+
 /*
  *  _____  _   _  _____  _  _  _     
  * |_   _|| | | |/  ___|| |(_)| |     Steam    
@@ -23,35 +27,30 @@
  *
  */
 
-#pragma once
+int main() {
+    uint8_t a[8] = {0x0, 0x1, 0x0, 0x1, 0x0,};
+    uint8_t b[8] = {0x1, 0x2, 0x0, 0x1, 0x1,};
 
-#include <stdint.h>
-#include <stdbool.h>
+    IHS_HIDReportHolder holder;
+    IHS_HIDReportHolderInit(&holder, 3);
 
-#include <SDL2/SDL.h>
+    IHS_HIDReportHolderSetLength(&holder, 16);
+    uint8_t *bufAddr = holder.deltaBuf;
+    assert(bufAddr != NULL);
 
-#include "hid/device.h"
+    // Subsequent calls should have no effect
+    IHS_HIDReportHolderSetLength(&holder, 16);
+    assert(bufAddr == holder.deltaBuf);
 
-#include "sdl_hid_report.h"
-#include "hid/report.h"
+    IHS_HIDReportHolderUpdateDelta(&holder, a, b, 8);
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
+    assert(holder.report.has_device);
+    assert(holder.report.device == 3);
+    assert(holder.report.n_reports == 1);
+    assert(holder.report.reports[0]->delta_report.len == 5);
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
+    uint8_t deltaExpected[] = {0x13 /*0b00011001*/, 0x0, 0x1, 0x2, 0x1};
+    assert(memcmp(holder.report.reports[0]->delta_report.data, deltaExpected, 5) == 0);
 
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+    IHS_HIDReportHolderDeinit(&holder);
+}

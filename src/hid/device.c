@@ -32,6 +32,14 @@ IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls) {
     return device;
 }
 
+void IHS_HIDDeviceOpened(IHS_HIDDevice *device) {
+    IHS_HIDManager *manager = device->manager;
+    assert(manager != NULL);
+    if (device->cls->opened != NULL) {
+        device->cls->opened(device);
+    }
+}
+
 void IHS_HIDDeviceClose(IHS_HIDDevice *device) {
     IHS_HIDManager *manager = device->manager;
     assert(manager != NULL);

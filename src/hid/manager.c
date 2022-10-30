@@ -56,6 +56,7 @@ IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *pat
             }
             device->id = ++manager->lastDeviceId;
             device->manager = manager;
+            IHS_HIDDeviceOpened(device);
             IHS_ArrayListAppend(&manager->devices, &device);
             return device;
         }

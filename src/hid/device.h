@@ -28,7 +28,9 @@
 #include "ihs_buffer.h"
 #include "ihslib/hid.h"
 
-IHS_HIDDevice * IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls);
+IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls);
+
+void IHS_HIDDeviceOpened(IHS_HIDDevice *device);
 
 void IHS_HIDDeviceClose(IHS_HIDDevice *device);
 

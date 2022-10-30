@@ -73,17 +73,17 @@ add_library(ihslib
         src/hid/device.c
         src/hid/provider.c
         src/hid/manager.c
-        )
+        src/hid/report.c)
 
 if (SDL2_VERSION VERSION_GREATER_EQUAL 2.0.18)
     set(IHSLIB_SDL2_HIDAPI 1)
     target_compile_definitions(ihslib PUBLIC IHSLIB_SDL2_HIDAPI)
-endif()
+endif ()
 
 if (HIDAPI_FOUND)
     set(IHSLIB_HIDAPI 1)
     target_compile_definitions(ihslib PUBLIC IHSLIB_HIDAPI)
-endif()
+endif ()
 
 configure_file(src/config.h.in config.h @ONLY)
 
@@ -111,7 +111,7 @@ if (IHSLIB_SANITIZE_ADDRESS)
     add_compile_options(-fsanitize=address)
     add_link_options(-fsanitize=address)
     link_libraries(asan)
-endif()
+endif ()
 
 if (IHSLIB_SAMPLES)
     add_subdirectory(samples)

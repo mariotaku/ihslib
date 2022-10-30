@@ -94,6 +94,7 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
     if (endptr == begin) {
         return NULL;
     }
+    // SDL_GameControllerOpen will return opened controller, so no extra check needed
     SDL_GameController *controller = SDL_GameControllerOpen(index);
     if (controller == NULL) {
         return NULL;

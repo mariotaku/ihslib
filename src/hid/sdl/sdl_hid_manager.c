@@ -23,35 +23,22 @@
  *
  */
 
-#pragma once
+#include "sdl_hid_common.h"
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "hid/manager.h"
 
-#include <SDL2/SDL.h>
+static int CompareDeviceByJoystickID(const SDL_JoystickID *id, const IHS_HIDDevice **deviceListPtr);
 
-#include "hid/device.h"
+IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId) {
+    return IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) CompareDeviceByJoystickID, &joystickId);
+}
 
-#include "sdl_hid_report.h"
-#include "hid/report.h"
-
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
-
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
-
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+static int CompareDeviceByJoystickID(const SDL_JoystickID *id, const IHS_HIDDevice **deviceListPtr) {
+    const IHS_HIDDevice *device = *deviceListPtr;
+    if (!IHS_HIDDeviceIsSDL(device)) {
+        return -1;
+    }
+    SDL_GameController *controller = ((const IHS_HIDDeviceSDL *) device)->controller;
+    SDL_JoystickID deviceJoystickID = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+    return *id - deviceJoystickID;
+}

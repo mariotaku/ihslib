@@ -35,8 +35,6 @@
 #include "hid/device.h"
 #include "hid/sdl/sdl_hid_common.h"
 
-static int DeviceJoystickIDPredicate(const SDL_JoystickID *joystickID, const IHS_HIDDevice **deviceArrayPtr);
-
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -76,9 +74,8 @@ int main(int argc, char *argv[]) {
     assert(device != NULL);
 
     SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
-    assert(IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) DeviceJoystickIDPredicate, &id) == device);
-    id = 99999;
-    assert(IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) DeviceJoystickIDPredicate, &id) == NULL);
+    assert(IHS_HIDManagerDeviceByJoystickID(manager, id) == device);
+    assert(IHS_HIDManagerDeviceByJoystickID(manager, 99999) == NULL);
 
     const static uint8_t maxRumble[21] = {0x1, 0xff, 0xff, 0xff, 0xff, 0x88, 0x13,};
     IHS_HIDDeviceWrite(device, maxRumble, 21);
@@ -105,6 +102,14 @@ int main(int argc, char *argv[]) {
     assert(report[0] == true);
     assert(report[1] == false);
 
+    IHS_HIDDeviceRead(device, &buffer, 30, 10);
+    const uint8_t sendFeatureReport[21] = {0};
+    assert(IHS_HIDDeviceSendFeatureReport(device, sendFeatureReport, 21) == -1);
+
+    IHS_HIDDeviceGetVendorString(device, &buffer);
+    IHS_HIDDeviceGetProductString(device, &buffer);
+    IHS_HIDDeviceGetSerialNumberString(device, &buffer);
+
     IHS_BufferClear(&buffer, true);
 
     IHS_HIDDeviceClose(device);
@@ -115,10 +120,4 @@ int main(int argc, char *argv[]) {
 
     SDL_Quit();
     return 0;
-}
-
-static int DeviceJoystickIDPredicate(const SDL_JoystickID *joystickID, const IHS_HIDDevice **deviceArrayPtr) {
-    SDL_GameController *controller = (*((const IHS_HIDDeviceSDL **) deviceArrayPtr))->controller;
-    SDL_JoystickID deviceJoystickID = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-    return *joystickID - deviceJoystickID;
 }

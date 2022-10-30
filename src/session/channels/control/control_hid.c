@@ -242,6 +242,22 @@ static void SendRequestResponse(IHS_SessionChannel *channel, CHIDMessageFromRemo
     IHS_SessionChannelControlSendHIDMsg(channel, &outMessage);
 }
 
+static void SendReport(IHS_SessionChannel *channel, IHS_HIDDevice *device) {
+    CHIDMessageFromRemote outMessage = CHIDMESSAGE_FROM_REMOTE__INIT;
+    outMessage.command_case = CHIDMESSAGE_FROM_REMOTE__COMMAND_REPORTS;
+    CHIDMessageFromRemote__DeviceInputReports reports = CHIDMESSAGE_FROM_REMOTE__DEVICE_INPUT_REPORTS__INIT;
+    outMessage.reports = &reports;
+
+    CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport report = CHIDMESSAGE_FROM_REMOTE__DEVICE_INPUT_REPORTS__DEVICE_INPUT_REPORT__INIT;
+    PROTOBUF_C_SET_VALUE(report, device, device->id);
+
+    CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport *reportArray = &report;
+
+    reports.device_reports = &reportArray;
+    reports.n_device_reports = 1;
+    IHS_SessionChannelControlSendHIDMsg(channel, &outMessage);
+}
+
 static void InfoFromHID(CHIDDeviceInfo *info, const IHS_StreamHIDDeviceInfo *hid) {
     chiddevice_info__init(info);
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationRemote);

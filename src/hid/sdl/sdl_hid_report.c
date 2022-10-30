@@ -23,35 +23,25 @@
  *
  */
 
-#pragma once
-
-#include <stdint.h>
-#include <stdbool.h>
-
-#include <SDL2/SDL.h>
-
-#include "hid/device.h"
-
 #include "sdl_hid_report.h"
-#include "hid/report.h"
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
+bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton button, bool pressed) {
+    if (button < 0 || button >= 16) {
+        return false;
+    }
+    if (pressed) {
+        report->buttons |= 1 << button;
+    } else {
+        report->buttons &= ~(1 << button);
+    }
+    return true;
+}
 
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axis, int16_t value) {
+    if (axis < 0 || axis >= 6) {
+        return false;
+    }
+    report->axes[axis] = value;
+    return true;
+}

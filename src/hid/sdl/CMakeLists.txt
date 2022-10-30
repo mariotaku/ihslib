@@ -5,6 +5,7 @@ add_library(ihslib-hid-sdl STATIC
         sdl_hid_write.c
         sdl_hid_feature_report.c
         sdl_hid_event.c
-        )
+        sdl_hid_manager.c
+        sdl_hid_report.c)
 target_link_libraries(ihslib-hid-sdl PUBLIC ihslib)
 target_include_directories(ihslib-hid-sdl PUBLIC include PRIVATE ../..)

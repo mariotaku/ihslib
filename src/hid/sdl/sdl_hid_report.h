@@ -30,28 +30,20 @@
 
 #include <SDL2/SDL.h>
 
-#include "hid/device.h"
+typedef struct __attribute__((__packed__)) IHS_HIDReportSDL {
+    int16_t axes[6];
+    uint32_t flags;
+    uint16_t buttons;
+    uint8_t pad1[9];
+    uint8_t reportUnknown;
+    int16_t gyro[3];
+    int16_t accel[3];
+    int16_t touch[2];
+    uint8_t pad2[4];
+} IHS_HIDStateSDL;
 
-#include "sdl_hid_report.h"
-#include "hid/report.h"
+_Static_assert(sizeof(IHS_HIDStateSDL) == 48, "");
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
+bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton button, bool pressed);
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
-
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axis, int16_t value);

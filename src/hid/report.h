@@ -26,32 +26,26 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
+#include <stddef.h>
 
-#include <SDL2/SDL.h>
+#include "protobuf/hiddevices.pb-c.h"
 
-#include "hid/device.h"
+typedef struct IHS_HIDReportHolder {
+    CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport report;
+    size_t reportLen;
+    uint8_t *deltaBuf;
+    CHIDDeviceInputReport reportItem;
+    /**
+     * Pointer to address of `reportItem`
+     */
+    CHIDDeviceInputReport *reportItems[1];
+} IHS_HIDReportHolder;
 
-#include "sdl_hid_report.h"
-#include "hid/report.h"
+void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
+void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder);
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
+void IHS_HIDReportHolderSetLength(IHS_HIDReportHolder *holder, size_t len);
 
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+void IHS_HIDReportHolderUpdateDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
+                                    size_t len);

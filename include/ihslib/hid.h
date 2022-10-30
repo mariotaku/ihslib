@@ -60,6 +60,8 @@ typedef struct IHS_HIDDeviceClass {
 
     void (*free)(IHS_HIDDevice *device);
 
+    void (*opened)(IHS_HIDDevice *device);
+
     /**
      * Close underlying resources
      * @param device Device instance

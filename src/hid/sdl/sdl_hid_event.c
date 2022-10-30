@@ -27,9 +27,12 @@
 
 #include "hid/manager.h"
 
+#include "sdl_hid_common.h"
 #include "session/session_pri.h"
 
 static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event);
+
+static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEvent *event);
 
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
     switch (event->type) {
@@ -41,9 +44,28 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
         case SDL_CONTROLLERBUTTONUP: {
             return HandleCButtonEvent(session->hidManager, &event->cbutton);
         }
+        case SDL_CONTROLLERAXISMOTION: {
+            return HandleCAxisEvent(session->hidManager, &event->caxis);
+        }
     }
     return false;
 }
 
 static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event) {
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    if (device == NULL) {
+        return false;
+    }
+    IHS_HIDReportSDLSetButton(&device->states.current, event->button, event->state == SDL_PRESSED);
+
+    return true;
+}
+
+static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEvent *event) {
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    if (device == NULL) {
+        return false;
+    }
+    IHS_HIDReportSDLSetAxis(&device->states.current, event->axis, event->value);
+    return true;
 }

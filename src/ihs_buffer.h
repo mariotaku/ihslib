@@ -34,6 +34,8 @@
 
 #define IHS_BUFFER_INIT(initCap, maxCap) {.initialCapacity = (initCap), .maxCapacity = (maxCap)}
 
+#define IHS_BUFFER_WRAP(d, l) {.data = (uint8_t*) (d), .capacity = (l), .size = (l)}
+
 void IHS_BufferInit(IHS_Buffer *buffer, size_t initialCapacity, size_t maxCapacity);
 
 /*

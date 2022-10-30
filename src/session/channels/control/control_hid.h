@@ -26,7 +26,3 @@
 #pragma once
 
 #include "session/channels/channel.h"
-
-void IHS_SessionHIDInputReportGenerateDelta(const IHS_Buffer *previous, const IHS_Buffer *current, IHS_Buffer *delta);
-
-void IHS_SessionHIDInputReportApplyDelta(IHS_Buffer *previous, const IHS_Buffer *delta);

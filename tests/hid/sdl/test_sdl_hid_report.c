@@ -22,36 +22,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include <assert.h>
+#include "hid/sdl/sdl_hid_report.h"
 
-#pragma once
+int main() {
+    IHS_HIDStateSDL report;
+    assert(sizeof(IHS_HIDStateSDL) == 48);
+    memset(&report, 0, sizeof(report));
 
-#include <stdint.h>
-#include <stdbool.h>
+    assert(!IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_PADDLE1, true));
+    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, true));
 
-#include <SDL2/SDL.h>
+    const int8_t buttonsExpected[] = {0x01, 0x00};
+    assert(memcmp(((int8_t *) &report) + 16, buttonsExpected, 2) == 0);
 
-#include "hid/device.h"
+    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, false));
 
-#include "sdl_hid_report.h"
-#include "hid/report.h"
+    assert(!IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_MAX, 0));
+    assert(IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_LEFTX, INT16_MAX));
 
-typedef struct IHS_HIDDeviceSDL {
-    IHS_HIDDevice base;
-    SDL_GameController *controller;
-    struct {
-        IHS_HIDStateSDL current;
-        IHS_HIDStateSDL previous;
-    } states;
-    IHS_HIDReportHolder reportHolder;
-} IHS_HIDDeviceSDL;
-
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
-
-bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
-
-int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
-
-int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
-                                     IHS_Buffer *dest, size_t length);
-
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId);
+    return 0;
+}

@@ -25,12 +25,18 @@
 
 #include "ihs_buffer.h"
 #include "ihslib/hid.h"
+
 #include "hid/device.h"
+
 #include "sdl_hid_common.h"
+#include "hid/report.h"
+#include "crc32c.h"
 
 #include <SDL2/SDL.h>
 
 static IHS_HIDDevice *DeviceAlloc(const struct IHS_HIDDeviceClass *cls);
+
+static void DeviceOpened(IHS_HIDDevice *device);
 
 static void DeviceFree(IHS_HIDDevice *device);
 
@@ -46,9 +52,15 @@ static int DeviceProductString(IHS_HIDDevice *device, IHS_Buffer *dest);
 
 static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest);
 
+static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length);
+
+static int DeviceRequestFullReport(IHS_HIDDevice *device);
+
+static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
 
 static const IHS_HIDDeviceClass DeviceClass = {
         .alloc = DeviceAlloc,
+        .opened = DeviceOpened,
         .free = DeviceFree,
         .close = DeviceClose,
         .write = IHS_HIDDeviceSDLWrite,
@@ -58,6 +70,9 @@ static const IHS_HIDDeviceClass DeviceClass = {
         .getVendorString = DeviceVendorString,
         .getProductString = DeviceProductString,
         .getSerialNumberString = DeviceSerialNumber,
+        .startInputReports = DeviceStartInputReports,
+        .requestFullReport = DeviceRequestFullReport,
+        .requestDisconnect = DeviceRequestDisconnect,
 };
 
 IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
@@ -66,10 +81,26 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
     return (IHS_HIDDevice *) device;
 }
 
+bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device) {
+    return device->cls == &DeviceClass;
+}
+
+void IHS_HIDDeviceSubmitReport(IHS_HIDDevice *device) {
+    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDReportHolderUpdateDelta(&sdl->reportHolder, (const uint8_t *) &sdl->states.current,
+                                   (const uint8_t *) &sdl->states.previous, 48);
+    sdl->states.previous = sdl->states.current;
+}
+
 static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
     IHS_HIDDeviceSDL *device = calloc(1, sizeof(IHS_HIDDeviceSDL));
     device->base.cls = cls;
     return (IHS_HIDDevice *) device;
+}
+
+static void DeviceOpened(IHS_HIDDevice *device) {
+    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDReportHolderInit(&sdl->reportHolder, device->id);
 }
 
 static void DeviceFree(IHS_HIDDevice *device) {
@@ -80,6 +111,7 @@ static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
     SDL_GameControllerClose(deviceSdl->controller);
     deviceSdl->controller = NULL;
+    IHS_HIDReportHolderDeinit(&deviceSdl->reportHolder);
 }
 
 static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs) {
@@ -91,7 +123,8 @@ static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, ui
 }
 
 static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
-    return 0;
+    // Should return -1 according to official implementation
+    return -1;
 }
 
 static int DeviceVendorString(IHS_HIDDevice *device, IHS_Buffer *dest) {
@@ -114,4 +147,17 @@ static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
 #endif
     IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
     return 0;
+}
+
+static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length) {
+    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDReportHolderSetLength(&sdl->reportHolder, length);
+}
+
+static int DeviceRequestFullReport(IHS_HIDDevice *device) {
+
+}
+
+static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {
+
 }
