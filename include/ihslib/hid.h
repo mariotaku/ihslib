@@ -40,6 +40,29 @@ typedef struct IHS_HIDManager IHS_HIDManager;
 
 typedef struct IHS_HIDDeviceInfo IHS_HIDDeviceInfo;
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+typedef enum IHS_HIDDeviceCaps {
+    IHS_HID_CAP_ABXY                    = 0x00000001,
+    IHS_HID_CAP_DPAD                    = 0x00000002,
+    IHS_HID_CAP_LSTICK                  = 0x00000004,
+    IHS_HID_CAP_RSTICK                  = 0x00000008,
+    IHS_HID_CAP_STICKBTNS               = 0x00000010,
+    IHS_HID_CAP_SHOULDERS               = 0x00000020,
+    IHS_HID_CAP_TRIGGERS                = 0x00000040,
+    IHS_HID_CAP_BACK                    = 0x00000080,
+    IHS_HID_CAP_START                   = 0x00000100,
+    IHS_HID_CAP_GUIDE                   = 0x00000200,
+    IHS_HID_CAP_PADDLE_1                = 0x00000400 /*Paddle 1*/,
+    IHS_HID_CAP_PADDLE_3                = 0x00400000 /*Paddle 3*/,
+    IHS_HID_CAP_MISC_1                  = 0x00800000 /*Misc 1*/,
+    IHS_HID_CAP_XBOX_ELITE_2            = 0x00030000 /*Xbox elite 2?*/,
+    IHS_HID_CAP_PS4_PS5                 = 0x02071800 /*PS4/PS5, gyro and touchpad?*/,
+    IHS_HID_CAP_NOT_XINPUT_NOT_HIDAPI   = 0x00010000 /*Not XInput and not HIDAPI?*/,
+    IHS_HID_CAP_XINPUT_HIDAPI           = 0x00004000 /*XInput and HIDAPI*/,
+} IHS_HIDDeviceCaps;
+#pragma clang diagnostic pop
+
 typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
@@ -47,6 +70,7 @@ typedef struct IHS_HIDDeviceInfo {
     uint16_t vendor_id;
     /** Device Product ID */
     uint16_t product_id;
+    uint16_t product_version;
 } IHS_HIDDeviceInfo;
 
 typedef struct IHS_HIDDevice {

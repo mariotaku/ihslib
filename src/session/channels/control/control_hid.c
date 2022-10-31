@@ -195,28 +195,33 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
     CHIDDeviceInfo *allDevices = NULL, **allDevicePointers = NULL;
     int numAllDevices = 0;
 
+    IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Start enumerate device. Number of providers: %u",
+                   manager->providers.size);
+
     for (int pi = 0, ps = (int) manager->providers.size; pi < ps; pi++) {
         IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, pi));
         IHS_Enumeration *e = IHS_HIDProviderEnumerateDevices(provider);
         size_t numDevices = IHS_EnumerationCount(e);
         if (numDevices != 0) {
-            allDevices = realloc(allDevices, numAllDevices + numDevices);
+            allDevices = realloc(allDevices, (numAllDevices + numDevices) * sizeof(CHIDDeviceInfo));
             for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
                 IHS_HIDDeviceInfo hid;
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
+                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, vid=%u, pid=%u", hid.path,
+                               hid.vendor_id, hid.product_id);
                 numAllDevices++;
             }
         }
         IHS_EnumerationFree(e);
     }
 
-    allDevicePointers = calloc(sizeof(CHIDDeviceInfo *), numAllDevices);
+    allDevicePointers = calloc(numAllDevices, sizeof(CHIDDeviceInfo *));
     for (int di = 0; di < numAllDevices; di++) {
         allDevicePointers[di] = &allDevices[di];
     }
     updateDeviceList.n_devices = numAllDevices;
-    updateDeviceList.devices = calloc(numAllDevices, sizeof(CHIDDeviceInfo *));
+    updateDeviceList.devices = allDevicePointers;
 
     hidMessage.command_case = CHIDMESSAGE_FROM_REMOTE__COMMAND_UPDATE_DEVICE_LIST;
     hidMessage.update_device_list = &updateDeviceList;
@@ -265,5 +270,18 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);
         PROTOBUF_C_P_SET_VALUE(info, product_id, hid->product_id);
+        PROTOBUF_C_P_SET_VALUE(info, release_number, hid->product_version);
     }
+    PROTOBUF_C_P_SET_VALUE(info, usage_page, 1);
+    PROTOBUF_C_P_SET_VALUE(info, usage, 5/*For SDL_GameController*/);
+    info->product_string = "SDL Gamepad";
+    PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
+    /*Seems to be corresponding to kernel version. See stream_client/GetOSType */
+    PROTOBUF_C_P_SET_VALUE(info, ostype, -203);
+
+    IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
+                                 IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
+                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE |
+                                 IHS_HID_CAP_NOT_XINPUT_NOT_HIDAPI;
+    PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
 }

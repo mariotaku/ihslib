@@ -36,8 +36,8 @@ static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t 
                         uint8_t *delta);
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
-    holder->deltaBuf = NULL;
-    holder->reportLen = 0;
+    holder->reportBuf.data = NULL;
+    holder->reportBuf.len = 0;
     chidmessage_from_remote__device_input_reports__device_input_report__init(&holder->report);
     PROTOBUF_C_SET_VALUE(holder->report, device, deviceId);
     holder->reportItems[0] = &holder->reportItem;
@@ -46,32 +46,42 @@ void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
 }
 
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
-    if (holder->deltaBuf != NULL) {
-        free(holder->deltaBuf);
+    if (holder->reportBuf.data != NULL) {
+        free(holder->reportBuf.data);
     }
 }
 
 void IHS_HIDReportHolderSetLength(IHS_HIDReportHolder *holder, size_t len) {
-    if (holder->reportLen == len) {
+    if (holder->reportBuf.len == len) {
         return;
     }
-    holder->reportLen = len;
-    holder->deltaBuf = realloc(holder->deltaBuf, len);
+    holder->reportBuf.len = len;
+    holder->reportBuf.data = realloc(holder->reportBuf.data, len);
+}
+
+void IHS_HIDReportHolderUpdateFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
+    assert(holder->reportBuf.len >= len);
+    memcpy(holder->reportBuf.data, current, len);
+
+    chiddevice_input_report__init(&holder->reportItem);
+    holder->reportItem.has_full_report = true;
+    holder->reportItem.full_report.data = holder->reportBuf.data;
+    holder->reportItem.full_report.len = len;
 }
 
 void IHS_HIDReportHolderUpdateDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
                                     size_t len) {
-    int deltaLen = ComputeDelta(previous, current, len, holder->reportLen, holder->deltaBuf);
+    int deltaLen = ComputeDelta(previous, current, len, holder->reportBuf.len, holder->reportBuf.data);
     // Send the data and CRC
     uint32_t crc = IHS_CRC32C(current, len);
 
-    CHIDDeviceInputReport report = CHIDDEVICE_INPUT_REPORT__INIT;
-    report.has_delta_report = true;
-    report.delta_report.data = holder->deltaBuf;
-    report.delta_report.len = deltaLen;
-    PROTOBUF_C_SET_VALUE(report, delta_report_crc, crc);
 
-    holder->reportItem = report;
+    chiddevice_input_report__init(&holder->reportItem);
+    holder->reportItem.has_delta_report = true;
+    holder->reportItem.delta_report.data = holder->reportBuf.data;
+    holder->reportItem.delta_report.len = deltaLen;
+    PROTOBUF_C_SET_VALUE(holder->reportItem, delta_report_crc, crc);
+    PROTOBUF_C_SET_VALUE(holder->reportItem, delta_report_size, len);
 }
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,

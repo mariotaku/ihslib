@@ -76,6 +76,7 @@ void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo 
 #if SDL_VERSION_ATLEAST(2, 0, 6)
     info->vendor_id = SDL_JoystickGetDeviceVendor(index);
     info->product_id = SDL_JoystickGetDeviceProduct(index);
+    info->product_version = SDL_JoystickGetDeviceProductVersion(index);
 #else
     info->vendor_id = 0;
     info->product_id = 0;

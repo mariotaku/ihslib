@@ -32,8 +32,7 @@
 
 typedef struct IHS_HIDReportHolder {
     CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport report;
-    size_t reportLen;
-    uint8_t *deltaBuf;
+    ProtobufCBinaryData reportBuf;
     CHIDDeviceInputReport reportItem;
     /**
      * Pointer to address of `reportItem`
@@ -46,6 +45,8 @@ void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder);
 
 void IHS_HIDReportHolderSetLength(IHS_HIDReportHolder *holder, size_t len);
+
+void IHS_HIDReportHolderUpdateFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len);
 
 void IHS_HIDReportHolderUpdateDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
                                     size_t len);
