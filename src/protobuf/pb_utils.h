@@ -25,7 +25,13 @@
 
 #pragma once
 
-#include <protobuf-c/protobuf-c.h>
+#ifndef PROTOBUF_C_H
+#error "Please include <protobuf-c/protobuf-c.h>"
+#endif
+
+#ifndef __bool_true_false_are_defined
+#error "Please include <stdbool.h>"
+#endif
 
 #define PROTOBUF_C_SET_VALUE(message, key, value) (message).has_##key = true; (message).key = (value)
 

@@ -22,4 +22,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+#include <protobuf-c/protobuf-c.h>
+#include <stdbool.h>
+
 #include "pb_utils.h"

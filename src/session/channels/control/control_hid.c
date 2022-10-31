@@ -265,7 +265,7 @@ static void SendReport(IHS_SessionChannel *channel, IHS_HIDDevice *device) {
 
 static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     chiddevice_info__init(info);
-    PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationRemote);
+    PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationLocal);
     info->path = strdup(hid->path);
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);

@@ -23,7 +23,7 @@
  *
  */
 
-#include <stdlib.h>
+#include <stdbool.h>
 
 #include "protobuf/remoteplay.pb-c.h"
 #include "protobuf/pb_utils.h"

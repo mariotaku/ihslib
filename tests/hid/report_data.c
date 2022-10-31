@@ -35,12 +35,12 @@ int main() {
     IHS_HIDReportHolderInit(&holder, 3);
 
     IHS_HIDReportHolderSetLength(&holder, 16);
-    uint8_t *bufAddr = holder.deltaBuf;
+    uint8_t *bufAddr = holder.reportBuf.data;
     assert(bufAddr != NULL);
 
     // Subsequent calls should have no effect
     IHS_HIDReportHolderSetLength(&holder, 16);
-    assert(bufAddr == holder.deltaBuf);
+    assert(bufAddr == holder.reportBuf.data);
 
     IHS_HIDReportHolderUpdateDelta(&holder, a, b, 8);
 
