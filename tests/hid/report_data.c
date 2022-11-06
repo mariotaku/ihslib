@@ -1,7 +1,3 @@
-#include <assert.h>
-#include <string.h>
-#include "hid/report.h"
-
 /*
  *  _____  _   _  _____  _  _  _     
  * |_   _|| | | |/  ___|| |(_)| |     Steam    
@@ -26,6 +22,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include <assert.h>
+#include <string.h>
+#include "hid/report.h"
 
 int main() {
     uint8_t a[8] = {0x0, 0x1, 0x0, 0x1, 0x0,};
@@ -35,16 +34,22 @@ int main() {
     IHS_HIDReportHolderInit(&holder, 3);
 
     IHS_HIDReportHolderSetReportLength(&holder, 16);
+
+    assert(IHS_HIDReportHolderGetMessage(&holder) == NULL);
+
+    IHS_HIDReportHolderAddFull(&holder, a, 8);
     IHS_HIDReportHolderAddDelta(&holder, a, b, 8);
 
     IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&holder);
     assert(report->has_device);
     assert(report->device == 3);
-    assert(report->n_reports == 1);
-    assert(report->reports[0]->delta_report.len == 5);
+    assert(report->n_reports == 2);
+    assert(report->reports[0]->full_report.len == 8);
+    assert(memcmp(report->reports[0]->full_report.data, a, 8) == 0);
 
+    assert(report->reports[1]->delta_report.len == 5);
     uint8_t deltaExpected[] = {0x13 /*0b00011001*/, 0x0, 0x1, 0x2, 0x1};
-    assert(memcmp(report->reports[0]->delta_report.data, deltaExpected, 5) == 0);
+    assert(memcmp(report->reports[1]->delta_report.data, deltaExpected, 5) == 0);
 
     IHS_HIDReportHolderDeinit(&holder);
 }

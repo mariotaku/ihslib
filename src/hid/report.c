@@ -60,12 +60,15 @@ void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *curr
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
     assert(holder->reportLength >= len);
     memcpy(data, current, len);
+    holder->dataBuffer.size += len;
     CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
+
     chiddevice_input_report__init(item);
     item->has_full_report = true;
     item->full_report.data = data;
     item->full_report.len = len;
 
+    IHS_ArrayListAppend(&holder->reportPointers, &item);
     holder->report.n_reports = holder->reportItems.size;
 }
 
@@ -74,10 +77,11 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
     // TODO lock?
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, holder->reportLength);
     int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
+    holder->dataBuffer.size += deltaLen;
     // Send the data and CRC
     uint32_t crc = IHS_CRC32C(current, len);
     CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
-    IHS_ArrayListAppend(&holder->reportPointers, &item);
+
     chiddevice_input_report__init(item);
     item->has_delta_report = true;
     item->delta_report.data = data;
@@ -85,6 +89,7 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
     PROTOBUF_C_P_SET_VALUE(item, delta_report_crc, crc);
     PROTOBUF_C_P_SET_VALUE(item, delta_report_size, len);
 
+    IHS_ArrayListAppend(&holder->reportPointers, &item);
     holder->report.n_reports = holder->reportItems.size;
 }
 
