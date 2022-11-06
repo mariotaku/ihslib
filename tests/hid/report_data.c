@@ -34,23 +34,17 @@ int main() {
     IHS_HIDReportHolder holder;
     IHS_HIDReportHolderInit(&holder, 3);
 
-    IHS_HIDReportHolderSetLength(&holder, 16);
-    uint8_t *bufAddr = holder.reportBuf.data;
-    assert(bufAddr != NULL);
+    IHS_HIDReportHolderSetReportLength(&holder, 16);
+    IHS_HIDReportHolderAddDelta(&holder, a, b, 8);
 
-    // Subsequent calls should have no effect
-    IHS_HIDReportHolderSetLength(&holder, 16);
-    assert(bufAddr == holder.reportBuf.data);
-
-    IHS_HIDReportHolderUpdateDelta(&holder, a, b, 8);
-
-    assert(holder.report.has_device);
-    assert(holder.report.device == 3);
-    assert(holder.report.n_reports == 1);
-    assert(holder.report.reports[0]->delta_report.len == 5);
+    IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&holder);
+    assert(report->has_device);
+    assert(report->device == 3);
+    assert(report->n_reports == 1);
+    assert(report->reports[0]->delta_report.len == 5);
 
     uint8_t deltaExpected[] = {0x13 /*0b00011001*/, 0x0, 0x1, 0x2, 0x1};
-    assert(memcmp(holder.report.reports[0]->delta_report.data, deltaExpected, 5) == 0);
+    assert(memcmp(report->reports[0]->delta_report.data, deltaExpected, 5) == 0);
 
     IHS_HIDReportHolderDeinit(&holder);
 }

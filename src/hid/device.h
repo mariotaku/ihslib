@@ -29,11 +29,13 @@
 #include "ihslib/hid.h"
 #include "protobuf/hiddevices.pb-c.h"
 
+typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
+
 IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls);
 
-void IHS_HIDDeviceOpened(IHS_HIDDevice *device);
+void IHS_HIDManagedDeviceOpened(IHS_HIDManagedDevice *managed);
 
-void IHS_HIDDeviceClose(IHS_HIDDevice *device);
+void IHS_HIDManagedDeviceClose(IHS_HIDManagedDevice *managed);
 
 int IHS_HIDDeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 

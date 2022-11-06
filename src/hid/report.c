@@ -28,10 +28,8 @@
 
 #include <memory.h>
 #include <stdbool.h>
-#include <malloc.h>
 
 #include "protobuf/pb_utils.h"
-#include "device.h"
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,
                         uint8_t *delta);
@@ -67,6 +65,8 @@ void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *curr
     item->has_full_report = true;
     item->full_report.data = data;
     item->full_report.len = len;
+
+    holder->report.n_reports = holder->reportItems.size;
 }
 
 void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
@@ -77,15 +77,18 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
     // Send the data and CRC
     uint32_t crc = IHS_CRC32C(current, len);
     CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
+    IHS_ArrayListAppend(&holder->reportPointers, &item);
     chiddevice_input_report__init(item);
     item->has_delta_report = true;
     item->delta_report.data = data;
     item->delta_report.len = deltaLen;
     PROTOBUF_C_P_SET_VALUE(item, delta_report_crc, crc);
     PROTOBUF_C_P_SET_VALUE(item, delta_report_size, len);
+
+    holder->report.n_reports = holder->reportItems.size;
 }
 
-IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder, IHS_HIDDevice *device) {
+IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder) {
     if (holder->reportItems.size == 0) {
         return NULL;
     }

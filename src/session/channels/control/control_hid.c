@@ -74,8 +74,8 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_CLOSE: {
             CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
-            IHS_HIDDevice *device = (IHS_HIDDevice *) IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-            IHS_HIDDeviceClose(device);
+            IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+            IHS_HIDManagedDeviceClose(managed);
             // TODO send response?
             break;
         }
@@ -276,7 +276,7 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
     IHS_ArrayListClear(&session->hidManager->inputReports);
     for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
         IHS_HIDManagedDevice *device = IHS_ArrayListGet(&session->hidManager->devices, i);
-        IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&device->reportHolder, device->device);
+        IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&device->reportHolder);
         if (report == NULL) {
             continue;
         }

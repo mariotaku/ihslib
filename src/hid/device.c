@@ -32,19 +32,19 @@ IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls) {
     return device;
 }
 
-void IHS_HIDDeviceOpened(IHS_HIDDevice *device) {
-    IHS_HIDManagedDevice *managed = (IHS_HIDManagedDevice *) device;
+void IHS_HIDManagedDeviceOpened(IHS_HIDManagedDevice *managed) {
     assert(managed->manager != NULL);
+    IHS_HIDDevice *device = managed->device;
     if (device->cls->opened != NULL) {
         device->cls->opened(device);
     }
 }
 
-void IHS_HIDDeviceClose(IHS_HIDDevice *device) {
-    IHS_HIDManagedDevice *managed = (IHS_HIDManagedDevice *) device;
+void IHS_HIDManagedDeviceClose(IHS_HIDManagedDevice *managed) {
+    IHS_HIDDevice *device = managed->device;
     assert(managed->manager != NULL);
     device->cls->close(device);
-    IHS_HIDManagerRemoveClosedDevice(managed->manager, device);
+    IHS_HIDManagerRemoveClosedDevice(managed->manager, managed);
     device->cls->free(device);
 }
 

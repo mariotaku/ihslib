@@ -52,7 +52,8 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
 }
 
 static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event) {
-    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
     if (device == NULL) {
         return false;
     }
@@ -61,7 +62,8 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
 }
 
 static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEvent *event) {
-    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
     if (device == NULL) {
         return false;
     }

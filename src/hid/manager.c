@@ -34,8 +34,8 @@ static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *devic
 IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_HIDManager *manager = calloc(1, sizeof(IHS_HIDManager));
     IHS_ArrayListInit(&manager->providers, sizeof(IHS_HIDProvider *));
-    IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDManagedDevice *));
-    IHS_ArrayListInit(&manager->inputReports, sizeof(CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport *));
+    IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDManagedDevice));
+    IHS_ArrayListInit(&manager->inputReports, sizeof(IHS_HIDDeviceReportMessage *));
     return manager;
 }
 
@@ -59,7 +59,7 @@ IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const ch
             managed->manager = manager;
             managed->device = device;
             IHS_HIDReportHolderInit(&managed->reportHolder, managed->id);
-            IHS_HIDDeviceOpened(device);
+            IHS_HIDManagedDeviceOpened(managed);
             return managed;
         }
     }

@@ -29,7 +29,7 @@
 
 static int CompareDeviceByJoystickID(const SDL_JoystickID *id, const IHS_HIDDevice **deviceListPtr);
 
-IHS_HIDDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId) {
+IHS_HIDManagedDevice *IHS_HIDManagerDeviceByJoystickID(IHS_HIDManager *manager, SDL_JoystickID joystickId) {
     return IHS_HIDManagerFindDevice(manager, (IHS_HIDDeviceComparator) CompareDeviceByJoystickID, &joystickId);
 }
 

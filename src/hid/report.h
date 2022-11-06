@@ -78,4 +78,4 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
  * @return Pointer for input report, or NULL if there is no report item. Please lock the holder to prevent it being
  * modified during usage
  */
-IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder, IHS_HIDDevice *device);
+IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder);

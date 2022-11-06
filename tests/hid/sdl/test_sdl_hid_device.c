@@ -40,6 +40,10 @@ int main(int argc, char *argv[]) {
     (void) argv;
 
     SDL_Init(SDL_INIT_GAMECONTROLLER);
+    if (SDL_NumJoysticks() > 0) {
+        SDL_Quit();
+        return 0;
+    }
     int indices[8];
     indices[0] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
     indices[1] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_WHEEL, 4, 8, 0);
@@ -70,11 +74,12 @@ int main(int argc, char *argv[]) {
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://1") == NULL);
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://aaaa") == NULL);
 
-    IHS_HIDDevice *device = IHS_HIDManagerOpenDevice(manager, "sdl://0");
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, "sdl://0");
+    IHS_HIDDevice *device = managed->device;
     assert(device != NULL);
 
     SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
-    assert(IHS_HIDManagerDeviceByJoystickID(manager, id) == device);
+    assert(IHS_HIDManagerDeviceByJoystickID(manager, id) == managed);
     assert(IHS_HIDManagerDeviceByJoystickID(manager, 99999) == NULL);
 
     const static uint8_t maxRumble[21] = {0x1, 0xff, 0xff, 0xff, 0xff, 0x88, 0x13,};
@@ -112,7 +117,7 @@ int main(int argc, char *argv[]) {
 
     IHS_BufferClear(&buffer, true);
 
-    IHS_HIDDeviceClose(device);
+    IHS_HIDManagedDeviceClose(managed);
 
     IHS_HIDProviderSDLDestroy(provider);
 

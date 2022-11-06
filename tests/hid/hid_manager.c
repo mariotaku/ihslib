@@ -87,13 +87,15 @@ int main(int argc, char *argv[]) {
     IHS_EnumerationFree(enumeration);
 
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://0") == NULL);
-    IHS_HIDDevice *device = IHS_HIDManagerOpenDevice(manager, "test://0");
-    assert(device != NULL);
-    assert(device->id == 1);
-    assert(device == IHS_HIDManagerFindDeviceByID(manager, 1));
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, "test://0");
+    assert(managed != NULL);
+    assert(managed->id == 1);
+    assert(managed == IHS_HIDManagerFindDeviceByID(manager, 1));
     assert(IHS_HIDManagerFindDeviceByID(manager, 114514) == NULL);
 
     IHS_Buffer str = IHS_BUFFER_INIT(256, 256);
+
+    IHS_HIDDevice *device = managed->device;
 
     IHS_HIDDeviceGetVendorString(device, &str);
     assert(strcmp("Vendor String", (const char *) IHS_BufferPointer(&str)) == 0);
@@ -109,7 +111,7 @@ int main(int argc, char *argv[]) {
     IHS_HIDDeviceRead(device, &buffer, 64, 5);
     IHS_HIDDeviceWrite(device, IHS_BufferPointer(&buffer), 64);
 
-    IHS_HIDDeviceClose(device);
+    IHS_HIDManagedDeviceClose(managed);
 
     IHS_HIDManagerRemoveProvider(manager, provider);
     assert(manager->providers.size == 0);
