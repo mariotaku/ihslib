@@ -27,14 +27,33 @@
 
 #include "ihslib/hid.h"
 #include "ihs_arraylist.h"
+#include "ihs_thread.h"
+#include "report.h"
+
+#include "protobuf/hiddevices.pb-c.h"
 
 typedef struct IHS_HIDDevice IHS_HIDDevice;
+
+typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
 
 struct IHS_HIDManager {
     IHS_ArrayList devices;
     IHS_ArrayList providers;
+    IHS_ArrayList inputReports;
     uint32_t lastDeviceId;
 };
+
+struct IHS_HIDManagedDevice {
+    /**
+     * @attention Must be the first field!
+     */
+    IHS_HIDDevice *device;
+    IHS_HIDManager *manager;
+    uint32_t id;
+    IHS_HIDReportHolder reportHolder;
+    IHS_Mutex *lock;
+};
+
 
 /**
  * @param value Value to compare
@@ -47,14 +66,14 @@ IHS_HIDManager *IHS_HIDManagerCreate();
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager);
 
-IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path);
+IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path);
 
-IHS_HIDDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id);
+IHS_HIDManagedDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id);
 
-IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
+IHS_HIDManagedDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
                                         const void *value);
 
-void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDDevice *device);
+void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed);
 
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider);
 

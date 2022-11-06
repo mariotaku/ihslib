@@ -29,24 +29,53 @@
 #include <stddef.h>
 
 #include "protobuf/hiddevices.pb-c.h"
+#include "ihs_buffer.h"
+#include "ihs_arraylist.h"
 
+typedef struct IHS_HIDDevice IHS_HIDDevice;
+
+typedef CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport IHS_HIDDeviceReportMessage;
+
+/**
+ * DeviceInputReport message has many pointers to manage inside, this structure is to hold them.
+ */
 typedef struct IHS_HIDReportHolder {
-    CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport report;
-    ProtobufCBinaryData reportBuf;
-    CHIDDeviceInputReport reportItem;
     /**
-     * Pointer to address of `reportItem`
+     * Reused device report
      */
-    CHIDDeviceInputReport *reportItems[1];
+    IHS_HIDDeviceReportMessage report;
+    /**
+     * Continuous buffer storing all the data referenced in CHIDDeviceInputReport.
+     */
+    IHS_Buffer dataBuffer;
+    /**
+     * List storing report items (CHIDDeviceInputReport).
+     */
+    IHS_ArrayList reportItems;
+    /**
+     * List of (CHIDDeviceInputReport*).
+     */
+    IHS_ArrayList reportPointers;
+    /**
+     * Data length for single report item. Will be used for delta calculation, etc.
+     */
+    size_t reportLength;
 } IHS_HIDReportHolder;
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);
 
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder);
 
-void IHS_HIDReportHolderSetLength(IHS_HIDReportHolder *holder, size_t len);
+void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t reportLen);
 
-void IHS_HIDReportHolderUpdateFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len);
+void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len);
 
-void IHS_HIDReportHolderUpdateDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
-                                    size_t len);
+void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
+                                 size_t len);
+
+/**
+ *
+ * @return Pointer for input report, or NULL if there is no report item. Please lock the holder to prevent it being
+ * modified during usage
+ */
+IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder, IHS_HIDDevice *device);

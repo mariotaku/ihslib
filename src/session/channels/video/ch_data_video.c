@@ -136,6 +136,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
         memcpy(videoCh->config.codecData, message->codec_data.data, message->codec_data.len);
     }
     videoCh->stateMutex = IHS_MutexCreate();
+    IHS_BufferInit(&videoCh->frame.buffer, 128 * 1024/*128KB*/, 2048 * 1024/*2MB*/);
     IHS_SessionChannelDataInit(channel, 2048);
 }
 

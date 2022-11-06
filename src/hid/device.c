@@ -33,18 +33,18 @@ IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls) {
 }
 
 void IHS_HIDDeviceOpened(IHS_HIDDevice *device) {
-    IHS_HIDManager *manager = device->manager;
-    assert(manager != NULL);
+    IHS_HIDManagedDevice *managed = (IHS_HIDManagedDevice *) device;
+    assert(managed->manager != NULL);
     if (device->cls->opened != NULL) {
         device->cls->opened(device);
     }
 }
 
 void IHS_HIDDeviceClose(IHS_HIDDevice *device) {
-    IHS_HIDManager *manager = device->manager;
-    assert(manager != NULL);
+    IHS_HIDManagedDevice *managed = (IHS_HIDManagedDevice *) device;
+    assert(managed->manager != NULL);
     device->cls->close(device);
-    IHS_HIDManagerRemoveClosedDevice(manager, device);
+    IHS_HIDManagerRemoveClosedDevice(managed->manager, device);
     device->cls->free(device);
 }
 
@@ -90,3 +90,4 @@ int IHS_HIDDeviceRequestFullReport(IHS_HIDDevice *device) {
 int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {
     return device->cls->requestDisconnect(device, method, data, dataLen);
 }
+

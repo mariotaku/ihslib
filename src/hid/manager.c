@@ -29,24 +29,24 @@
 #include "device.h"
 #include "provider.h"
 
-#include "ihslib/hid.h"
-
-static int CompareDeviceID(const uint32_t *id, const IHS_HIDDevice **device);
+static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *device);
 
 IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_HIDManager *manager = calloc(1, sizeof(IHS_HIDManager));
     IHS_ArrayListInit(&manager->providers, sizeof(IHS_HIDProvider *));
-    IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDDevice *));
+    IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDManagedDevice *));
+    IHS_ArrayListInit(&manager->inputReports, sizeof(CHIDMessageFromRemote__DeviceInputReports__DeviceInputReport *));
     return manager;
 }
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
     IHS_ArrayListDeinit(&manager->devices);
     IHS_ArrayListDeinit(&manager->providers);
+    IHS_ArrayListDeinit(&manager->inputReports);
     free(manager);
 }
 
-IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path) {
+IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path) {
     for (size_t i = 0, j = manager->providers.size; i < j; ++i) {
         IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, i));
         if (IHS_HIDProviderSupportsDevice(provider, path)) {
@@ -54,37 +54,40 @@ IHS_HIDDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *pat
             if (device == NULL) {
                 continue;
             }
-            device->id = ++manager->lastDeviceId;
-            device->manager = manager;
+            IHS_HIDManagedDevice *managed = IHS_ArrayListAppend(&manager->devices, NULL);
+            managed->id = ++manager->lastDeviceId;
+            managed->manager = manager;
+            managed->device = device;
+            IHS_HIDReportHolderInit(&managed->reportHolder, managed->id);
             IHS_HIDDeviceOpened(device);
-            IHS_ArrayListAppend(&manager->devices, &device);
-            return device;
+            return managed;
         }
     }
     return NULL;
 }
 
-IHS_HIDDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id) {
+IHS_HIDManagedDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id) {
     int index = IHS_ArrayListBinarySearch(&manager->devices, &id, (IHS_ArrayListSearchFn) CompareDeviceID);
     if (index < 0) {
         return NULL;
     }
-    IHS_HIDDevice **itemPtr = IHS_ArrayListGet(&manager->devices, index);
-    return *itemPtr;
+    return IHS_ArrayListGet(&manager->devices, index);
 }
 
-IHS_HIDDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate, const void *value) {
+IHS_HIDManagedDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
+                                               const void *value) {
     int index = IHS_ArrayListLinearSearch(&manager->devices, value, (IHS_ArrayListSearchFn) predicate);
     if (index < 0) {
         return NULL;
     }
-    IHS_HIDDevice **itemPtr = IHS_ArrayListGet(&manager->devices, index);
-    return *itemPtr;
+    return IHS_ArrayListGet(&manager->devices, index);
 }
 
-void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDDevice *device) {
-    int index = IHS_ArrayListBinarySearch(&manager->devices, &device->id, (IHS_ArrayListSearchFn) CompareDeviceID);
+void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed) {
+    int index = IHS_ArrayListBinarySearch(&manager->devices, &managed->id, (IHS_ArrayListSearchFn) CompareDeviceID);
     assert(index >= 0);
+    IHS_HIDReportHolderDeinit(&managed->reportHolder);
+    IHS_ArrayListRemove(&manager->devices, index);
 }
 
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
@@ -96,6 +99,6 @@ void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *prov
     assert(removed);
 }
 
-static int CompareDeviceID(const uint32_t *id, const IHS_HIDDevice **device) {
-    return (int) (*id - (*device)->id);
+static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *device) {
+    return (int) (*id - device->id);
 }

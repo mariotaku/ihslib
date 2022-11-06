@@ -43,9 +43,17 @@ void IHS_ArrayListInit(IHS_ArrayList *list, size_t itemSize);
 
 void IHS_ArrayListDeinit(IHS_ArrayList *list);
 
-void IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr);
+/**
+ *
+ * @param list
+ * @param itemPtr If not null, memory of this pointer will be copied
+ * @return Pointer of the element in the array
+ */
+void *IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr);
 
 bool IHS_ArrayListRemoveFirst(IHS_ArrayList *list, const void *itemPtr);
+
+bool IHS_ArrayListRemove(IHS_ArrayList *list, size_t index);
 
 void *IHS_ArrayListGet(IHS_ArrayList *list, size_t index);
 
@@ -68,3 +76,5 @@ int IHS_ArrayListBinarySearch(const IHS_ArrayList *list, const void *value, IHS_
  * @return
  */
 int IHS_ArrayListLinearSearch(const IHS_ArrayList *list, const void *value, IHS_ArrayListSearchFn searchFn);
+
+void IHS_ArrayListClear(IHS_ArrayList *list);

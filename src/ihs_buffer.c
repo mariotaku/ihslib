@@ -80,8 +80,9 @@ void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
         newCapacity = buffer->initialCapacity;
     }
     if (newCapacity == 0) {
-        newCapacity = 1024;
+        newCapacity = buffer->maxCapacity < 1024 ? buffer->maxCapacity : 1024;
     }
+    assert (newCapacity > 0);
     while (newCapacity < wantedCapacity) {
         newCapacity *= 2;
     }

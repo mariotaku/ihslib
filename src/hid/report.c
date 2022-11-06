@@ -31,57 +31,65 @@
 #include <malloc.h>
 
 #include "protobuf/pb_utils.h"
+#include "device.h"
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,
                         uint8_t *delta);
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
-    holder->reportBuf.data = NULL;
-    holder->reportBuf.len = 0;
     chidmessage_from_remote__device_input_reports__device_input_report__init(&holder->report);
     PROTOBUF_C_SET_VALUE(holder->report, device, deviceId);
-    holder->reportItems[0] = &holder->reportItem;
-    holder->report.n_reports = 1;
-    holder->report.reports = holder->reportItems;
+    IHS_BufferInit(&holder->dataBuffer, 256, 8192);
+    IHS_ArrayListInit(&holder->reportItems, sizeof(CHIDDeviceInputReport));
+    IHS_ArrayListInit(&holder->reportPointers, sizeof(CHIDDeviceInputReport *));
+    holder->report.reports = holder->reportPointers.data;
+    holder->reportLength = 0;
 }
 
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
-    if (holder->reportBuf.data != NULL) {
-        free(holder->reportBuf.data);
-    }
+    holder->report.reports = NULL;
+    IHS_ArrayListDeinit(&holder->reportPointers);
+    IHS_ArrayListDeinit(&holder->reportItems);
+    IHS_BufferClear(&holder->dataBuffer, true);
 }
 
-void IHS_HIDReportHolderSetLength(IHS_HIDReportHolder *holder, size_t len) {
-    if (holder->reportBuf.len == len) {
-        return;
-    }
-    holder->reportBuf.len = len;
-    holder->reportBuf.data = realloc(holder->reportBuf.data, len);
+void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t reportLen) {
+    holder->reportLength = reportLen;
 }
 
-void IHS_HIDReportHolderUpdateFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
-    assert(holder->reportBuf.len >= len);
-    memcpy(holder->reportBuf.data, current, len);
-
-    chiddevice_input_report__init(&holder->reportItem);
-    holder->reportItem.has_full_report = true;
-    holder->reportItem.full_report.data = holder->reportBuf.data;
-    holder->reportItem.full_report.len = len;
+void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
+    // TODO lock?
+    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
+    assert(holder->reportLength >= len);
+    memcpy(data, current, len);
+    CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
+    chiddevice_input_report__init(item);
+    item->has_full_report = true;
+    item->full_report.data = data;
+    item->full_report.len = len;
 }
 
-void IHS_HIDReportHolderUpdateDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
-                                    size_t len) {
-    int deltaLen = ComputeDelta(previous, current, len, holder->reportBuf.len, holder->reportBuf.data);
+void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
+                                 size_t len) {
+    // TODO lock?
+    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, holder->reportLength);
+    int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
     // Send the data and CRC
     uint32_t crc = IHS_CRC32C(current, len);
+    CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
+    chiddevice_input_report__init(item);
+    item->has_delta_report = true;
+    item->delta_report.data = data;
+    item->delta_report.len = deltaLen;
+    PROTOBUF_C_P_SET_VALUE(item, delta_report_crc, crc);
+    PROTOBUF_C_P_SET_VALUE(item, delta_report_size, len);
+}
 
-
-    chiddevice_input_report__init(&holder->reportItem);
-    holder->reportItem.has_delta_report = true;
-    holder->reportItem.delta_report.data = holder->reportBuf.data;
-    holder->reportItem.delta_report.len = deltaLen;
-    PROTOBUF_C_SET_VALUE(holder->reportItem, delta_report_crc, crc);
-    PROTOBUF_C_SET_VALUE(holder->reportItem, delta_report_size, len);
+IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder, IHS_HIDDevice *device) {
+    if (holder->reportItems.size == 0) {
+        return NULL;
+    }
+    return &holder->report;
 }
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,

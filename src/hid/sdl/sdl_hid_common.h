@@ -42,7 +42,6 @@ typedef struct IHS_HIDDeviceSDL {
         IHS_HIDStateSDL current;
         IHS_HIDStateSDL previous;
     } states;
-    IHS_HIDReportHolder reportHolder;
 } IHS_HIDDeviceSDL;
 
 IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);

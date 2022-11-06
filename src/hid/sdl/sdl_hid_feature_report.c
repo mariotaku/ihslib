@@ -81,14 +81,17 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
                     .xinput = false,
                     .playerIndex = playerIndex,
                     .controllerType = k_ControllerTypeGen,
-                    .hid = true,
+                    .hid = false,
             };
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferWriteMem(dest, 1, (const unsigned char *) &report, 20);
             break;
         }
-        default:
-            return -1;
+        default: {
+            // Write an empty array
+            IHS_BufferFillMem(dest, 0, 0, 1);
+            return 0;
+        }
     }
     return 0;
 }

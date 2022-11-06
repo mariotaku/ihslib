@@ -29,7 +29,6 @@
 #include "hid/device.h"
 
 #include "sdl_hid_common.h"
-#include "hid/report.h"
 #include "crc32c.h"
 
 #include <SDL2/SDL.h>
@@ -85,13 +84,6 @@ bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device) {
     return device->cls == &DeviceClass;
 }
 
-void IHS_HIDDeviceSubmitReport(IHS_HIDDevice *device) {
-    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
-    IHS_HIDReportHolderUpdateDelta(&sdl->reportHolder, (const uint8_t *) &sdl->states.current,
-                                   (const uint8_t *) &sdl->states.previous, 48);
-    sdl->states.previous = sdl->states.current;
-}
-
 static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
     IHS_HIDDeviceSDL *device = calloc(1, sizeof(IHS_HIDDeviceSDL));
     device->base.cls = cls;
@@ -99,8 +91,6 @@ static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
 }
 
 static void DeviceOpened(IHS_HIDDevice *device) {
-    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
-    IHS_HIDReportHolderInit(&sdl->reportHolder, device->id);
 }
 
 static void DeviceFree(IHS_HIDDevice *device) {
@@ -111,7 +101,6 @@ static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
     SDL_GameControllerClose(deviceSdl->controller);
     deviceSdl->controller = NULL;
-    IHS_HIDReportHolderDeinit(&deviceSdl->reportHolder);
 }
 
 static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs) {
@@ -151,11 +140,14 @@ static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
 
 static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length) {
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
-    IHS_HIDReportHolderSetLength(&sdl->reportHolder, length);
+    sdl->states.previous = sdl->states.current;
+    return 0;
 }
 
 static int DeviceRequestFullReport(IHS_HIDDevice *device) {
-
+    IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    sdl->states.previous = sdl->states.current;
+    return 0;
 }
 
 static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {

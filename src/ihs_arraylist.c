@@ -45,19 +45,25 @@ void IHS_ArrayListDeinit(IHS_ArrayList *list) {
     }
 }
 
-void IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr) {
+void *IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr) {
     if (list->size + 1 >= list->capacity) {
         list->capacity = list->capacity * 2;
         list->data = realloc(list->data, list->capacity * list->itemSize);
     }
-    memcpy(IHS_ArrayListGet(list, list->size), itemPtr, list->itemSize);
+    void *elementPtr = IHS_ArrayListGet(list, list->size);
+    if (itemPtr != NULL) {
+        memcpy(elementPtr, itemPtr, list->itemSize);
+    } else {
+        memset(elementPtr, 0, list->itemSize);
+    }
     list->size += 1;
+    return elementPtr;
 }
 
 bool IHS_ArrayListRemoveFirst(IHS_ArrayList *list, const void *itemPtr) {
     for (int i = 0; i < list->size; ++i) {
         if (memcmp(IHS_ArrayListGet(list, i), itemPtr, list->itemSize) == 0) {
-            int toMove = (int) list->size - 1 - i;
+            int toMove = (int) ((list->size - 1 - i) * list->itemSize);
             if (toMove > 0) {
                 memmove(IHS_ArrayListGet(list, i), IHS_ArrayListGet(list, i + 1), toMove);
             }
@@ -66,6 +72,16 @@ bool IHS_ArrayListRemoveFirst(IHS_ArrayList *list, const void *itemPtr) {
         }
     }
     return false;
+}
+
+bool IHS_ArrayListRemove(IHS_ArrayList *list, size_t index) {
+    if (index >= list->size) {
+        return false;
+    }
+    int toMove = (int) ((list->size - 1 - index) * list->itemSize);
+    memmove(IHS_ArrayListGet(list, index), IHS_ArrayListGet(list, index + 1), toMove);
+    list->size -= 1;
+    return true;
 }
 
 void *IHS_ArrayListGet(IHS_ArrayList *list, size_t index) {
@@ -88,4 +104,8 @@ int IHS_ArrayListLinearSearch(const IHS_ArrayList *list, const void *value, IHS_
         }
     }
     return -1;
+}
+
+void IHS_ArrayListClear(IHS_ArrayList *list) {
+    list->size = 0;
 }

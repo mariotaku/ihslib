@@ -57,7 +57,6 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
         return false;
     }
     IHS_HIDReportSDLSetButton(&device->states.current, event->button, event->state == SDL_PRESSED);
-
     return true;
 }
 
