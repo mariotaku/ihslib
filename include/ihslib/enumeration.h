@@ -54,7 +54,7 @@ typedef struct IHS_Enumeration {
 
 typedef void *(*IHS_EnumerationLinkedListNext)(void *cur);
 
-typedef void *(*IHS_EnumerationFreeUnderlying)(void *p);
+typedef void (*IHS_EnumerationFreeUnderlying)(void *p);
 
 IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls);
 

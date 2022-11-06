@@ -38,6 +38,8 @@ static void TestArray();
 
 static void TestLinkedList();
 
+static void NoOp();
+
 int main(int argc, char *argv[]) {
     TestArray();
     TestLinkedList();
@@ -48,7 +50,7 @@ static void TestArray() {
     printf("%s:\n", __FUNCTION__);
 
     int array[] = {1, 2, 3, 4, 5, 6, 7, 8};
-    IHS_Enumeration *e = IHS_EnumerationArrayCreate(array, sizeof(int), 8, NULL);
+    IHS_Enumeration *e = IHS_EnumerationArrayCreate(array, sizeof(int), 8, NoOp);
     assert(IHS_EnumerationCount(e) == 8);
     int iterations = 0;
     for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
@@ -73,7 +75,7 @@ static void TestLinkedList() {
     LinkedListNode node1 = {.value = 2, .next = &node2};
     LinkedListNode node0 = {.value = 1, .next = &node1};
 
-    IHS_Enumeration *e = IHS_EnumerationLinkedListCreate(&node0, LinkedListNext, NULL);
+    IHS_Enumeration *e = IHS_EnumerationLinkedListCreate(&node0, LinkedListNext, NoOp);
     assert(IHS_EnumerationCount(e) == 8);
     int iterations = 0;
     for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
@@ -88,4 +90,8 @@ static void TestLinkedList() {
 
 static void *LinkedListNext(void *cur) {
     return ((LinkedListNode *) cur)->next;
+}
+
+static void NoOp() {
+
 }
