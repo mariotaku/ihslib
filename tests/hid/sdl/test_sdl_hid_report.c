@@ -32,11 +32,13 @@ int main() {
 
     assert(!IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_PADDLE1, true));
     assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, true));
+    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, true));
 
-    const int8_t buttonsExpected[] = {0x01, 0x00};
+    int8_t buttonsExpected[] = {0x01, 0x40};
     assert(memcmp(((int8_t *) &report) + 16, buttonsExpected, 2) == 0);
 
     assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, false));
+    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, false));
 
     assert(!IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_MAX, 0));
     assert(IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_LEFTX, INT16_MAX));

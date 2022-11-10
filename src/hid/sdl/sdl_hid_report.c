@@ -42,9 +42,9 @@ bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton
     }
     uint16_t prev = report->buttons;
     if (pressed) {
-        report->buttons |= SDL_SwapBE16(1 << button);
+        report->buttons |= 1 << button;
     } else {
-        report->buttons &= ~SDL_SwapBE16(1 << button);
+        report->buttons &= ~(1 << button);
     }
     return prev != report->buttons;
 }
