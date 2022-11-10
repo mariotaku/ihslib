@@ -73,12 +73,24 @@ typedef struct IHS_HIDDeviceInfo {
     uint16_t product_version;
 } IHS_HIDDeviceInfo;
 
-typedef struct IHS_HIDDevice {
-    const struct IHS_HIDDeviceClass *cls;
-} IHS_HIDDevice;
+typedef struct IHS_HIDDeviceClass IHS_HIDDeviceClass;
+typedef struct IHS_HIDDevice IHS_HIDDevice;
 
-typedef struct IHS_HIDDeviceClass {
-    IHS_HIDDevice *(*alloc)(const struct IHS_HIDDeviceClass *cls);
+typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
+
+typedef struct IHS_HIDProviderClass IHS_HIDProviderClass;
+typedef struct IHS_HIDProvider IHS_HIDProvider;
+
+struct IHS_HIDDevice {
+    const IHS_HIDDeviceClass *cls;
+    /**
+     * Opaque pointer to report holder
+     */
+    IHS_HIDManagedDevice *managed;
+};
+
+struct IHS_HIDDeviceClass {
+    IHS_HIDDevice *(*alloc)(const IHS_HIDDeviceClass *cls);
 
     void (*free)(IHS_HIDDevice *device);
 
@@ -129,14 +141,14 @@ typedef struct IHS_HIDDeviceClass {
 
     int (*requestDisconnect)(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
 
-} IHS_HIDDeviceClass;
+};
 
-typedef struct IHS_HIDProvider {
-    const struct IHS_HIDProviderClass *cls;
-} IHS_HIDProvider;
+struct IHS_HIDProvider {
+    const IHS_HIDProviderClass *cls;
+};
 
-typedef struct IHS_HIDProviderClass {
-    IHS_HIDProvider *(*alloc)(const struct IHS_HIDProviderClass *cls);
+struct IHS_HIDProviderClass {
+    IHS_HIDProvider *(*alloc)(const IHS_HIDProviderClass *cls);
 
     void (*free)(IHS_HIDProvider *provider);
 
@@ -149,10 +161,14 @@ typedef struct IHS_HIDProviderClass {
     IHS_Enumeration *(*enumerateDevices)(IHS_HIDProvider *provider);
 
     void (*deviceInfo)(IHS_HIDProvider *provider, IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
-} IHS_HIDProviderClass;
+};
 
 bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session);
 
 bool IHS_SessionHIDSendReport(IHS_Session *session);
 
 void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider);
+
+void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, size_t len);
+
+void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len);

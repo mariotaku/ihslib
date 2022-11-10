@@ -102,6 +102,7 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
             break;
         }
         case COMMAND_SET_REQUESTED_REPORT_VERSION: {
+            IHS_HIDReportSDLSetRequestedReportVersion(&sdl->states.current, command->byte.value);
             break;
         }
         case COMMAND_SET_PS5_RUMBLE: {

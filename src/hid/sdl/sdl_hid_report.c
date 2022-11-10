@@ -26,22 +26,34 @@
 #include "sdl_hid_report.h"
 
 
+bool IHS_HIDReportSDLInit(IHS_HIDStateSDL *report) {
+    memset(report, 0, sizeof(IHS_HIDStateSDL));
+    return true;
+}
+
+bool IHS_HIDReportSDLSetRequestedReportVersion(IHS_HIDStateSDL *report, uint8_t version) {
+    report->reportUnknown = version;
+    return true;
+}
+
 bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton button, bool pressed) {
     if (button < 0 || button >= 16) {
         return false;
     }
+    uint16_t prev = report->buttons;
     if (pressed) {
-        report->buttons |= 1 << button;
+        report->buttons |= SDL_SwapBE16(1 << button);
     } else {
-        report->buttons &= ~(1 << button);
+        report->buttons &= ~SDL_SwapBE16(1 << button);
     }
-    return true;
+    return prev != report->buttons;
 }
 
 bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axis, int16_t value) {
     if (axis < 0 || axis >= 6) {
         return false;
     }
+    int16_t prev = report->axes[axis];
     report->axes[axis] = value;
-    return true;
+    return prev != value;
 }

@@ -91,3 +91,10 @@ int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint
     return device->cls->requestDisconnect(device, method, data, dataLen);
 }
 
+void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, size_t len) {
+    IHS_HIDReportHolderAddFull(&device->managed->reportHolder, current, len);
+}
+
+void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len) {
+    IHS_HIDReportHolderAddDelta(&device->managed->reportHolder, previous, current, len);
+}

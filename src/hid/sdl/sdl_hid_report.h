@@ -44,6 +44,10 @@ typedef struct __attribute__((__packed__)) IHS_HIDReportSDL {
 
 _Static_assert(sizeof(IHS_HIDStateSDL) == 48, "");
 
+bool IHS_HIDReportSDLInit(IHS_HIDStateSDL *report);
+
+bool IHS_HIDReportSDLSetRequestedReportVersion(IHS_HIDStateSDL *report, uint8_t version);
+
 bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton button, bool pressed);
 
 bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axis, int16_t value);

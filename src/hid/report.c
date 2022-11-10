@@ -56,7 +56,6 @@ void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t repo
 }
 
 void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
-    // TODO lock?
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
     assert(holder->reportLength >= len);
     memcpy(data, current, len);
@@ -74,7 +73,6 @@ void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *curr
 
 void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
                                  size_t len) {
-    // TODO lock?
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, holder->reportLength);
     int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
     holder->dataBuffer.size += deltaLen;
@@ -98,6 +96,13 @@ IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *h
         return NULL;
     }
     return &holder->report;
+}
+
+void IHS_HIDReportHolderResetMessage(IHS_HIDReportHolder *holder) {
+    holder->report.n_reports = 0;
+    IHS_BufferClear(&holder->dataBuffer, false);
+    IHS_ArrayListClear(&holder->reportItems);
+    IHS_ArrayListClear(&holder->reportPointers);
 }
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,

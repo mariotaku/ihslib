@@ -79,3 +79,5 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
  * modified during usage
  */
 IHS_HIDDeviceReportMessage *IHS_HIDReportHolderGetMessage(IHS_HIDReportHolder *holder);
+
+void IHS_HIDReportHolderResetMessage(IHS_HIDReportHolder *holder);

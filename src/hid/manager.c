@@ -58,7 +58,9 @@ IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const ch
             managed->id = ++manager->lastDeviceId;
             managed->manager = manager;
             managed->device = device;
+            managed->lock = IHS_MutexCreate();
             IHS_HIDReportHolderInit(&managed->reportHolder, managed->id);
+            device->managed = managed;
             IHS_HIDManagedDeviceOpened(managed);
             return managed;
         }
@@ -87,6 +89,7 @@ void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDev
     int index = IHS_ArrayListBinarySearch(&manager->devices, &managed->id, (IHS_ArrayListSearchFn) CompareDeviceID);
     assert(index >= 0);
     IHS_HIDReportHolderDeinit(&managed->reportHolder);
+    IHS_MutexDestroy(managed->lock);
     IHS_ArrayListRemove(&manager->devices, index);
 }
 

@@ -91,6 +91,9 @@ static IHS_HIDDevice *DeviceAlloc(const IHS_HIDDeviceClass *cls) {
 }
 
 static void DeviceOpened(IHS_HIDDevice *device) {
+    IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDReportSDLInit(&deviceSdl->states.previous);
+    IHS_HIDReportSDLInit(&deviceSdl->states.current);
 }
 
 static void DeviceFree(IHS_HIDDevice *device) {
@@ -140,12 +143,14 @@ static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
 
 static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length) {
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDDeviceReportAddFull(device, (const uint8_t *) &sdl->states.current, 48);
     sdl->states.previous = sdl->states.current;
     return 0;
 }
 
 static int DeviceRequestFullReport(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    IHS_HIDDeviceReportAddFull(device, (const uint8_t *) &sdl->states.current, 48);
     sdl->states.previous = sdl->states.current;
     return 0;
 }

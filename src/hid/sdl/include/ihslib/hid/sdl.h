@@ -33,4 +33,10 @@ IHS_HIDProvider *IHS_HIDProviderSDLCreate();
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);
 
+/**
+ * For an event from IHS managed device, it will add report data
+ * @param session
+ * @param event
+ * @return
+ */
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event);
