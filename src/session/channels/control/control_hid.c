@@ -138,6 +138,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
             response.data.data = IHS_BufferPointer(&str);
             response.data.len = str.size;
             SendRequestResponse(channel, &response);
+            IHS_BufferClear(&str, true);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_PRODUCT_STRING: {
@@ -153,6 +154,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
             response.data.data = IHS_BufferPointer(&str);
             response.data.len = str.size;
             SendRequestResponse(channel, &response);
+            IHS_BufferClear(&str, true);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_SERIAL_NUMBER_STRING: {
@@ -168,6 +170,7 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
             response.data.data = IHS_BufferPointer(&str);
             response.data.len = str.size;
             SendRequestResponse(channel, &response);
+            IHS_BufferClear(&str, true);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_START_INPUT_REPORTS: {
