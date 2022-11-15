@@ -22,26 +22,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include <assert.h>
-#include "hid/sdl/sdl_hid_report.h"
 
-int main() {
-    IHS_HIDStateSDL report;
-    IHS_HIDReportSDLInit(&report);
-    IHS_HIDReportSDLSetRequestedReportVersion(&report, 1);
+#pragma once
 
-    assert(!IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_PADDLE1, true));
-    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, true));
-    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, true));
+#include <stddef.h>
+#include <stdint.h>
 
-    int8_t buttonsExpected[] = {0x01, 0x40};
-    assert(memcmp(((int8_t *) &report) + 16, buttonsExpected, 2) == 0);
-
-    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_A, false));
-    assert(IHS_HIDReportSDLSetButton(&report, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, false));
-
-    assert(!IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_MAX, 0));
-    assert(IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_LEFTX, INT16_MAX));
-
-    return 0;
-}
+uint32_t IHS_CRC32(const uint8_t *buf, size_t len);

@@ -24,10 +24,11 @@
  */
 
 #include "report.h"
-#include "crc32c.h"
 
 #include <memory.h>
 #include <stdbool.h>
+
+#include "crc32.h"
 
 #include "protobuf/pb_utils.h"
 
@@ -77,7 +78,7 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
     int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
     holder->dataBuffer.size += deltaLen;
     // Send the data and CRC
-    uint32_t crc = IHS_CRC32C(current, len);
+    uint32_t crc = IHS_CRC32(current, len);
     CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
 
     chiddevice_input_report__init(item);

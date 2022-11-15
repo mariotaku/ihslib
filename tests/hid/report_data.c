@@ -27,29 +27,47 @@
 #include "hid/report.h"
 
 int main() {
-    uint8_t a[8] = {0x0, 0x1, 0x0, 0x1, 0x0,};
-    uint8_t b[8] = {0x1, 0x2, 0x0, 0x1, 0x1,};
+    // Nothing is pressed
+    uint8_t a[48] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    // Menu is pressed
+    uint8_t b[48] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
 
     IHS_HIDReportHolder holder;
     IHS_HIDReportHolderInit(&holder, 3);
 
-    IHS_HIDReportHolderSetReportLength(&holder, 16);
+    IHS_HIDReportHolderSetReportLength(&holder, 65);
 
     assert(IHS_HIDReportHolderGetMessage(&holder) == NULL);
 
-    IHS_HIDReportHolderAddFull(&holder, a, 8);
-    IHS_HIDReportHolderAddDelta(&holder, a, b, 8);
+    IHS_HIDReportHolderAddFull(&holder, a, 48);
+    IHS_HIDReportHolderAddDelta(&holder, a, b, 48);
 
     IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&holder);
     assert(report->has_device);
     assert(report->device == 3);
     assert(report->n_reports == 2);
-    assert(report->reports[0]->full_report.len == 8);
-    assert(memcmp(report->reports[0]->full_report.data, a, 8) == 0);
+    assert(report->reports[0]->full_report.len == 48);
+    assert(memcmp(report->reports[0]->full_report.data, a, 48) == 0);
 
-    assert(report->reports[1]->delta_report.len == 5);
-    uint8_t deltaExpected[] = {0x13 /*0b00011001*/, 0x0, 0x1, 0x2, 0x1};
-    assert(memcmp(report->reports[1]->delta_report.data, deltaExpected, 5) == 0);
+    assert(report->reports[1]->delta_report_size == 48);
+    assert(report->reports[1]->delta_report.len == 10);
+    uint8_t deltaExpected[] = {0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40};
+    assert(memcmp(report->reports[1]->delta_report.data, deltaExpected, 10) == 0);
+    assert(report->reports[1]->delta_report_crc == 406293423);
 
     IHS_HIDReportHolderDeinit(&holder);
 }

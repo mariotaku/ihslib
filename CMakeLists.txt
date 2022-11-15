@@ -34,6 +34,7 @@ endif ()
 
 add_library(ihslib
         src/base.c
+        src/crc32.c
         src/crc32c.c
         src/ihs_timer.c
         src/ihs_ip.c

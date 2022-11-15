@@ -61,9 +61,8 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
     bool changed = IHS_HIDReportSDLSetButton(&device->states.current, event->button,
                                              event->state == SDL_PRESSED);
     if (changed) {
-//        IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
-//                                    (const uint8_t *) &device->states.current, 48);
-        IHS_HIDDeviceReportAddFull(managed->device, (const uint8_t *) &device->states.current, 48);
+        IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
+                                    (const uint8_t *) &device->states.current, 48);
         device->states.previous = device->states.current;
     }
     IHS_MutexUnlock(managed->lock);
@@ -79,9 +78,8 @@ static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEv
     IHS_MutexLock(managed->lock);
     bool changed = IHS_HIDReportSDLSetAxis(&device->states.current, event->axis, event->value);
     if (changed) {
-//        IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
-//                                    (const uint8_t *) &device->states.current, 48);
-        IHS_HIDDeviceReportAddFull(managed->device, (const uint8_t *) &device->states.current, 48);
+        IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
+                                    (const uint8_t *) &device->states.current, 48);
         device->states.previous = device->states.current;
     }
     IHS_MutexUnlock(managed->lock);
