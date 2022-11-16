@@ -66,12 +66,14 @@ IHS_HIDManager *IHS_HIDManagerCreate();
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager);
 
+void IHS_HIDManagerCloseAll(IHS_HIDManager *manager);
+
 IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path);
 
 IHS_HIDManagedDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint32_t id);
 
 IHS_HIDManagedDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
-                                        const void *value);
+                                               const void *value);
 
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed);
 

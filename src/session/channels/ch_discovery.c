@@ -34,6 +34,7 @@
 #include "ch_control.h"
 #include "endianness.h"
 #include "ihs_buffer_ext.h"
+#include "hid/manager.h"
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
@@ -112,6 +113,7 @@ static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *p
     IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session disconnected");
     IHS_SessionChannel *control = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
     IHS_SessionChannelControlStopHeartbeat(control);
+    IHS_HIDManagerCloseAll(session->hidManager);
     IHS_SessionInterrupt(session);
 }
 

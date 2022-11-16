@@ -46,6 +46,14 @@ void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
     free(manager);
 }
 
+void IHS_HIDManagerCloseAll(IHS_HIDManager *manager) {
+    for (size_t i = 0, j = manager->devices.size; i < j; ++i) {
+        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
+        IHS_HIDManagedDeviceClose(managed);
+    }
+    IHS_ArrayListClear(&manager->devices);
+}
+
 IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path) {
     for (size_t i = 0, j = manager->providers.size; i < j; ++i) {
         IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, i));
