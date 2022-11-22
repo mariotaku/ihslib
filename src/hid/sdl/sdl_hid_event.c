@@ -36,10 +36,12 @@ static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEv
 
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
     switch (event->type) {
-        case SDL_CONTROLLERDEVICEADDED:
+        case SDL_CONTROLLERDEVICEADDED: {
             break;
-        case SDL_CONTROLLERDEVICEREMOVED:
+        }
+        case SDL_CONTROLLERDEVICEREMOVED: {
             break;
+        }
         case SDL_CONTROLLERBUTTONDOWN:
         case SDL_CONTROLLERBUTTONUP: {
             return HandleCButtonEvent(session->hidManager, &event->cbutton);
@@ -57,7 +59,7 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
     if (device == NULL) {
         return false;
     }
-    IHS_MutexLock(managed->lock);
+    IHS_HIDDeviceLock(managed->device);
     bool changed = IHS_HIDReportSDLSetButton(&device->states.current, event->button,
                                              event->state == SDL_PRESSED);
     if (changed) {
@@ -65,7 +67,7 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
                                     (const uint8_t *) &device->states.current, 48);
         device->states.previous = device->states.current;
     }
-    IHS_MutexUnlock(managed->lock);
+    IHS_HIDDeviceUnlock(managed->device);
     return changed;
 }
 
@@ -75,13 +77,13 @@ static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEv
     if (device == NULL) {
         return false;
     }
-    IHS_MutexLock(managed->lock);
+    IHS_HIDDeviceLock(managed->device);
     bool changed = IHS_HIDReportSDLSetAxis(&device->states.current, event->axis, event->value);
     if (changed) {
         IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
                                     (const uint8_t *) &device->states.current, 48);
         device->states.previous = device->states.current;
     }
-    IHS_MutexUnlock(managed->lock);
+    IHS_HIDDeviceUnlock(managed->device);
     return changed;
 }

@@ -172,3 +172,7 @@ void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider);
 void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, size_t len);
 
 void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len);
+
+void IHS_HIDDeviceLock(IHS_HIDDevice *device);
+
+void IHS_HIDDeviceUnlock(IHS_HIDDevice *device);

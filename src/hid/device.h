@@ -81,7 +81,3 @@ int IHS_HIDDeviceStartInputReports(IHS_HIDDevice *device, size_t length);
 int IHS_HIDDeviceRequestFullReport(IHS_HIDDevice *device);
 
 int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
-
-void IHS_HIDDeviceLock(IHS_HIDDevice *device);
-
-void IHS_HIDDeviceUnlock(IHS_HIDDevice *device);

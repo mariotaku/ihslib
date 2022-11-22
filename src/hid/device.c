@@ -98,3 +98,13 @@ void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, s
 void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len) {
     IHS_HIDReportHolderAddDelta(&device->managed->reportHolder, previous, current, len);
 }
+
+void IHS_HIDDeviceLock(IHS_HIDDevice *device) {
+    assert(device->managed != NULL);
+    IHS_MutexLock(device->managed->lock);
+}
+
+void IHS_HIDDeviceUnlock(IHS_HIDDevice *device) {
+    assert(device->managed != NULL);
+    IHS_MutexUnlock(device->managed->lock);
+}
