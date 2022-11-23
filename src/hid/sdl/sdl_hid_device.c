@@ -23,13 +23,10 @@
  *
  */
 
-#include "ihs_buffer.h"
+#include "ihslib/buffer.h"
 #include "ihslib/hid.h"
 
-#include "hid/device.h"
-
 #include "sdl_hid_common.h"
-#include "crc32c.h"
 
 #include <SDL2/SDL.h>
 
@@ -77,6 +74,16 @@ static const IHS_HIDDeviceClass DeviceClass = {
 IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDDeviceCreate(&DeviceClass);
     device->controller = controller;
+    SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
+    SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
+    if (haptic != NULL) {
+        unsigned int hapticBits = SDL_HapticQuery(haptic);
+        if (hapticBits & SDL_HAPTIC_LEFTRIGHT) {
+            device->haptic = haptic;
+        } else {
+            SDL_HapticClose(haptic);
+        }
+    }
     return (IHS_HIDDevice *) device;
 }
 
@@ -102,6 +109,10 @@ static void DeviceFree(IHS_HIDDevice *device) {
 
 static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
+    if (deviceSdl->haptic != NULL) {
+        SDL_HapticClose(deviceSdl->haptic);
+        deviceSdl->haptic = NULL;
+    }
     SDL_GameControllerClose(deviceSdl->controller);
     deviceSdl->controller = NULL;
 }

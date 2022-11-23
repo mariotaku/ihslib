@@ -77,8 +77,8 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
     const WriteCommand *command = (const WriteCommand *) data;
     switch (command->type) {
         case COMMAND_RUMBLE: {
-            SDL_GameControllerRumble(sdl->controller, command->rumble.lowFreq,
-                                     command->rumble.highFreq, command->rumble.durationMs);
+//            SDL_GameControllerRumble(sdl->controller, command->rumble.lowFreq,
+//                                     command->rumble.highFreq, command->rumble.durationMs);
             break;
         }
         case COMMAND_SET_LED: {

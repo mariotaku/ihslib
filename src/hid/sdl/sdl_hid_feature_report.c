@@ -57,9 +57,11 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     switch (reportNumber[0]) {
         case 0x07: {
+#if SDL_VERSION_ATLEAST(2, 0, 14)
             const char *serial = SDL_GameControllerGetSerial(sdl->controller);
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferWriteMem(dest, 1, (const uint8_t *) serial, strlen(serial) + 1);
+#endif
             break;
         }
         case 0x02: {

@@ -30,8 +30,6 @@
 #include "ihs_thread.h"
 #include "report.h"
 
-#include "protobuf/hiddevices.pb-c.h"
-
 typedef struct IHS_HIDDevice IHS_HIDDevice;
 
 typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;

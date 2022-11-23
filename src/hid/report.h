@@ -28,9 +28,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "protobuf/hiddevices.pb-c.h"
 #include "ihs_buffer.h"
 #include "ihs_arraylist.h"
+
+#include "protobuf/hiddevices.pb-c.h"
 
 typedef struct IHS_HIDDevice IHS_HIDDevice;
 

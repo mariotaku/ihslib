@@ -27,7 +27,6 @@
 
 #include "ihs_buffer.h"
 #include "ihslib/hid.h"
-#include "protobuf/hiddevices.pb-c.h"
 
 typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
 

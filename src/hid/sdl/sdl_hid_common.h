@@ -38,6 +38,7 @@
 typedef struct IHS_HIDDeviceSDL {
     IHS_HIDDevice base;
     SDL_GameController *controller;
+    SDL_Haptic *haptic;
     struct {
         IHS_HIDStateSDL current;
         IHS_HIDStateSDL previous;
