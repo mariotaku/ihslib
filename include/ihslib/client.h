@@ -45,7 +45,6 @@ typedef struct IHS_StreamingRequest {
         int32_t y;
     } maxResolution;
     int32_t audioChannelCount;
-    int32_t gamepadCount;
 } IHS_StreamingRequest;
 
 /**

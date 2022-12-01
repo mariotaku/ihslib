@@ -157,9 +157,6 @@ static uint64_t StreamingRequestTimer(void *context) {
     message.has_audio_channel_count = true;
     message.audio_channel_count = request.audioChannelCount;
 
-    message.has_gamepad_count = request.gamepadCount >= 0;
-    message.gamepad_count = request.gamepadCount;
-
     message.has_restricted = true;
     message.restricted = false;
 
