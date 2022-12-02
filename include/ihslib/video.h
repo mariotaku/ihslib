@@ -55,10 +55,16 @@ typedef struct IHS_StreamVideoConfig {
     size_t codecDataLen;
 } IHS_StreamVideoConfig;
 
+typedef enum IHS_StreamVideoSubmitResult {
+    IHS_StreamVideoSubmitOK = 0,
+    IHS_StreamVideoSubmitReportLost = 1,
+    IHS_StreamVideoSubmitError = -1,
+} IHS_StreamVideoSubmitResult;
+
 typedef struct IHS_StreamVideoCallbacks {
     int (*start)(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context);
 
-    int (*submit)(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags, void *context);
+    IHS_StreamVideoSubmitResult (*submit)(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags, void *context);
 
     void (*stop)(IHS_Session *session, void *context);
 
