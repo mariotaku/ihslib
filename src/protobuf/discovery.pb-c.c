@@ -2422,20 +2422,22 @@ const ProtobufCEnumDescriptor eremote_client_broadcast_msg__descriptor =
   eremote_client_broadcast_msg__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue eremote_client_service__enum_values_by_number[5] =
+static const ProtobufCEnumValue eremote_client_service__enum_values_by_number[6] =
 {
   { "k_ERemoteClientServiceNone", "k_ERemoteClientServiceNone", 0 },
   { "k_ERemoteClientServiceRemoteControl", "k_ERemoteClientServiceRemoteControl", 1 },
   { "k_ERemoteClientServiceGameStreaming", "k_ERemoteClientServiceGameStreaming", 2 },
   { "k_ERemoteClientServiceSiteLicense", "k_ERemoteClientServiceSiteLicense", 4 },
   { "k_ERemoteClientServiceContentCache", "k_ERemoteClientServiceContentCache", 8 },
+  { "k_ERemoteClientServiceContentServer", "k_ERemoteClientServiceContentServer", 16 },
 };
 static const ProtobufCIntRange eremote_client_service__value_ranges[] = {
-{0, 0},{4, 3},{8, 4},{0, 5}
+{0, 0},{4, 3},{8, 4},{16, 5},{0, 6}
 };
-static const ProtobufCEnumValueIndex eremote_client_service__enum_values_by_name[5] =
+static const ProtobufCEnumValueIndex eremote_client_service__enum_values_by_name[6] =
 {
   { "k_ERemoteClientServiceContentCache", 4 },
+  { "k_ERemoteClientServiceContentServer", 5 },
   { "k_ERemoteClientServiceGameStreaming", 2 },
   { "k_ERemoteClientServiceNone", 0 },
   { "k_ERemoteClientServiceRemoteControl", 1 },
@@ -2448,11 +2450,11 @@ const ProtobufCEnumDescriptor eremote_client_service__descriptor =
   "ERemoteClientService",
   "ERemoteClientService",
   "",
-  5,
+  6,
   eremote_client_service__enum_values_by_number,
-  5,
+  6,
   eremote_client_service__enum_values_by_name,
-  3,
+  4,
   eremote_client_service__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

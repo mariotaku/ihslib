@@ -298,8 +298,8 @@ void   chidmessage_from_remote__free_unpacked
 static const EHIDDeviceLocation chiddevice_info__location__default_value = k_EDeviceLocationLocal;
 static const int32_t chiddevice_info__interface_number__default_value = -1;
 static const int32_t chiddevice_info__ostype__default_value = -1;
-static const uint32_t chiddevice_info__e_controller_type_obsolete__default_value = 0u;
-static const protobuf_c_boolean chiddevice_info__is_xinput_device__default_value = 0;
+static const uint32_t chiddevice_info__e_controller_type__obsolete__default_value = 0u;
+static const protobuf_c_boolean chiddevice_info__is_xinput_device__obsolete__default_value = 0;
 static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
 {
   {
@@ -495,26 +495,26 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "eControllerType_obsolete",
+    "eControllerType_OBSOLETE",
     17,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
     offsetof(CHIDDeviceInfo, has_econtrollertype_obsolete),
     offsetof(CHIDDeviceInfo, econtrollertype_obsolete),
     NULL,
-    &chiddevice_info__e_controller_type_obsolete__default_value,
+    &chiddevice_info__e_controller_type__obsolete__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "is_xinput_device",
+    "is_xinput_device_OBSOLETE",
     18,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(CHIDDeviceInfo, has_is_xinput_device),
-    offsetof(CHIDDeviceInfo, is_xinput_device),
+    offsetof(CHIDDeviceInfo, has_is_xinput_device_obsolete),
+    offsetof(CHIDDeviceInfo, is_xinput_device_obsolete),
     NULL,
-    &chiddevice_info__is_xinput_device__default_value,
+    &chiddevice_info__is_xinput_device__obsolete__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -533,11 +533,11 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
 };
 static const unsigned chiddevice_info__field_indices_by_name[] = {
   14,   /* field[14] = caps_bits */
-  16,   /* field[16] = eControllerType_obsolete */
+  16,   /* field[16] = eControllerType_OBSOLETE */
   10,   /* field[10] = interface_number */
   12,   /* field[12] = is_generic_gamepad */
   13,   /* field[13] = is_generic_joystick */
-  17,   /* field[17] = is_xinput_device */
+  17,   /* field[17] = is_xinput_device_OBSOLETE */
   0,   /* field[0] = location */
   6,   /* field[6] = manufacturer_string */
   11,   /* field[11] = ostype */
@@ -713,8 +713,8 @@ static const ProtobufCIntRange chidmessage_to_remote__device_close__number_range
 const ProtobufCMessageDescriptor chidmessage_to_remote__device_close__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "CHIDMessageToRemote.DeviceCloseAndFree",
-  "DeviceCloseAndFree",
+  "CHIDMessageToRemote.DeviceClose",
+  "DeviceClose",
   "CHIDMessageToRemote__DeviceClose",
   "",
   sizeof(CHIDMessageToRemote__DeviceClose),
@@ -1534,7 +1534,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__device_input_repo
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "states",
+    "reports",
     2,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_MESSAGE,
@@ -1548,7 +1548,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__device_input_repo
 };
 static const unsigned chidmessage_from_remote__device_input_reports__device_input_report__field_indices_by_name[] = {
   0,   /* field[0] = device */
-  1,   /* field[1] = states */
+  1,   /* field[1] = reports */
 };
 static const ProtobufCIntRange chidmessage_from_remote__device_input_reports__device_input_report__number_ranges[1 + 1] =
 {
@@ -1691,7 +1691,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "states",
+    "reports",
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
@@ -1730,7 +1730,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
 static const unsigned chidmessage_from_remote__field_indices_by_name[] = {
   4,   /* field[4] = close_all_devices */
   3,   /* field[3] = close_device */
-  2,   /* field[2] = states */
+  2,   /* field[2] = reports */
   1,   /* field[1] = response */
   0,   /* field[0] = update_device_list */
 };

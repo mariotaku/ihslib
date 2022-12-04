@@ -64,7 +64,8 @@ typedef enum _ERemoteClientService {
   k_ERemoteClientServiceRemoteControl = 1,
   k_ERemoteClientServiceGameStreaming = 2,
   k_ERemoteClientServiceSiteLicense = 4,
-  k_ERemoteClientServiceContentCache = 8
+  k_ERemoteClientServiceContentCache = 8,
+  k_ERemoteClientServiceContentServer = 16
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(EREMOTE_CLIENT_SERVICE)
 } ERemoteClientService;
 typedef enum _ERemoteDeviceAuthorizationResult {

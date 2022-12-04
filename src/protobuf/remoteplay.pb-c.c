@@ -3838,6 +3838,51 @@ void   cshow_on_screen_keyboard_msg__free_unpacked
   assert(message->base.descriptor == &cshow_on_screen_keyboard_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   ccontroller_personalization_update_msg__init
+                     (CControllerPersonalizationUpdateMsg         *message)
+{
+  static const CControllerPersonalizationUpdateMsg init_value = CCONTROLLER_PERSONALIZATION_UPDATE_MSG__INIT;
+  *message = init_value;
+}
+size_t ccontroller_personalization_update_msg__get_packed_size
+                     (const CControllerPersonalizationUpdateMsg *message)
+{
+  assert(message->base.descriptor == &ccontroller_personalization_update_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t ccontroller_personalization_update_msg__pack
+                     (const CControllerPersonalizationUpdateMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &ccontroller_personalization_update_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t ccontroller_personalization_update_msg__pack_to_buffer
+                     (const CControllerPersonalizationUpdateMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &ccontroller_personalization_update_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CControllerPersonalizationUpdateMsg *
+       ccontroller_personalization_update_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CControllerPersonalizationUpdateMsg *)
+     protobuf_c_message_unpack (&ccontroller_personalization_update_msg__descriptor,
+                                allocator, len, data);
+}
+void   ccontroller_personalization_update_msg__free_unpacked
+                     (CControllerPersonalizationUpdateMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &ccontroller_personalization_update_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cstream_data_lost_msg__init
                      (CStreamDataLostMsg         *message)
 {
@@ -5262,9 +5307,10 @@ static const int32_t cstreaming_client_config__audio_channels__default_value = 2
 static const protobuf_c_boolean cstreaming_client_config__enable_video_hevc__default_value = 0;
 static const protobuf_c_boolean cstreaming_client_config__enable_performance_icons__default_value = 1;
 static const protobuf_c_boolean cstreaming_client_config__enable_microphone_streaming__default_value = 0;
-static const protobuf_c_boolean cstreaming_client_config__enable_touch_controller__default_value = 0;
+static const protobuf_c_boolean cstreaming_client_config__enable_touch_controller__obsolete__default_value = 0;
 static const EStreamP2PScope cstreaming_client_config__p2p_scope__default_value = k_EStreamP2PScopeAutomatic;
-static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptors[18] =
+static const protobuf_c_boolean cstreaming_client_config__enable_audio_uncompressed__default_value = 0;
+static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptors[19] =
 {
   {
     "quality",
@@ -5459,14 +5505,14 @@ static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptor
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "enable_touch_controller",
+    "enable_touch_controller_OBSOLETE",
     17,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_BOOL,
-    offsetof(CStreamingClientConfig, has_enable_touch_controller),
-    offsetof(CStreamingClientConfig, enable_touch_controller),
+    offsetof(CStreamingClientConfig, has_enable_touch_controller_obsolete),
+    offsetof(CStreamingClientConfig, enable_touch_controller_obsolete),
     NULL,
-    &cstreaming_client_config__enable_touch_controller__default_value,
+    &cstreaming_client_config__enable_touch_controller__obsolete__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -5482,17 +5528,30 @@ static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptor
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "enable_audio_uncompressed",
+    20,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CStreamingClientConfig, has_enable_audio_uncompressed),
+    offsetof(CStreamingClientConfig, enable_audio_uncompressed),
+    NULL,
+    &cstreaming_client_config__enable_audio_uncompressed__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cstreaming_client_config__field_indices_by_name[] = {
   11,   /* field[11] = audio_channels */
   15,   /* field[15] = controller_overlay_hotkey */
   9,   /* field[9] = enable_audio_streaming */
+  18,   /* field[18] = enable_audio_uncompressed */
   6,   /* field[6] = enable_hardware_decoding */
   10,   /* field[10] = enable_input_streaming */
   14,   /* field[14] = enable_microphone_streaming */
   13,   /* field[13] = enable_performance_icons */
   7,   /* field[7] = enable_performance_overlay */
-  16,   /* field[16] = enable_touch_controller */
+  16,   /* field[16] = enable_touch_controller_OBSOLETE */
   12,   /* field[12] = enable_video_hevc */
   8,   /* field[8] = enable_video_streaming */
   5,   /* field[5] = maximum_bitrate_kbps */
@@ -5507,7 +5566,7 @@ static const ProtobufCIntRange cstreaming_client_config__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 19, 17 },
-  { 0, 18 }
+  { 0, 19 }
 };
 const ProtobufCMessageDescriptor cstreaming_client_config__descriptor =
 {
@@ -5517,7 +5576,7 @@ const ProtobufCMessageDescriptor cstreaming_client_config__descriptor =
   "CStreamingClientConfig",
   "",
   sizeof(CStreamingClientConfig),
-  18,
+  19,
   cstreaming_client_config__field_descriptors,
   cstreaming_client_config__field_indices_by_name,
   2,  cstreaming_client_config__number_ranges,
@@ -9479,6 +9538,70 @@ const ProtobufCMessageDescriptor cshow_on_screen_keyboard_msg__descriptor =
   (ProtobufCMessageInit) cshow_on_screen_keyboard_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor ccontroller_personalization_update_msg__field_descriptors[3] =
+{
+  {
+    "controller_path",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerPersonalizationUpdateMsg, controller_path),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "controller_name",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CControllerPersonalizationUpdateMsg, controller_name),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "reverse_diamond_button_layout",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CControllerPersonalizationUpdateMsg, has_reverse_diamond_button_layout),
+    offsetof(CControllerPersonalizationUpdateMsg, reverse_diamond_button_layout),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned ccontroller_personalization_update_msg__field_indices_by_name[] = {
+  1,   /* field[1] = controller_name */
+  0,   /* field[0] = controller_path */
+  2,   /* field[2] = reverse_diamond_button_layout */
+};
+static const ProtobufCIntRange ccontroller_personalization_update_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 3 }
+};
+const ProtobufCMessageDescriptor ccontroller_personalization_update_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CControllerPersonalizationUpdateMsg",
+  "CControllerPersonalizationUpdateMsg",
+  "CControllerPersonalizationUpdateMsg",
+  "",
+  sizeof(CControllerPersonalizationUpdateMsg),
+  3,
+  ccontroller_personalization_update_msg__field_descriptors,
+  ccontroller_personalization_update_msg__field_indices_by_name,
+  1,  ccontroller_personalization_update_msg__number_ranges,
+  (ProtobufCMessageInit) ccontroller_personalization_update_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1] =
 {
   {
@@ -10897,7 +11020,7 @@ const ProtobufCEnumDescriptor estream_discovery_message__descriptor =
   estream_discovery_message__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_control_message__enum_values_by_number[90] =
+static const ProtobufCEnumValue estream_control_message__enum_values_by_number[91] =
 {
   { "k_EStreamControlAuthenticationRequest", "k_EStreamControlAuthenticationRequest", 1 },
   { "k_EStreamControlAuthenticationResponse", "k_EStreamControlAuthenticationResponse", 2 },
@@ -10989,16 +11112,18 @@ static const ProtobufCEnumValue estream_control_message__enum_values_by_number[9
   { "k_EStreamControlSetBitrateOverride", "k_EStreamControlSetBitrateOverride", 135 },
   { "k_EStreamControlShowOnScreenKeyboard", "k_EStreamControlShowOnScreenKeyboard", 136 },
   { "k_EStreamControlControllerConfigMsg", "k_EStreamControlControllerConfigMsg", 137 },
+  { "k_EStreamControlControllerPersonalizationUpdate", "k_EStreamControlControllerPersonalizationUpdate", 138 },
 };
 static const ProtobufCIntRange estream_control_message__value_ranges[] = {
-{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 90}
+{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 91}
 };
-static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[90] =
+static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[91] =
 {
   { "k_EStreamControlAuthenticationRequest", 0 },
   { "k_EStreamControlAuthenticationResponse", 1 },
   { "k_EStreamControlClientHandshake", 5 },
   { "k_EStreamControlControllerConfigMsg", 89 },
+  { "k_EStreamControlControllerPersonalizationUpdate", 90 },
   { "k_EStreamControlDeleteCursor", 28 },
   { "k_EStreamControlDisableHighResCapture", 77 },
   { "k_EStreamControlEnableHighResCapture", 76 },
@@ -11093,9 +11218,9 @@ const ProtobufCEnumDescriptor estream_control_message__descriptor =
   "EStreamControlMessage",
   "EStreamControlMessage",
   "",
-  90,
+  91,
   estream_control_message__enum_values_by_number,
-  90,
+  91,
   estream_control_message__enum_values_by_name,
   7,
   estream_control_message__value_ranges,

@@ -101,6 +101,7 @@ typedef struct _CSetInputTemporarilyDisabledMsg CSetInputTemporarilyDisabledMsg;
 typedef struct _CSetQualityOverrideMsg CSetQualityOverrideMsg;
 typedef struct _CSetBitrateOverrideMsg CSetBitrateOverrideMsg;
 typedef struct _CShowOnScreenKeyboardMsg CShowOnScreenKeyboardMsg;
+typedef struct _CControllerPersonalizationUpdateMsg CControllerPersonalizationUpdateMsg;
 typedef struct _CStreamDataLostMsg CStreamDataLostMsg;
 typedef struct _CAudioFormat CAudioFormat;
 typedef struct _CVideoFormat CVideoFormat;
@@ -232,7 +233,8 @@ typedef enum _EStreamControlMessage {
   k_EStreamControlSetQualityOverride = 134,
   k_EStreamControlSetBitrateOverride = 135,
   k_EStreamControlShowOnScreenKeyboard = 136,
-  k_EStreamControlControllerConfigMsg = 137
+  k_EStreamControlControllerConfigMsg = 137,
+  k_EStreamControlControllerPersonalizationUpdate = 138
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(ESTREAM_CONTROL_MESSAGE)
 } EStreamControlMessage;
 typedef enum _EStreamVersion {
@@ -640,14 +642,16 @@ struct  _CStreamingClientConfig
   protobuf_c_boolean has_enable_microphone_streaming;
   protobuf_c_boolean enable_microphone_streaming;
   char *controller_overlay_hotkey;
-  protobuf_c_boolean has_enable_touch_controller;
-  protobuf_c_boolean enable_touch_controller;
+  protobuf_c_boolean has_enable_touch_controller_obsolete;
+  protobuf_c_boolean enable_touch_controller_obsolete;
   protobuf_c_boolean has_p2p_scope;
   EStreamP2PScope p2p_scope;
+  protobuf_c_boolean has_enable_audio_uncompressed;
+  protobuf_c_boolean enable_audio_uncompressed;
 };
 #define CSTREAMING_CLIENT_CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cstreaming_client_config__descriptor) \
-    , 0, k_EStreamQualityBalanced, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 0, NULL, 0, 0, 0, k_EStreamP2PScopeAutomatic }
+    , 0, k_EStreamQualityBalanced, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 0, NULL, 0, 0, 0, k_EStreamP2PScopeAutomatic, 0, 0 }
 
 
 struct  _CStreamingServerConfig
@@ -1620,6 +1624,19 @@ struct  _CShowOnScreenKeyboardMsg
 #define CSHOW_ON_SCREEN_KEYBOARD_MSG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cshow_on_screen_keyboard_msg__descriptor) \
      }
+
+
+struct  _CControllerPersonalizationUpdateMsg
+{
+  ProtobufCMessage base;
+  char *controller_path;
+  char *controller_name;
+  protobuf_c_boolean has_reverse_diamond_button_layout;
+  protobuf_c_boolean reverse_diamond_button_layout;
+};
+#define CCONTROLLER_PERSONALIZATION_UPDATE_MSG__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&ccontroller_personalization_update_msg__descriptor) \
+    , NULL, NULL, 0, 0 }
 
 
 struct  _CStreamDataLostMsg
@@ -3527,6 +3544,25 @@ CShowOnScreenKeyboardMsg *
 void   cshow_on_screen_keyboard_msg__free_unpacked
                      (CShowOnScreenKeyboardMsg *message,
                       ProtobufCAllocator *allocator);
+/* CControllerPersonalizationUpdateMsg methods */
+void   ccontroller_personalization_update_msg__init
+                     (CControllerPersonalizationUpdateMsg         *message);
+size_t ccontroller_personalization_update_msg__get_packed_size
+                     (const CControllerPersonalizationUpdateMsg   *message);
+size_t ccontroller_personalization_update_msg__pack
+                     (const CControllerPersonalizationUpdateMsg   *message,
+                      uint8_t             *out);
+size_t ccontroller_personalization_update_msg__pack_to_buffer
+                     (const CControllerPersonalizationUpdateMsg   *message,
+                      ProtobufCBuffer     *buffer);
+CControllerPersonalizationUpdateMsg *
+       ccontroller_personalization_update_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   ccontroller_personalization_update_msg__free_unpacked
+                     (CControllerPersonalizationUpdateMsg *message,
+                      ProtobufCAllocator *allocator);
 /* CStreamDataLostMsg methods */
 void   cstream_data_lost_msg__init
                      (CStreamDataLostMsg         *message);
@@ -4052,6 +4088,9 @@ typedef void (*CSetBitrateOverrideMsg_Closure)
 typedef void (*CShowOnScreenKeyboardMsg_Closure)
                  (const CShowOnScreenKeyboardMsg *message,
                   void *closure_data);
+typedef void (*CControllerPersonalizationUpdateMsg_Closure)
+                 (const CControllerPersonalizationUpdateMsg *message,
+                  void *closure_data);
 typedef void (*CStreamDataLostMsg_Closure)
                  (const CStreamDataLostMsg *message,
                   void *closure_data);
@@ -4227,6 +4266,7 @@ extern const ProtobufCMessageDescriptor cset_input_temporarily_disabled_msg__des
 extern const ProtobufCMessageDescriptor cset_quality_override_msg__descriptor;
 extern const ProtobufCMessageDescriptor cset_bitrate_override_msg__descriptor;
 extern const ProtobufCMessageDescriptor cshow_on_screen_keyboard_msg__descriptor;
+extern const ProtobufCMessageDescriptor ccontroller_personalization_update_msg__descriptor;
 extern const ProtobufCMessageDescriptor cstream_data_lost_msg__descriptor;
 extern const ProtobufCMessageDescriptor caudio_format__descriptor;
 extern const ProtobufCMessageDescriptor cvideo_format__descriptor;
