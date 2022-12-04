@@ -14,3 +14,7 @@ Based on [reverse engineering work](https://github.com/mariotaku/steamlink.py) o
 be core of fully featured Steam Remote Play client.
 
 This project is licensed under LGPL v3.
+
+## Credits
+
+[SteamDatabase/Protobufs](https://github.com/SteamDatabase/Protobufs) - Up-to-date protobufs thanks to this project!
