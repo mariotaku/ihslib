@@ -71,10 +71,12 @@ static const IHS_HIDDeviceClass DeviceClass = {
         .requestDisconnect = DeviceRequestDisconnect,
 };
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller) {
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool managed) {
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDDeviceCreate(&DeviceClass);
-    device->controller = controller;
     SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
+    device->managed = managed;
+    device->instanceId = SDL_JoystickInstanceID(joystick);
+    device->controller = controller;
     SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
     if (haptic != NULL) {
         unsigned int hapticBits = SDL_HapticQuery(haptic);
@@ -113,8 +115,11 @@ static void DeviceClose(IHS_HIDDevice *device) {
         SDL_HapticClose(deviceSdl->haptic);
         deviceSdl->haptic = NULL;
     }
-    SDL_GameControllerClose(deviceSdl->controller);
-    deviceSdl->controller = NULL;
+
+    if (deviceSdl->managed) {
+        SDL_GameControllerClose(deviceSdl->controller);
+        deviceSdl->controller = NULL;
+    }
 }
 
 static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs) {
@@ -126,22 +131,27 @@ static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, ui
 }
 
 static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
+    (void) device;
+    (void) data;
+    (void) dataLen;
     // Should return -1 according to official implementation
     return -1;
 }
 
 static int DeviceVendorString(IHS_HIDDevice *device, IHS_Buffer *dest) {
+    (void) device;
     IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
     return 0;
 }
 
 static int DeviceProductString(IHS_HIDDevice *device, IHS_Buffer *dest) {
+    (void) device;
     IHS_BufferWriteMem(dest, 0, (const unsigned char *) "", 1);
     return 0;
 }
 
 static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     const char *serial = SDL_GameControllerGetSerial(sdl->controller);
     if (serial != NULL) {

@@ -33,6 +33,11 @@
 
 #include <SDL2/SDL.h>
 
+typedef struct HIDProviderSDL {
+    IHS_HIDProvider base;
+    bool manageDevice;
+} HIDProviderSDL;
+
 static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls);
 
 static void ProviderFree(IHS_HIDProvider *provider);
@@ -60,10 +65,12 @@ static const IHS_HIDProviderClass ProviderClass = {
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerate();
 
-void IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
+bool IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
 
-IHS_HIDProvider *IHS_HIDProviderSDLCreate() {
-    return IHS_SessionHIDProviderCreate(&ProviderClass);
+IHS_HIDProvider *IHS_HIDProviderSDLCreate(bool manageDevice) {
+    HIDProviderSDL *provider = (HIDProviderSDL *) IHS_SessionHIDProviderCreate(&ProviderClass);
+    provider->manageDevice = manageDevice;
+    return (IHS_HIDProvider *) provider;
 }
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
@@ -71,9 +78,9 @@ void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
 }
 
 static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls) {
-    IHS_HIDProvider *provider = calloc(1, sizeof(IHS_HIDProvider));
-    provider->cls = cls;
-    return provider;
+    HIDProviderSDL *provider = calloc(1, sizeof(HIDProviderSDL));
+    provider->base.cls = cls;
+    return (IHS_HIDProvider *) provider;
 }
 
 static void ProviderFree(IHS_HIDProvider *provider) {
@@ -86,20 +93,38 @@ static bool ProviderSupportsDevice(IHS_HIDProvider *provider, const char *path) 
 }
 
 static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *path) {
-    (void) provider;
+    HIDProviderSDL *sdlProvider = (HIDProviderSDL *) provider;
     assert(strstr(path, "sdl://") == path);
     char *endptr = NULL;
     const char *begin = &path[6];
-    int index = (int) strtol(begin, &endptr, 10);
+    int deviceId = (int) strtol(begin, &endptr, 10);
     if (endptr == begin) {
         return NULL;
     }
+    SDL_GameController *controller = NULL;
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+    if (sdlProvider->manageDevice) {
+        int index = -1;
+        for (int i = 0, numJoysticks = SDL_NumJoysticks(); i < numJoysticks; i++) {
+            if (deviceId == SDL_JoystickGetDeviceInstanceID(i)) {
+                index = i;
+                break;
+            }
+        }
+        if (index >= 0) {
+            controller = SDL_GameControllerOpen(index);
+        }
+    } else {
+        controller = SDL_GameControllerFromInstanceID((SDL_JoystickID) deviceId);
+    }
+#else
     // SDL_GameControllerOpen will return opened controller, so no extra check needed
-    SDL_GameController *controller = SDL_GameControllerOpen(index);
+    controller = SDL_GameControllerOpen(deviceId);
+#endif
     if (controller == NULL) {
         return NULL;
     }
-    return IHS_HIDDeviceSDLCreate(controller);
+    return IHS_HIDDeviceSDLCreate(controller, sdlProvider->manageDevice);
 }
 
 static bool ProviderHasChange(IHS_HIDProvider *provider) {

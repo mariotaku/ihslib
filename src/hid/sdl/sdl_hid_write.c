@@ -82,20 +82,20 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
             break;
         }
         case COMMAND_SET_LED: {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
             SDL_GameControllerSetLED(sdl->controller, command->led.r, command->led.g, command->led.b);
 #endif
             break;
         }
         case COMMAND_RUMBLE_TRIGGERS: {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
             SDL_GameControllerRumbleTriggers(sdl->controller, command->rumble.lowFreq,
                                              command->rumble.highFreq, command->rumble.durationMs);
 #endif
             break;
         }
         case COMMAND_SET_SENSOR_ENABLED: {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
             SDL_GameControllerSetSensorEnabled(sdl->controller, SDL_SENSOR_ACCEL, command->byte.value);
             SDL_GameControllerSetSensorEnabled(sdl->controller, SDL_SENSOR_GYRO, command->byte.value);
 #endif
@@ -106,13 +106,13 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
             break;
         }
         case COMMAND_SET_PS5_RUMBLE: {
-#if SDL_VERSION_ATLEAST(2, 0, 16)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 16)
             SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, command->byte.value ? "1" : "0");
 #endif
             break;
         }
         case COMMAND_SET_PLAYER_INDEX: {
-#if SDL_VERSION_ATLEAST(2, 0, 12)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 12)
             SDL_GameControllerSetPlayerIndex(sdl->controller, command->byte.value);
 #endif
             break;
