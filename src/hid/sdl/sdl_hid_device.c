@@ -74,7 +74,7 @@ static const IHS_HIDDeviceClass DeviceClass = {
 IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool managed) {
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDDeviceCreate(&DeviceClass);
     SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
-    device->managed = managed;
+    device->controllerManaged = managed;
     device->instanceId = SDL_JoystickInstanceID(joystick);
     device->controller = controller;
     SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
@@ -116,7 +116,7 @@ static void DeviceClose(IHS_HIDDevice *device) {
         deviceSdl->haptic = NULL;
     }
 
-    if (deviceSdl->managed) {
+    if (deviceSdl->controllerManaged) {
         SDL_GameControllerClose(deviceSdl->controller);
         deviceSdl->controller = NULL;
     }

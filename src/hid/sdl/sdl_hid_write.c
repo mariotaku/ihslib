@@ -112,9 +112,10 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
             break;
         }
         case COMMAND_SET_PLAYER_INDEX: {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 12)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
             SDL_GameControllerSetPlayerIndex(sdl->controller, command->byte.value);
 #endif
+            sdl->playerIndex = command->byte.value;
             break;
         }
         default:

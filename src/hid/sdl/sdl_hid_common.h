@@ -50,10 +50,11 @@ typedef struct IHS_HIDDeviceSDL {
     /**
      * If true, the controller will be closed when the device is closed
      */
-    bool managed;
+    bool controllerManaged;
     SDL_JoystickID instanceId;
     SDL_GameController *controller;
     SDL_Haptic *haptic;
+    int playerIndex;
     struct {
         IHS_HIDStateSDL current;
         IHS_HIDStateSDL previous;
