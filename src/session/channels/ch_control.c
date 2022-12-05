@@ -81,10 +81,19 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     bool ret;
     const ProtobufCEnumValue *value = protobuf_c_enum_descriptor_get_value(&estream_control_message__descriptor,
                                                                            type);
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Send control message: %s, id=%d", value->name,
-                   packetId);
+    enum IHS_LogLevel logLevel;
+    switch (type) {
+        case k_EStreamControlRemoteHID:
+            logLevel = IHS_LogLevelVerbose;
+            break;
+        default:
+            logLevel = IHS_LogLevelDebug;
+            break;
+    }
     IHS_SessionFrame frame;
     IHS_SessionChannelInitializeFrame(channel, &frame, IHS_SessionPacketTypeReliable, true, packetId);
+    IHS_SessionLog(channel->session, logLevel, "Control", "Send control message: %s, id=%u", value->name,
+                   frame.header.packetId);
     IHS_BufferAppendUInt8(&frame.body, type);
     if (IsMessageEncrypted(type)) {
         size_t cipherSize = EncryptedMessageCapacity(messageCapacity);

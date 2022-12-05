@@ -35,6 +35,7 @@ typedef struct IHS_HIDDevice IHS_HIDDevice;
 typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
 
 struct IHS_HIDManager {
+    IHS_Session *session;
     IHS_ArrayList devices;
     IHS_ArrayList providers;
     IHS_ArrayList inputReports;
@@ -72,6 +73,8 @@ IHS_HIDManagedDevice *IHS_HIDManagerFindDeviceByID(IHS_HIDManager *manager, uint
 
 IHS_HIDManagedDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDDeviceComparator predicate,
                                                const void *value);
+
+bool IHS_HIDManagerNotifyDeviceClosed(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed);
 
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed);
 

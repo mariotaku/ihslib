@@ -28,6 +28,9 @@
 #include "manager.h"
 #include "device.h"
 #include "provider.h"
+#include "session/channels/ch_control.h"
+#include "protobuf/pb_utils.h"
+#include "session/session_pri.h"
 
 static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *device);
 
@@ -91,6 +94,17 @@ IHS_HIDManagedDevice *IHS_HIDManagerFindDevice(IHS_HIDManager *manager, IHS_HIDD
         return NULL;
     }
     return IHS_ArrayListGet(&manager->devices, index);
+}
+
+bool IHS_HIDManagerNotifyDeviceClosed(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed) {
+    IHS_SessionChannel *channel = IHS_SessionChannelForType(manager->session, IHS_SessionChannelTypeControl);
+    CHIDMessageFromRemote message = CHIDMESSAGE_FROM_REMOTE__INIT;
+    CHIDMessageFromRemote__CloseDevice closeDevice = CHIDMESSAGE_FROM_REMOTE__CLOSE_DEVICE__INIT;
+    PROTOBUF_C_SET_VALUE(closeDevice, device, managed->id);
+    message.command_case = CHIDMESSAGE_FROM_REMOTE__COMMAND_CLOSE_DEVICE;
+    message.close_device = &closeDevice;
+    IHS_SessionLog(manager->session, IHS_LogLevelDebug, "HID", "Close device, id=%u", managed->id);
+    return IHS_SessionChannelControlSendHIDMsg(channel, &message);
 }
 
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed) {

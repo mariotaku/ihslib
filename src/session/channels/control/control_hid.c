@@ -75,8 +75,10 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_CLOSE: {
             CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
             IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-            IHS_HIDManagedDeviceClose(managed);
-            // TODO send response?
+            // If the device got closed on client side, it should be NULL here.
+            if (managed != NULL) {
+                IHS_HIDManagedDeviceClose(managed);
+            }
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_WRITE: {

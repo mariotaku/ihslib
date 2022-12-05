@@ -39,10 +39,13 @@ static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEv
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
     switch (event->type) {
         case SDL_CONTROLLERDEVICEADDED: {
-            break;
+            IHS_SessionHIDNotifyDeviceChange(session);
+            return true;
         }
         case SDL_CONTROLLERDEVICEREMOVED: {
-            return HandleRemoveEvent(session->hidManager, &event->cdevice);
+            bool changed = HandleRemoveEvent(session->hidManager, &event->cdevice);
+            IHS_SessionHIDNotifyDeviceChange(session);
+            return changed;
         }
         case SDL_CONTROLLERBUTTONDOWN:
         case SDL_CONTROLLERBUTTONUP: {
@@ -74,6 +77,9 @@ static bool HandleRemoveEvent(IHS_HIDManager *manager, const SDL_ControllerDevic
 
 static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButtonEvent *event) {
     IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    if (managed == NULL) {
+        return false;
+    }
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
     if (device == NULL) {
         return false;

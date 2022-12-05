@@ -41,9 +41,11 @@ void IHS_HIDManagedDeviceOpened(IHS_HIDManagedDevice *managed) {
 }
 
 void IHS_HIDManagedDeviceClose(IHS_HIDManagedDevice *managed) {
+    assert(managed != NULL);
     IHS_HIDDevice *device = managed->device;
     assert(managed->manager != NULL);
     device->cls->close(device);
+    IHS_HIDManagerNotifyDeviceClosed(managed->manager, managed);
     IHS_HIDManagerRemoveClosedDevice(managed->manager, managed);
     device->cls->free(device);
 }

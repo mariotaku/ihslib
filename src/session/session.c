@@ -72,12 +72,15 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->hidManager = IHS_HIDManagerCreate();
 
     session->numChannels = 3;
+
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);
     session->channels[IHS_SessionChannelIdControl] = IHS_SessionChannelControlCreate(session);
     session->channels[IHS_SessionChannelIdStats] = IHS_SessionChannelStatsCreate(session);
     char *ipStr = IHS_IPAddressToString(&sessionInfo->address.ip);
     IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Session created. IP address: %s", ipStr);
     free(ipStr);
+
+    session->hidManager->session = session;
     return session;
 }
 
