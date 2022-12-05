@@ -57,7 +57,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     switch (reportNumber[0]) {
         case 0x07: {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
             const char *serial = SDL_GameControllerGetSerial(sdl->controller);
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferWriteMem(dest, 1, (const uint8_t *) serial, strlen(serial) + 1);
@@ -65,7 +65,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
             break;
         }
         case 0x02: {
-#if SDL_VERSION_ATLEAST(2, 0, 4)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 4)
             SDL_Joystick *joystick = SDL_GameControllerGetJoystick(sdl->controller);
             uint8_t level = SDL_JoystickCurrentPowerLevel(joystick);
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
@@ -75,7 +75,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
         }
         case 0x04: {
             int playerIndex = -1;
-#if SDL_VERSION_ATLEAST(2, 0, 9)
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
             playerIndex = SDL_GameControllerGetPlayerIndex(sdl->controller);
 #endif
             DeviceFeatureReport report = {

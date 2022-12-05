@@ -29,7 +29,7 @@
 
 #include <SDL2/SDL_events.h>
 
-IHS_HIDProvider *IHS_HIDProviderSDLCreate();
+IHS_HIDProvider *IHS_HIDProviderSDLCreate(bool manageDevice);
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);
 
@@ -40,3 +40,10 @@ void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);
  * @return
  */
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event);
+
+/**
+ * For device related (added, removed) event, it will trigger a device list update
+ * @param session
+ * @param event
+ * @return true to update device list
+ */

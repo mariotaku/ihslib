@@ -35,8 +35,23 @@
 #include "sdl_hid_report.h"
 #include "hid/report.h"
 
+#ifndef IHS_SDL_TARGETVERSION
+#define IHS_SDL_TARGETVERSION SDL_COMPILEDVERSION
+#endif
+
+/**
+ *  This macro will evaluate to true if compiled with SDL at least X.Y.Z.
+ */
+#define IHS_SDL_TARGET_ATLEAST(X, Y, Z) \
+    (IHS_SDL_TARGETVERSION >= SDL_VERSIONNUM(X, Y, Z))
+
 typedef struct IHS_HIDDeviceSDL {
     IHS_HIDDevice base;
+    /**
+     * If true, the controller will be closed when the device is closed
+     */
+    bool managed;
+    SDL_JoystickID instanceId;
     SDL_GameController *controller;
     SDL_Haptic *haptic;
     struct {
@@ -45,7 +60,7 @@ typedef struct IHS_HIDDeviceSDL {
     } states;
 } IHS_HIDDeviceSDL;
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller);
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool managed);
 
 bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
 
