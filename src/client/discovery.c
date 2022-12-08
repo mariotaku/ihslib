@@ -83,7 +83,7 @@ static uint64_t DiscoveryTimerRun(IHS_Client *client) {
     if (client->discoveryTimer == NULL) {
         return 0;
     }
-    IHS_ClientLog(client, IHS_LogLevelDebug, "Discovery", "Send broadcast");
+    IHS_ClientLog(client, IHS_LogLevelVerbose, "Discovery", "Send broadcast");
     DiscoveryBroadcast(client);
     return client->discoveryInterval;
 }
