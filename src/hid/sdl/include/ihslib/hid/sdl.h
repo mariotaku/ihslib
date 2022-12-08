@@ -42,8 +42,8 @@ void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider);
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event);
 
 /**
- * For device related (added, removed) event, it will trigger a device list update
+ * Reset input state for all SDL game controllers
  * @param session
- * @param event
- * @return true to update device list
+ * @return
  */
+bool IHS_HIDResetSDLGameControllers(IHS_Session *session);

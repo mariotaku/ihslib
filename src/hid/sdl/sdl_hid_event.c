@@ -66,6 +66,26 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
     return false;
 }
 
+bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
+    IHS_HIDManager *manager = session->hidManager;
+    for (size_t i = 0, j = manager->devices.size; i < j; ++i) {
+        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
+        if (!IHS_HIDDeviceIsSDL(managed->device)) {
+            continue;
+        }
+        IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
+        IHS_HIDDeviceLock(managed->device);
+        bool changed = IHS_HIDReportSDLClear(&device->states.current);
+        if (changed) {
+            IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
+                                        (const uint8_t *) &device->states.current, 48);
+            device->states.previous = device->states.current;
+        }
+        IHS_HIDDeviceUnlock(managed->device);
+    }
+    return true;
+}
+
 static bool HandleRemoveEvent(IHS_HIDManager *manager, const SDL_ControllerDeviceEvent *event) {
     IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
     if (managed == NULL) {

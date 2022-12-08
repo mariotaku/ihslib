@@ -57,3 +57,10 @@ bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axi
     report->axes[axis] = value;
     return prev != value;
 }
+
+bool IHS_HIDReportSDLClear(IHS_HIDStateSDL *report) {
+    uint8_t version = report->reportUnknown;
+    memset(report, 0, sizeof(IHS_HIDStateSDL));
+    report->reportUnknown = version;
+    return true;
+}
