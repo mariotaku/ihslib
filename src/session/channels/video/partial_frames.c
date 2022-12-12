@@ -31,8 +31,12 @@ static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Bu
 
 static void FreeNode(IHS_VideoPartialFrame *node);
 
-void IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
-                                        const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
+void IHS_VideoPartialFramesInit(IHS_VideoPartialFrames *frames) {
+    memset(frames, 0, sizeof(IHS_VideoPartialFrames));
+}
+
+IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
+                                                          const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     assert (frames != NULL);
     assert (before != NULL);
     IHS_VideoPartialFrame *inserted = NewNode(header, data);
@@ -49,10 +53,11 @@ void IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_Vide
 
     inserted->prev = prev;
     inserted->next = before;
+    return inserted;
 }
 
-void IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
-                                  IHS_Buffer *data) {
+IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
+                                                    IHS_Buffer *data) {
     assert (frames != NULL);
     IHS_VideoPartialFrame *inserted = NewNode(header, data);
 
@@ -67,6 +72,7 @@ void IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_Vide
         inserted->prev = oldTail;
     }
     frames->tail = inserted;
+    return inserted;
 }
 
 void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *node) {

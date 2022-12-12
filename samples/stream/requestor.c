@@ -93,7 +93,6 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
             .maxResolution = {1270, 720},
             .streamingEnable = {true, true, true},
             .audioChannelCount = 2,
-            .gamepadCount = 0
     };
     if (!IHS_ClientStreamingRequest(client, &info, &req)) {
         fprintf(stderr, "IHS_ClientStreamingRequest failed: %s\n", info.hostname);

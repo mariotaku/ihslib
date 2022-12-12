@@ -35,9 +35,14 @@
 #include "hid/device.h"
 #include "hid/sdl/sdl_hid_common.h"
 
+#include "test_session.h"
+#include "ihslib/session.h"
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
+
+    IHS_Init();
 
     SDL_Init(SDL_INIT_GAMECONTROLLER);
     if (SDL_NumJoysticks() > 0) {
@@ -56,8 +61,9 @@ int main(int argc, char *argv[]) {
 
     assert(SDL_NumJoysticks() == 8);
 
-    IHS_HIDManager *manager = IHS_HIDManagerCreate();
-    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreate();
+    IHS_Session *session = IHS_TestSessionCreate();
+    IHS_HIDManager *manager = session->hidManager;
+    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreate(true);
     IHS_HIDManagerAddProvider(manager, provider);
 
     IHS_Enumeration *enumeration = IHS_HIDProviderEnumerateDevices(provider);
@@ -71,14 +77,17 @@ int main(int argc, char *argv[]) {
     IHS_EnumerationFree(enumeration);
 
     assert(IHS_HIDManagerOpenDevice(manager, "bad://1") == NULL);
-    assert(IHS_HIDManagerOpenDevice(manager, "sdl://1") == NULL);
+    assert(IHS_HIDManagerOpenDevice(manager, "sdl://9999") == NULL);
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://aaaa") == NULL);
 
-    IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, "sdl://0");
+    SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
+
+    char path[16];
+    snprintf(path, 16, "sdl://%d", id);
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, path);
     IHS_HIDDevice *device = managed->device;
     assert(device != NULL);
 
-    SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
     assert(IHS_HIDManagerDeviceByJoystickID(manager, id) == managed);
     assert(IHS_HIDManagerDeviceByJoystickID(manager, 99999) == NULL);
 
@@ -121,8 +130,10 @@ int main(int argc, char *argv[]) {
 
     IHS_HIDProviderSDLDestroy(provider);
 
-    IHS_HIDManagerDestroy(manager);
+    IHS_SessionDestroy(session);
 
     SDL_Quit();
+
+    IHS_Quit();
     return 0;
 }

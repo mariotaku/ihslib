@@ -1,0 +1,1 @@
+ihs_add_test(partial_frames test_partial_frames.c)

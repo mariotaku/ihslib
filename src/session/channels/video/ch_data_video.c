@@ -138,6 +138,7 @@ static void ChannelVideoInit(IHS_SessionChannel *channel, const void *config) {
     }
     videoCh->stateMutex = IHS_MutexCreate();
     IHS_BufferInit(&videoCh->frame.buffer, 128 * 1024/*128KB*/, 2048 * 1024/*2MB*/);
+    IHS_VideoPartialFramesInit(&videoCh->frame.partial);
     IHS_SessionChannelDataInit(channel, 2048);
 }
 

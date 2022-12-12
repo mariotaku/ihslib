@@ -42,11 +42,13 @@ typedef struct IHS_SessionVideoPartialFrames {
     IHS_VideoPartialFrame *tail;
 } IHS_VideoPartialFrames;
 
-void IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
-                                        const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+void IHS_VideoPartialFramesInit(IHS_VideoPartialFrames *frames);
 
-void IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
-                                  IHS_Buffer *data);
+IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
+                                                          const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+
+IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
+                                                    IHS_Buffer *data);
 
 void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *node);
 

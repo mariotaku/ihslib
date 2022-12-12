@@ -31,6 +31,8 @@
 #include "hid/device.h"
 #include "ihs_enumeration.h"
 
+#include "test_session.h"
+
 static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls);
 
 static void ProviderFree(IHS_HIDProvider *provider);
@@ -78,8 +80,10 @@ static const IHS_HIDDeviceClass DeviceClass = {
 };
 
 
-int main(int argc, char *argv[]) {
-    IHS_HIDManager *manager = IHS_HIDManagerCreate();
+int main() {
+    IHS_Init();
+    IHS_Session *session = IHS_TestSessionCreate();
+    IHS_HIDManager *manager = session->hidManager;
     IHS_HIDProvider *provider = IHS_SessionHIDProviderCreate(&ProviderClass);
     IHS_HIDManagerAddProvider(manager, provider);
 
@@ -116,10 +120,12 @@ int main(int argc, char *argv[]) {
     IHS_HIDManagerRemoveProvider(manager, provider);
     assert(manager->providers.size == 0);
     IHS_SessionHIDProviderDestroy(provider);
-    IHS_HIDManagerDestroy(manager);
+
+    IHS_SessionDestroy(session);
 
     IHS_BufferClear(&str, true);
     IHS_BufferClear(&buffer, true);
+    IHS_Quit();
     return 0;
 }
 
