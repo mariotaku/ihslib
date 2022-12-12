@@ -226,9 +226,6 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     }
 
     if (AssembleFrame(channel)) {
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Video",
-                       "Submit video frame, id=%u, timestamp=%u, seq=%u, flags=%08x, reserved1=%u, reserved1=%u",
-                       header->id, header->timestamp, vhead.sequence, vhead.flags, vhead.reserved1, vhead.reserved2);
         SubmitFrame(channel, &videoCh->frame.buffer, videoCh->frame.flags);
         IHS_BufferClear(&videoCh->frame.buffer, false);
         videoCh->frame.flags = 0;
