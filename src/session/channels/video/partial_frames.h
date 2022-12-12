@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 typedef struct IHS_VideoPartialFrame {
+    uint16_t frameId;
     IHS_VideoFrameHeader header;
     IHS_Buffer data;
     struct IHS_VideoPartialFrame *prev;
@@ -45,10 +46,11 @@ typedef struct IHS_SessionVideoPartialFrames {
 void IHS_VideoPartialFramesInit(IHS_VideoPartialFrames *frames);
 
 IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
-                                                          const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+                                                          uint16_t frameId, const IHS_VideoFrameHeader *header,
+                                                          IHS_Buffer *data);
 
-IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
-                                                    IHS_Buffer *data);
+IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, uint16_t frameId,
+                                                    const IHS_VideoFrameHeader *header, IHS_Buffer *data);
 
 void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *node);
 

@@ -94,7 +94,8 @@ static uint64_t ReportVideoStats(void *data);
  * @param data Data frame body
  * @param header Data frame header
  */
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, const IHS_VideoFrameHeader *header,
+                            IHS_Buffer *data);
 
 /**
  * Clear partial video frames and not yet assembled frame data
@@ -218,10 +219,10 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
                                          config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),
                                          &outLen);
         plain.size = outLen;
-        AddPartialFrame(videoCh, &vhead, &plain);
+        AddPartialFrame(videoCh, header->id, &vhead, &plain);
         IHS_BufferClear(&plain, true);
     } else {
-        AddPartialFrame(videoCh, &vhead, body);
+        AddPartialFrame(videoCh, header->id, &vhead, body);
     }
 
     if (AssembleFrame(channel)) {
@@ -290,18 +291,19 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
     return videoCh->states.frameFinished;
 }
 
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, const IHS_VideoFrameHeader *header,
+                            IHS_Buffer *data) {
     // Find reset matching cur frame
     IHS_VideoPartialFrame *cur = NULL;
     IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
-        if (header->sequence == cur->header.sequence && header->reserved2 < cur->header.reserved1) {
+        if (frameId == cur->frameId && header->reserved2 < cur->header.reserved1) {
             break;
         }
     }
     if (cur != NULL) {
-        IHS_VideoPartialFramesInsertBefore(&channel->frame.partial, cur, header, data);
+        IHS_VideoPartialFramesInsertBefore(&channel->frame.partial, cur, frameId, header, data);
     } else {
-        IHS_VideoPartialFramesAppend(&channel->frame.partial, header, data);
+        IHS_VideoPartialFramesAppend(&channel->frame.partial, frameId, header, data);
     }
 }
 

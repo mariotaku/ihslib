@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+static IHS_VideoPartialFrame *NewNode(uint16_t frameId, const IHS_VideoFrameHeader *header, IHS_Buffer *data);
 
 static void FreeNode(IHS_VideoPartialFrame *node);
 
@@ -36,10 +36,11 @@ void IHS_VideoPartialFramesInit(IHS_VideoPartialFrames *frames) {
 }
 
 IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames *frames, IHS_VideoPartialFrame *before,
-                                                          const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
+                                                          uint16_t frameId, const IHS_VideoFrameHeader *header,
+                                                          IHS_Buffer *data) {
     assert (frames != NULL);
     assert (before != NULL);
-    IHS_VideoPartialFrame *inserted = NewNode(header, data);
+    IHS_VideoPartialFrame *inserted = NewNode(frameId, header, data);
 
     IHS_VideoPartialFrame *prev = before->prev;
     if (prev == NULL) {
@@ -56,10 +57,10 @@ IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames
     return inserted;
 }
 
-IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, const IHS_VideoFrameHeader *header,
-                                                    IHS_Buffer *data) {
+IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, uint16_t frameId,
+                                                    const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     assert (frames != NULL);
-    IHS_VideoPartialFrame *inserted = NewNode(header, data);
+    IHS_VideoPartialFrame *inserted = NewNode(frameId, header, data);
 
     IHS_VideoPartialFrame *oldHead = frames->head, *oldTail = frames->tail;
     if (oldHead == NULL) {
@@ -113,10 +114,11 @@ size_t IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames) {
     return count;
 }
 
-static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
+static IHS_VideoPartialFrame *NewNode(uint16_t frameId, const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     assert(header != NULL);
     assert(data != NULL && data->data != NULL);
     IHS_VideoPartialFrame *node = calloc(1, sizeof(IHS_VideoPartialFrame));
+    node->frameId = frameId;
     node->header = *header;
     IHS_BufferTransferOwnership(data, &node->data);
     return node;
