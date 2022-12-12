@@ -94,14 +94,17 @@ size_t IHS_VideoPartialFramesCount(const IHS_VideoPartialFrames *frames) {
     return count;
 }
 
-void IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames) {
+size_t IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames) {
+    size_t count = 0;
     for (IHS_VideoPartialFrame *cur = frames->head; cur != NULL;) {
         IHS_VideoPartialFrame *next = cur->next;
         FreeNode(cur);
         cur = next;
+        count += 1;
     }
     frames->head = NULL;
     frames->tail = NULL;
+    return count;
 }
 
 static IHS_VideoPartialFrame *NewNode(const IHS_VideoFrameHeader *header, IHS_Buffer *data) {

@@ -61,8 +61,9 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
 }
 
 
-void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip,
+void IHS_ClientAuthorizationCallback(IHS_Client *client, const IHS_SocketAddress *address,
                                      CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
+    IHS_UNUSED(address);
     IHS_TimerTask *timer = client->taskHandles.authorization;
     if (!timer) return;
     if (header->msg_type != k_ERemoteDeviceAuthorizationResponse) {

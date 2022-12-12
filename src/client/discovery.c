@@ -60,15 +60,15 @@ bool IHS_ClientStopDiscovery(IHS_Client *client) {
 }
 
 
-void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                 ProtobufCMessage *message) {
+void IHS_ClientDiscoveryCallback(IHS_Client *client, const IHS_SocketAddress *address,
+                                 CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
     if (header->msg_type == k_ERemoteClientBroadcastMsgStatus) {
         CMsgRemoteClientBroadcastStatus *status = (CMsgRemoteClientBroadcastStatus *) message;
         IHS_HostInfo info;
         info.clientId = header->client_id;
         info.instanceId = header->instance_id;
-        info.address.ip = ip;
-        info.address.port = status->connect_port;
+        info.address = *address;
+        info.ostype = status->ostype;
         info.universe = status->euniverse;
         info.gamesRunning = status->games_running;
         strncpy(info.hostname, status->hostname, sizeof(info.hostname) - 1);

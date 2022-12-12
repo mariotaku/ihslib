@@ -177,12 +177,12 @@ static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address,
         case k_ERemoteClientBroadcastMsgStatus:
         case k_ERemoteClientBroadcastMsgOffline:
         case k_ERemoteClientBroadcastMsgClientIDDeconflict:
-            client->privCallbacks.discovery(client, address->ip, header, message);
+            client->privCallbacks.discovery(client, address, header, message);
             break;
         case k_ERemoteDeviceAuthorizationRequest:
         case k_ERemoteDeviceAuthorizationResponse:
         case k_ERemoteDeviceAuthorizationCancelRequest:
-            client->privCallbacks.authorization(client, address->ip, header, message);
+            client->privCallbacks.authorization(client, address, header, message);
             break;
         case k_ERemoteDeviceStreamingRequest:
         case k_ERemoteDeviceStreamingResponse:
@@ -190,7 +190,7 @@ static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address,
         case k_ERemoteDeviceStreamingCancelRequest:
         case k_ERemoteDeviceProofRequest:
         case k_ERemoteDeviceProofResponse:
-            client->privCallbacks.streaming(client, address->ip, header, message);
+            client->privCallbacks.streaming(client, address, header, message);
             break;
         default:
             break;

@@ -32,8 +32,8 @@
 #include "ihs_timer.h"
 
 
-typedef void (IHS_MessageCallback)(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                   ProtobufCMessage *message);
+typedef void (IHS_MessageCallback)(IHS_Client *client, const IHS_SocketAddress *address,
+                                   CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message);
 
 struct IHS_Client {
     IHS_Base base;
@@ -72,11 +72,11 @@ bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
 
 bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse universe, uint8_t *key, size_t *keyLen);
 
-void IHS_ClientDiscoveryCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                 ProtobufCMessage *message);
+void IHS_ClientDiscoveryCallback(IHS_Client *client, const IHS_SocketAddress *address,
+                                 CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message);
 
-void IHS_ClientAuthorizationCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                     ProtobufCMessage *message);
+void IHS_ClientAuthorizationCallback(IHS_Client *client, const IHS_SocketAddress *address,
+                                     CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message);
 
-void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                 ProtobufCMessage *message);
+void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *address,
+                                 CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message);

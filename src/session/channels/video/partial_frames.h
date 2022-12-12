@@ -52,6 +52,6 @@ void IHS_VideoPartialFramesRemove(IHS_VideoPartialFrames *frames, IHS_VideoParti
 
 size_t IHS_VideoPartialFramesCount(const IHS_VideoPartialFrames *frames);
 
-void IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames);
+size_t IHS_VideoPartialFramesClear(IHS_VideoPartialFrames *frames);
 
 #define IHS_VideoPartialFramesForEach(a, b) for((a) = (b)->head; (a) != NULL; (a) = (a)->next)

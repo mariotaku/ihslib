@@ -56,9 +56,9 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     return true;
 }
 
-void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemoteClientBroadcastHeader *header,
-                                 ProtobufCMessage *message) {
-    IHS_UNUSED(ip);
+void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *address,
+                                 CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
+    IHS_UNUSED(address);
     IHS_TimerTask *timer = client->taskHandles.streaming;
     if (!timer) return;
     IHS_StreamingState *state = IHS_TimerTaskGetContext(timer);
@@ -102,8 +102,8 @@ void IHS_ClientStreamingCallback(IHS_Client *client, IHS_IPAddress ip, CMsgRemot
                         size_t keyLen = sizeof(key);
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
-                        IHS_SocketAddress address = {state->host.address.ip, response->port};
-                        client->callbacks.streaming->success(client, address, key, keyLen,
+                        IHS_SocketAddress streamingAddress = {state->host.address.ip, response->port};
+                        client->callbacks.streaming->success(client, streamingAddress, key, keyLen,
                                                              client->callbackContexts.streaming);
                     }
                     break;

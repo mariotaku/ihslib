@@ -48,6 +48,7 @@ typedef struct IHS_SessionChannelVideo {
         uint16_t lastFrameId;
         uint16_t frameCounter;
         uint64_t waitingKeyFrame;
+        bool frameStarted;
         bool frameFinished;
     } states;
     struct {
@@ -93,7 +94,7 @@ static uint64_t ReportVideoStats(void *data);
  * @param data Data frame body
  * @param header Data frame header
  */
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header);
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, const IHS_VideoFrameHeader *header, IHS_Buffer *data);
 
 /**
  * Clear partial video frames and not yet assembled frame data
@@ -216,17 +217,21 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
                                          config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),
                                          &outLen);
         plain.size = outLen;
-        AddPartialFrame(videoCh, &plain, &vhead);
+        AddPartialFrame(videoCh, &vhead, &plain);
         IHS_BufferClear(&plain, true);
     } else {
-        AddPartialFrame(videoCh, body, &vhead);
+        AddPartialFrame(videoCh, &vhead, body);
     }
 
     if (AssembleFrame(channel)) {
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Video",
+                       "Submit video frame, id=%u, timestamp=%u, seq=%u, flags=%08x, reserved1=%u, reserved1=%u",
+                       header->id, header->timestamp, vhead.sequence, vhead.flags, vhead.reserved1, vhead.reserved2);
         SubmitFrame(channel, &videoCh->frame.buffer, videoCh->frame.flags);
         IHS_BufferClear(&videoCh->frame.buffer, false);
         videoCh->frame.flags = 0;
         videoCh->states.frameFinished = false;
+        videoCh->states.frameStarted = false;
         videoCh->states.frameCounter++;
     }
     unlock:
@@ -284,7 +289,7 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
     return videoCh->states.frameFinished;
 }
 
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, const IHS_VideoFrameHeader *header) {
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     // Find reset matching cur frame
     IHS_VideoPartialFrame *cur = NULL;
     IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
@@ -301,7 +306,11 @@ static void AddPartialFrame(IHS_SessionChannelVideo *channel, IHS_Buffer *data, 
 
 static void DiscardPending(IHS_SessionChannelVideo *channel) {
     IHS_BufferClear(&channel->frame.buffer, 0);
-    IHS_VideoPartialFramesClear(&channel->frame.partial);
+    size_t clearedCount = IHS_VideoPartialFramesClear(&channel->frame.partial);
+    if (clearedCount > 0) {
+        IHS_SessionLog(((IHS_SessionChannel *) channel)->session, IHS_LogLevelWarn, "Video",
+                       "%u partial frames was cleared", clearedCount);
+    }
     channel->frame.flags = 0;
     channel->frame.reserved1 = 0;
 }

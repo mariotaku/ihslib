@@ -291,6 +291,17 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cremote_hidmsg__free_unpacked(message, NULL);
             break;
         }
+        case k_EStreamControlControllerConfigMsg: {
+            CControllerConfigMsg *message = IHS_UNPACK_BUFFER(ccontroller_config_msg__unpack, payload);
+            ccontroller_config_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlControllerPersonalizationUpdate: {
+            CControllerPersonalizationUpdateMsg *message = IHS_UNPACK_BUFFER(
+                    ccontroller_personalization_update_msg__unpack, payload);
+            ccontroller_personalization_update_msg__free_unpacked(message, NULL);
+            break;
+        }
         default: {
             IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control", "Unhandled control message: %s",
                            ControlMessageTypeName(type));
@@ -310,8 +321,10 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
 }
 
 static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message) {
+    const CStreamingClientConfig *config = message->config;
     IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Set client config. enable_video_hevc=%u",
-                   message->config->enable_video_hevc);
+                   config->enable_video_hevc);
+
 }
 
 static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message) {
