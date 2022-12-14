@@ -90,7 +90,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
                     IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request in progress: host %s",
                                   state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->progress) {
-                        client->callbacks.streaming->progress(client, client->callbackContexts.streaming);
+                        client->callbacks.streaming->progress(client, &state->host, client->callbackContexts.streaming);
                     }
                     return;
                 case k_ERemoteDeviceStreamingSuccess:
@@ -103,7 +103,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
                         IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
                                                    sizeof(client->base.secretKey), key, &keyLen);
                         IHS_SocketAddress streamingAddress = {state->host.address.ip, response->port};
-                        client->callbacks.streaming->success(client, streamingAddress, key, keyLen,
+                        client->callbacks.streaming->success(client, &state->host, &streamingAddress, key, keyLen,
                                                              client->callbackContexts.streaming);
                     }
                     break;
@@ -111,7 +111,8 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
                     IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request failed: host %s",
                                   state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->failed) {
-                        client->callbacks.streaming->failed(client, (IHS_StreamingResult) response->result,
+                        IHS_StreamingResult result = (IHS_StreamingResult) response->result;
+                        client->callbacks.streaming->failed(client, &state->host, result,
                                                             client->callbackContexts.streaming);
                     }
                     break;

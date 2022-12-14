@@ -64,31 +64,33 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
 void IHS_ClientAuthorizationCallback(IHS_Client *client, const IHS_SocketAddress *address,
                                      CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
     IHS_UNUSED(address);
-    IHS_TimerTask *timer = client->taskHandles.authorization;
-    if (!timer) return;
+    IHS_TimerTask *task = client->taskHandles.authorization;
+    if (!task) return;
     if (header->msg_type != k_ERemoteDeviceAuthorizationResponse) {
         return;
     }
+    IHS_AuthorizationState *state = IHS_TimerTaskGetContext(task);
     CMsgRemoteDeviceAuthorizationResponse *resp = (CMsgRemoteDeviceAuthorizationResponse *) message;
     switch (resp->result) {
         case k_ERemoteDeviceAuthorizationInProgress:
             if (client->callbacks.authorization && client->callbacks.authorization->progress) {
-                client->callbacks.authorization->progress(client, client->callbackContexts.authorization);
+                client->callbacks.authorization->progress(client, &state->host, client->callbackContexts.authorization);
             }
             return;
         case k_ERemoteDeviceAuthorizationSuccess:
             if (client->callbacks.authorization && client->callbacks.authorization->success) {
-                client->callbacks.authorization->success(client, resp->steamid, client->callbackContexts.authorization);
+                client->callbacks.authorization->success(client, &state->host, resp->steamid,
+                                                         client->callbackContexts.authorization);
             }
             break;
         default:
             if (client->callbacks.authorization && client->callbacks.authorization->failed) {
-                client->callbacks.authorization->failed(client, (IHS_AuthorizationResult) resp->result,
+                client->callbacks.authorization->failed(client, &state->host, (IHS_AuthorizationResult) resp->result,
                                                         client->callbackContexts.authorization);
             }
             break;
     }
-    IHS_TimerTaskStop(timer);
+    IHS_TimerTaskStop(task);
 }
 
 

@@ -74,7 +74,7 @@ void IHS_ClientDiscoveryCallback(IHS_Client *client, const IHS_SocketAddress *ad
         strncpy(info.hostname, status->hostname, sizeof(info.hostname) - 1);
         info.hostname[sizeof(info.hostname) - 1] = '\0';
         if (client->callbacks.discovery && client->callbacks.discovery->discovered) {
-            client->callbacks.discovery->discovered(client, info, client->callbackContexts.discovery);
+            client->callbacks.discovery->discovered(client, &info, client->callbackContexts.discovery);
         }
     }
 }

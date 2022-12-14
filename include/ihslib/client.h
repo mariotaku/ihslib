@@ -80,42 +80,25 @@ typedef enum IHS_StreamingResult {
     IHS_StreamingGameLaunchFailed = 14,
 } IHS_StreamingResult;
 
-typedef struct IHS_ClientCallbacks {
-    void (*hostDiscovered)(IHS_Client *client, IHS_HostInfo host, void *context);
-
-    void (*authorizationInProgress)(IHS_Client *client, void *context);
-
-    void (*authorizationSuccess)(IHS_Client *client, uint64_t steamId, void *context);
-
-    void (*authorizationFailed)(IHS_Client *client, IHS_AuthorizationResult result, void *context);
-
-    void (*streamingInProgress)(IHS_Client *client, void *context);
-
-    void (*streamingSuccess)(IHS_Client *client, IHS_SocketAddress address,
-                             const uint8_t *sessionKey, size_t sessionKeyLen, void *context);
-
-    void (*streamingFailed)(IHS_Client *client, IHS_StreamingResult result, void *context);
-} IHS_ClientCallbacks;
-
 typedef struct IHS_ClientDiscoveryCallbacks {
-    void (*discovered)(IHS_Client *client, IHS_HostInfo host, void *context);
+    void (*discovered)(IHS_Client *client, const IHS_HostInfo *host, void *context);
 } IHS_ClientDiscoveryCallbacks;
 
 typedef struct IHS_ClientAuthorizationCallbacks {
-    void (*progress)(IHS_Client *client, void *context);
+    void (*progress)(IHS_Client *client, const IHS_HostInfo *host, void *context);
 
-    void (*success)(IHS_Client *client, uint64_t steamId, void *context);
+    void (*success)(IHS_Client *client, const IHS_HostInfo *host, uint64_t steamId, void *context);
 
-    void (*failed)(IHS_Client *client, IHS_AuthorizationResult result, void *context);
+    void (*failed)(IHS_Client *client, const IHS_HostInfo *host, IHS_AuthorizationResult result, void *context);
 } IHS_ClientAuthorizationCallbacks;
 
 typedef struct IHS_ClientStreamingCallbacks {
-    void (*progress)(IHS_Client *client, void *context);
+    void (*progress)(IHS_Client *client, const IHS_HostInfo *host, void *context);
 
-    void (*success)(IHS_Client *client, IHS_SocketAddress address,
-                             const uint8_t *sessionKey, size_t sessionKeyLen, void *context);
+    void (*success)(IHS_Client *client, const IHS_HostInfo *host, const IHS_SocketAddress *address,
+                    const uint8_t *sessionKey, size_t sessionKeyLen, void *context);
 
-    void (*failed)(IHS_Client *client, IHS_StreamingResult result, void *context);
+    void (*failed)(IHS_Client *client, const IHS_HostInfo *host, IHS_StreamingResult result, void *context);
 } IHS_ClientStreamingCallbacks;
 
 
@@ -131,7 +114,8 @@ void IHS_ClientDestroy(IHS_Client *client);
 
 void IHS_ClientSetDiscoveryCallbacks(IHS_Client *client, const IHS_ClientDiscoveryCallbacks *callbacks, void *context);
 
-void IHS_ClientSetAuthorizationCallbacks(IHS_Client *client, const IHS_ClientAuthorizationCallbacks *callbacks, void *context);
+void IHS_ClientSetAuthorizationCallbacks(IHS_Client *client, const IHS_ClientAuthorizationCallbacks *callbacks,
+                                         void *context);
 
 void IHS_ClientSetStreamingCallbacks(IHS_Client *client, const IHS_ClientStreamingCallbacks *callbacks, void *context);
 
