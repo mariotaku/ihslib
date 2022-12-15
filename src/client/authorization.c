@@ -98,20 +98,20 @@ bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse univers
     IHS_UNUSED(client);
     switch (universe) {
         case IHS_SteamUniversePublic:
-            if (*keyLen < sizeof(IHS_AuthorizationPubKey1)) return false;
-            memcpy(key, IHS_AuthorizationPubKey1, sizeof(IHS_AuthorizationPubKey1));
-            *keyLen = sizeof(IHS_AuthorizationPubKey1);
+            if (*keyLen < sizeof(IHS_AuthorizationPubKeyPublic)) return false;
+            memcpy(key, IHS_AuthorizationPubKeyPublic, sizeof(IHS_AuthorizationPubKeyPublic));
+            *keyLen = sizeof(IHS_AuthorizationPubKeyPublic);
             break;
         case IHS_SteamUniverseBeta:
-            if (*keyLen < sizeof(IHS_AuthorizationPubKey2)) return false;
-            memcpy(key, IHS_AuthorizationPubKey2, sizeof(IHS_AuthorizationPubKey2));
-            *keyLen = sizeof(IHS_AuthorizationPubKey2);
+            if (*keyLen < sizeof(IHS_AuthorizationPubKeyBeta)) return false;
+            memcpy(key, IHS_AuthorizationPubKeyBeta, sizeof(IHS_AuthorizationPubKeyBeta));
+            *keyLen = sizeof(IHS_AuthorizationPubKeyBeta);
             break;
         case IHS_SteamUniverseInternal:
         case IHS_SteamUniverseDev:
-            if (*keyLen < sizeof(IHS_AuthorizationPubKey3And4)) return false;
-            memcpy(key, IHS_AuthorizationPubKey3And4, sizeof(IHS_AuthorizationPubKey3And4));
-            *keyLen = sizeof(IHS_AuthorizationPubKey3And4);
+            if (*keyLen < sizeof(IHS_AuthorizationPubKeyDev)) return false;
+            memcpy(key, IHS_AuthorizationPubKeyDev, sizeof(IHS_AuthorizationPubKeyDev));
+            *keyLen = sizeof(IHS_AuthorizationPubKeyDev);
             break;
         default:
             return false;
