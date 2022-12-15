@@ -33,6 +33,8 @@ typedef struct IHS_StreamingState {
     IHS_HostInfo host;
     IHS_StreamingRequest request;
     uint32_t requestId;
+    ERemoteClientBroadcastMsg lastMsgType;
+    uint64_t lastMsgTime;
 } IHS_StreamingState;
 
 static uint64_t StreamingRequestTimer(void *context);
@@ -49,6 +51,8 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     state->host = *host;
     state->request = *request;
     state->requestId = IHS_CryptoRandomUInt32();
+    state->lastMsgType = k_ERemoteClientBroadcastMsgDiscovery;
+    state->lastMsgTime = IHS_TimerNow();
     IHS_BaseLock(&client->base);
     client->taskHandles.streaming = IHS_TimerTaskStart(client->timers, StreamingRequestTimer, StreamingRequestCleanup,
                                                        0, state);
@@ -62,6 +66,8 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
     IHS_TimerTask *timer = client->taskHandles.streaming;
     if (!timer) return;
     IHS_StreamingState *state = IHS_TimerTaskGetContext(timer);
+    state->lastMsgType = header->msg_type;
+    state->lastMsgTime = IHS_TimerNow();
     switch (header->msg_type) {
         case k_ERemoteDeviceProofRequest: {
             CMsgRemoteDeviceProofRequest *request = (CMsgRemoteDeviceProofRequest *) message;
@@ -108,7 +114,7 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
                     }
                     break;
                 default:
-                    IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Streaming request failed: host %s",
+                    IHS_ClientLog(client, IHS_LogLevelWarn, "Client", "Streaming request failed: host %s",
                                   state->host.hostname);
                     if (client->callbacks.streaming && client->callbacks.streaming->failed) {
                         IHS_StreamingResult result = (IHS_StreamingResult) response->result;
@@ -128,6 +134,15 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
 static uint64_t StreamingRequestTimer(void *context) {
     IHS_StreamingState *state = context;
     IHS_Client *client = state->client;
+    if ((IHS_TimerNow() - state->lastMsgTime) > 15000) {
+        IHS_ClientLog(client, IHS_LogLevelWarn, "Client", "Streaming request timed out: host %s",
+                      state->host.hostname);
+        if (client->callbacks.streaming && client->callbacks.streaming->failed) {
+            client->callbacks.streaming->failed(client, &state->host, IHS_StreamingTimeout,
+                                                client->callbackContexts.streaming);
+        }
+        return 0;
+    }
     IHS_HostInfo host = state->host;
     IHS_StreamingRequest request = state->request;
 
@@ -179,8 +194,7 @@ static uint64_t StreamingRequestTimer(void *context) {
     message.supported_transport = transports;
 
     IHS_ClientLog(client, IHS_LogLevelDebug, "Client", "Sending streaming request packet to host %s", host.hostname);
-    IHS_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest,
-                   (ProtobufCMessage *) &message);
+    IHS_ClientSend(client, host.address, k_ERemoteDeviceStreamingRequest, (ProtobufCMessage *) &message);
     return 3000;
 }
 

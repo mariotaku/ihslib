@@ -60,6 +60,21 @@ bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host
     return true;
 }
 
+bool IHS_ClientAuthorizationCancel(IHS_Client *client) {
+    if (!client->taskHandles.authorization) {
+        return false;
+    }
+    IHS_TimerTask *task = client->taskHandles.authorization;
+    IHS_AuthorizationState *state = IHS_TimerTaskGetContext(task);
+
+    CMsgRemoteDeviceAuthorizationCancelRequest request = CMSG_REMOTE_DEVICE_AUTHORIZATION_CANCEL_REQUEST__INIT;
+    IHS_SocketAddress address = state->host.address;
+
+    IHS_TimerTaskStop(task);
+
+    IHS_ClientSend(client, address, k_ERemoteDeviceAuthorizationCancelRequest, (ProtobufCMessage *) &request);
+    return true;
+}
 
 void IHS_ClientAuthorizationCallback(IHS_Client *client, const IHS_SocketAddress *address,
                                      CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
@@ -125,7 +140,7 @@ static uint64_t AuthorizationRequestTimer(void *data) {
     uint8_t pubKey[384];
     size_t pubKeyLen = sizeof(pubKey);
     IHS_ClientAuthorizationPubKey(client, state->host.universe, pubKey, &pubKeyLen);
-    ProtobufCBinaryData deviceToken = {.data=client->base.deviceToken, .len = sizeof(client->base.deviceToken)};
+    ProtobufCBinaryData deviceToken = {.data = client->base.deviceToken, .len = sizeof(client->base.deviceToken)};
 
     /* Initialize and serialize ticket */
     CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket ticket =
@@ -136,7 +151,7 @@ static uint64_t AuthorizationRequestTimer(void *data) {
 
     /* RSA encrypt ticket data */
     uint8_t encryptedTicket[2048];
-    ProtobufCBinaryData encryptedRequest = {.data=encryptedTicket, .len = sizeof(encryptedTicket)};
+    ProtobufCBinaryData encryptedRequest = {.data = encryptedTicket, .len = sizeof(encryptedTicket)};
     IHS_CryptoRSAEncrypt(serTicket, serTicketLen, pubKey, pubKeyLen, encryptedRequest.data,
                          &encryptedRequest.len);
 

@@ -78,6 +78,7 @@ typedef enum IHS_StreamingResult {
     IHS_StreamingTransportUnavailable = 12,
     IHS_StreamingInvisible = 13,
     IHS_StreamingGameLaunchFailed = 14,
+    IHS_StreamingTimeout = -1,
 } IHS_StreamingResult;
 
 typedef struct IHS_ClientDiscoveryCallbacks {
@@ -147,9 +148,11 @@ bool IHS_ClientStopDiscovery(IHS_Client *client);
  */
 bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host, const char *pin);
 
+bool IHS_ClientAuthorizationCancel(IHS_Client *client);
+
 
 /* ----------------------------------------------------
- * - Authorization functions
+ * - Streaming functions
  * ---------------------------------------------------- */
 
 bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, const IHS_StreamingRequest *request);
