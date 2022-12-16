@@ -68,6 +68,7 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
 
 bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
     IHS_HIDManager *manager = session->hidManager;
+    bool changed = false;
     for (size_t i = 0, j = manager->devices.size; i < j; ++i) {
         IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
         if (!IHS_HIDDeviceIsSDL(managed->device)) {
@@ -75,13 +76,16 @@ bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
         }
         IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
         IHS_HIDDeviceLock(managed->device);
-        bool changed = IHS_HIDReportSDLClear(&device->states.current);
-        if (changed) {
+        if (IHS_HIDReportSDLClear(&device->states.current)) {
+            changed = true;
             IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
                                         (const uint8_t *) &device->states.current, 48);
             device->states.previous = device->states.current;
         }
         IHS_HIDDeviceUnlock(managed->device);
+    }
+    if (changed) {
+        IHS_SessionHIDSendReport(session);
     }
     return true;
 }
