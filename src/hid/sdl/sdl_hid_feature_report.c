@@ -23,6 +23,13 @@
  *
  */
 #include "sdl_hid_common.h"
+#include "sdl_hid_utils.h"
+
+typedef enum GetFeatureReportCommand {
+    GetFeatureReportGetPowerLevel = 0x02,
+    GetFeatureReportGetCaps = 0x04,
+    GetFeatureReportGetSerial = 0x07,
+} GetFeatureReportCommand;
 
 typedef enum EControllerType {
     k_ControllerTypeSteamController_a = 0x2,
@@ -52,11 +59,17 @@ typedef struct __attribute__((__packed__)) {
 
 _Static_assert(sizeof(DeviceFeatureReport) == 20, "");
 
+bool IsXinputDevice(const SDL_JoystickGUID *guid);
+
+bool IsHIDAPIDevice(const SDL_JoystickGUID *guid);
+
+EControllerType InferControllerType(const SDL_JoystickGUID *guid);
+
 int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                                      IHS_Buffer *dest, size_t length) {
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     switch (reportNumber[0]) {
-        case 0x07: {
+        case GetFeatureReportGetSerial: {
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
 #if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
             const char *serial = SDL_GameControllerGetSerial(sdl->controller);
@@ -67,7 +80,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
 #endif
             break;
         }
-        case 0x02: {
+        case GetFeatureReportGetPowerLevel: {
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
 #if IHS_SDL_TARGET_ATLEAST(2, 0, 4)
             SDL_Joystick *joystick = SDL_GameControllerGetJoystick(sdl->controller);
@@ -79,20 +92,24 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
 #endif
             break;
         }
-        case 0x04: {
+        case GetFeatureReportGetCaps: {
             int playerIndex = -1;
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
-            playerIndex = SDL_GameControllerGetPlayerIndex(sdl->controller);
-#else
-            playerIndex = sdl->playerIndex;
-#endif
+            SDL_JoystickGUID guid = SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(sdl->controller));
 
+            bool xinput = IsXinputDevice(&guid);
+            if (!xinput) {
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+                playerIndex = SDL_GameControllerGetPlayerIndex(sdl->controller);
+#else
+                playerIndex = sdl->playerIndex;
+#endif
+            }
             DeviceFeatureReport report = {
                     .valid = true,
-                    .xinput = false,
+                    .xinput = xinput,
                     .playerIndex = playerIndex,
-                    .controllerType = k_ControllerTypeGen,
-                    .hid = false,
+                    .controllerType = InferControllerType(&guid),
+                    .hid = IsHIDAPIDevice(&guid)/* Vibration needs this to be true? */,
             };
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferWriteMem(dest, 1, (const unsigned char *) &report, 20);
@@ -100,9 +117,49 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
         }
         default: {
             // Write an empty array
-            IHS_BufferFillMem(dest, 0, 0, 1);
+            IHS_BufferFillMem(dest, 1, 0, 1);
             return 0;
         }
     }
     return 0;
+}
+
+bool IsXinputDevice(const SDL_JoystickGUID *guid) {
+    return guid->data[14] == 'x';
+}
+
+bool IsHIDAPIDevice(const SDL_JoystickGUID *guid) {
+    return true;
+//    return guid->data[14] == 'h';
+}
+
+enum UsbVendorId {
+    UsbVendorIdMicrosoft = 0x045e,
+    UsbVendorIdSony = 0x054c,
+    UsbVendorIdNintendo = 0x057e,
+    UsbVendorIdValve = 0x28de,
+};
+
+EControllerType InferControllerType(const SDL_JoystickGUID *guid) {
+    uint16_t vendorId, productId;
+    if (!IHS_HIDDeviceSDLGetJoystickGUIDInfo(guid, &vendorId, &productId, NULL, NULL)) {
+        return k_ControllerTypeGen;
+    }
+    switch (vendorId) {
+        case UsbVendorIdMicrosoft: {
+            return k_ControllerTypeXB1;
+        }
+        case UsbVendorIdSony: {
+            return k_ControllerTypePS4;
+        }
+        case UsbVendorIdNintendo: {
+            return k_ControllerTypeSwitchGen;
+        }
+        case UsbVendorIdValve: {
+            return k_ControllerTypeSteamController_a;
+        }
+        default: {
+            return k_ControllerTypeGen;
+        }
+    }
 }

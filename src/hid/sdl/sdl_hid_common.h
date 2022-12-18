@@ -53,8 +53,9 @@ typedef struct IHS_HIDDeviceSDL {
     bool controllerManaged;
     SDL_JoystickID instanceId;
     SDL_GameController *controller;
-    SDL_Haptic *haptic;
     int playerIndex;
+    SDL_Haptic *haptic;
+    int hapticEffectId;
     struct {
         IHS_HIDStateSDL current;
         IHS_HIDStateSDL previous;

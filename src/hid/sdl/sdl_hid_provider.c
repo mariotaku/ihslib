@@ -70,10 +70,12 @@ bool IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo 
 IHS_HIDProvider *IHS_HIDProviderSDLCreate(bool manageDevice) {
     HIDProviderSDL *provider = (HIDProviderSDL *) IHS_SessionHIDProviderCreate(&ProviderClass);
     provider->manageDevice = manageDevice;
+    SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
     return (IHS_HIDProvider *) provider;
 }
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
+    SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
     IHS_SessionHIDProviderDestroy(provider);
 }
 

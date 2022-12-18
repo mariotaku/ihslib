@@ -54,12 +54,12 @@ typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_START = 0x00000100,
     IHS_HID_CAP_GUIDE = 0x00000200,
     IHS_HID_CAP_PADDLE_1 = 0x00000400 /*Paddle 1*/,
+    IHS_HID_CAP_XINPUT_HIDAPI = 0x00004000 /*XInput and HIDAPI*/,
     IHS_HID_CAP_PADDLE_3 = 0x00400000 /*Paddle 3*/,
     IHS_HID_CAP_MISC_1 = 0x00800000 /*Misc 1*/,
     IHS_HID_CAP_XBOX_ELITE_2 = 0x00030000 /*Xbox elite 2?*/,
     IHS_HID_CAP_PS4_PS5 = 0x02071800 /*PS4/PS5, gyro and touchpad?*/,
     IHS_HID_CAP_NOT_XINPUT_NOT_HIDAPI = 0x00010000 /*Not XInput and not HIDAPI?*/,
-    IHS_HID_CAP_XINPUT_HIDAPI = 0x00004000 /*XInput and HIDAPI*/,
 } IHS_HIDDeviceCaps;
 #pragma clang diagnostic pop
 

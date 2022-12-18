@@ -77,8 +77,28 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
     const WriteCommand *command = (const WriteCommand *) data;
     switch (command->type) {
         case COMMAND_RUMBLE: {
-//            SDL_GameControllerRumble(sdl->controller, command->rumble.lowFreq,
-//                                     command->rumble.highFreq, command->rumble.durationMs);
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+            SDL_GameControllerRumble(sdl->controller, command->rumble.lowFreq,
+                                     command->rumble.highFreq, command->rumble.durationMs);
+#else
+            if (sdl->haptic == NULL) {
+                break;
+            }
+            SDL_HapticEffect effect = {.leftright = {
+                    .type = SDL_HAPTIC_LEFTRIGHT,
+                    .length = command->rumble.durationMs,
+                    .large_magnitude = command->rumble.lowFreq / 2,
+                    .small_magnitude = command->rumble.highFreq / 2,
+            }};
+            if (sdl->hapticEffectId != -1) {
+                SDL_HapticUpdateEffect(sdl->haptic, sdl->hapticEffectId, &effect);
+            } else {
+                sdl->hapticEffectId = SDL_HapticNewEffect(sdl->haptic, &effect);
+            }
+            if (sdl->hapticEffectId != -1) {
+                SDL_HapticRunEffect(sdl->haptic, sdl->hapticEffectId, 1);
+            }
+#endif
             break;
         }
         case COMMAND_SET_LED: {

@@ -111,6 +111,8 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     config.n_available_video_modes = 1;
     config.available_video_modes = availableVideoModes;
 
+    PROTOBUF_C_SET_VALUE(config, enable_remote_hid, 0);
+
     CStreamingClientConfig clientConfig = CSTREAMING_CLIENT_CONFIG__INIT;
 
     PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_x, 0);
@@ -129,6 +131,8 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     if (ihsConf.enableHevc) {
         PROTOBUF_C_SET_VALUE(clientConfig, enable_video_hevc, true);
     }
+
+    clientConfig.controller_overlay_hotkey = "auto";
 
     CStreamingClientCaps clientCaps = CSTREAMING_CLIENT_CAPS__INIT;
 

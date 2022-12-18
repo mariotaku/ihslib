@@ -26,6 +26,7 @@
 #include <stdlib.h>
 
 #include "sdl_hid_common.h"
+#include "sdl_hid_utils.h"
 
 #include "ihslib/enumeration.h"
 #include "ihslib/hid.h"
@@ -82,9 +83,12 @@ bool IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo 
     info->product_version = SDL_JoystickGetDeviceProductVersion(index);
 #else
     snprintf(gce->temp.path, 16, "sdl://%d", index);
-    info->vendor_id = 0;
-    info->product_id = 0;
-    info->product_version = 0;
+    SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(index);
+    if (!IHS_HIDDeviceSDLGetJoystickGUIDInfo(&guid, &info->vendor_id, &info->product_id, &info->product_version, NULL)) {
+        info->vendor_id = 0;
+        info->product_id = 0;
+        info->product_version = 0;
+    }
 #endif
     info->path = gce->temp.path;
     return true;

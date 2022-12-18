@@ -77,6 +77,8 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool manag
     device->controllerManaged = managed;
     device->instanceId = SDL_JoystickInstanceID(joystick);
     device->controller = controller;
+    device->playerIndex = -1;
+    device->hapticEffectId = -1;
     SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
     if (haptic != NULL) {
         unsigned int hapticBits = SDL_HapticQuery(haptic);
@@ -112,6 +114,9 @@ static void DeviceFree(IHS_HIDDevice *device) {
 static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
     if (deviceSdl->haptic != NULL) {
+        if (deviceSdl->hapticEffectId != -1) {
+            SDL_HapticDestroyEffect(deviceSdl->haptic, deviceSdl->hapticEffectId);
+        }
         SDL_HapticClose(deviceSdl->haptic);
         deviceSdl->haptic = NULL;
     }

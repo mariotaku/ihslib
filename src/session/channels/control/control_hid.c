@@ -332,12 +332,12 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     PROTOBUF_C_P_SET_VALUE(info, usage, 5/*For SDL_GameController*/);
     info->product_string = "SDL Gamepad";
     PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
-    /*Seems to be corresponding to kernel version. See stream_client/GetOSType */
-    PROTOBUF_C_P_SET_VALUE(info, ostype, -203);
+    PROTOBUF_C_P_SET_VALUE(info, ostype, IHS_SteamOSTypeLinux);
 
+    // Expect 0x8043ff
     IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
                                  IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
                                  IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE |
-                                 IHS_HID_CAP_NOT_XINPUT_NOT_HIDAPI;
+                                 IHS_HID_CAP_XINPUT_HIDAPI;
     PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
 }
