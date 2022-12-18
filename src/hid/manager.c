@@ -117,7 +117,8 @@ void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDev
     assert(index >= 0);
     IHS_HIDReportHolderDeinit(&managed->reportHolder);
     IHS_MutexDestroy(managed->lock);
-    IHS_ArrayListRemove(&manager->devices, index);
+    bool removed = IHS_ArrayListRemove(&manager->devices, index);
+    assert(removed);
 }
 
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {

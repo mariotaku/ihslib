@@ -47,6 +47,7 @@ void IHS_HIDManagedDeviceClose(IHS_HIDManagedDevice *managed) {
     device->cls->close(device);
     IHS_HIDManagerNotifyDeviceClosed(managed->manager, managed);
     IHS_HIDManagerRemoveClosedDevice(managed->manager, managed);
+    device->managed = NULL;
     device->cls->free(device);
 }
 

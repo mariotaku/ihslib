@@ -38,7 +38,6 @@ static int CompareDeviceByJoystickID(const SDL_JoystickID *id, const IHS_HIDDevi
     if (!IHS_HIDDeviceIsSDL(device)) {
         return -1;
     }
-    SDL_GameController *controller = ((const IHS_HIDDeviceSDL *) device)->controller;
-    SDL_JoystickID deviceJoystickID = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-    return *id - deviceJoystickID;
+    const IHS_HIDDeviceSDL *deviceSdl = (const IHS_HIDDeviceSDL *) device;
+    return *id - deviceSdl->instanceId;
 }
