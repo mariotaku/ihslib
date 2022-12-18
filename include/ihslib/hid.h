@@ -66,6 +66,7 @@ typedef enum IHS_HIDDeviceCaps {
 typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
+    const char *name;
     /** Device Vendor ID */
     uint16_t vendor_id;
     /** Device Product ID */

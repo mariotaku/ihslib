@@ -38,6 +38,7 @@ typedef struct GameControllerEnumeration {
 
     struct {
         char path[16];
+        char name[64];
     } temp;
 } GameControllerEnumeration;
 
@@ -84,13 +85,22 @@ bool IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo 
 #else
     snprintf(gce->temp.path, 16, "sdl://%d", index);
     SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(index);
-    if (!IHS_HIDDeviceSDLGetJoystickGUIDInfo(&guid, &info->vendor_id, &info->product_id, &info->product_version, NULL)) {
+    const char *name = SDL_JoystickNameForIndex(index);
+    if (name != NULL) {
+        strncpy(gce->temp.name, name, 63);
+        gce->temp.name[63] = '\0';
+    } else {
+        strcpy(gce->temp.name, "Generic Gamepad");
+    }
+    if (!IHS_HIDDeviceSDLGetJoystickGUIDInfo(&guid, &info->vendor_id, &info->product_id, &info->product_version,
+                                             NULL)) {
         info->vendor_id = 0;
         info->product_id = 0;
         info->product_version = 0;
     }
 #endif
     info->path = gce->temp.path;
+    info->name = gce->temp.name;
     return true;
 }
 

@@ -53,53 +53,35 @@ const static char *const ToRemoteCommandNames[CHIDMESSAGE_TO_REMOTE__COMMAND_DEV
         "DeviceDisconnect",
 };
 
+static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
+
+static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
+
+static void HandleDeviceWrite(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
+
+static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
+
 static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid);
 
 static void SendRequestResponse(IHS_SessionChannel *channel, CHIDMessageFromRemote__RequestResponse *response);
 
 void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMessageToRemote *message) {
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message type: %s",
-                   ToRemoteCommandNames[message->command_case]);
     IHS_HIDManager *manager = channel->session->hidManager;
     switch (message->command_case) {
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_OPEN: {
-            CHIDMessageToRemote__DeviceOpen *cmd = message->device_open;
-            IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, cmd->info->path);
-            // Send managed ID as result
-            CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
-            PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
-            PROTOBUF_C_SET_VALUE(response, result, managed->id);
-            SendRequestResponse(channel, &response);
+            HandleDeviceOpen(channel, manager, message);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_CLOSE: {
-            CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
-            IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-            // If the device got closed on client side, it should be NULL here.
-            if (managed != NULL) {
-                IHS_HIDManagedDeviceClose(managed);
-            }
+            HandleDeviceClose(channel, manager, message);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_WRITE: {
-            CHIDMessageToRemote__DeviceWrite *cmd = message->device_write;
-            IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-            IHS_HIDDeviceWrite(managed->device, cmd->data.data, cmd->data.len);
+            HandleDeviceWrite(channel, manager, message);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_READ: {
-            CHIDMessageToRemote__DeviceRead *cmd = message->device_read;
-            IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-            IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
-            int result = IHS_HIDDeviceRead(managed->device, &str, cmd->length, cmd->timeout_ms);
-
-            CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
-            PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
-            PROTOBUF_C_SET_VALUE(response, result, result);
-            response.has_data = true;
-            response.data.data = IHS_BufferPointer(&str);
-            response.data.len = str.size;
-            SendRequestResponse(channel, &response);
+            HandleDeviceRead(channel, manager, message);
             break;
         }
         case CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_SEND_FEATURE_REPORT: {
@@ -203,8 +185,6 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
             // TODO send response
             break;
         }
-        default:
-            break;
     }
 }
 
@@ -241,7 +221,7 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
                 IHS_HIDDeviceInfo hid;
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
-                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, vid=%u, pid=%u", hid.path,
+                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x", hid.path,
                                hid.vendor_id, hid.product_id);
                 numAllDevices++;
             }
@@ -265,6 +245,7 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
     }
     if (allDevices != NULL) {
         for (int di = 0; di < numAllDevices; di++) {
+            free(allDevices[di].product_string);
             free(allDevices[di].path);
         }
         free(allDevices);
@@ -312,6 +293,57 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
     return ret;
 }
 
+static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager,
+                             const CHIDMessageToRemote *message) {
+    CHIDMessageToRemote__DeviceOpen *cmd = message->device_open;
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, cmd->info->path);
+    // Send managed ID as result
+    CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
+    PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
+    PROTOBUF_C_SET_VALUE(response, result, managed->id);
+    SendRequestResponse(channel, &response);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceOpen(path=%s) => id=%u",
+                   message->request_id, cmd->info->path, managed->id);
+}
+
+static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager,
+                              const CHIDMessageToRemote *message) {
+    CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+    // If the device got closed on client side, it should be NULL here.
+    if (managed != NULL) {
+        IHS_HIDManagedDeviceClose(managed);
+    }
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceClose(id=%u), found=%u",
+                   message->request_id, cmd->device, managed != NULL);
+}
+
+static void HandleDeviceWrite(IHS_SessionChannel *channel, IHS_HIDManager *manager,
+                              const CHIDMessageToRemote *message) {
+    CHIDMessageToRemote__DeviceWrite *cmd = message->device_write;
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+    int ret = IHS_HIDDeviceWrite(managed->device, cmd->data.data, cmd->data.len);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceWrite(id=%u) => %d",
+                   message->request_id, cmd->device, ret);
+}
+
+static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message) {
+    CHIDMessageToRemote__DeviceRead *cmd = message->device_read;
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+    IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
+    int result = IHS_HIDDeviceRead(managed->device, &str, cmd->length, cmd->timeout_ms);
+
+    CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
+    PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
+    PROTOBUF_C_SET_VALUE(response, result, result);
+    response.has_data = true;
+    response.data.data = IHS_BufferPointer(&str);
+    response.data.len = str.size;
+    SendRequestResponse(channel, &response);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceRead(id=%u) => %u bytes",
+                   message->request_id, cmd->device, response.data.len);
+}
+
 static void SendRequestResponse(IHS_SessionChannel *channel, CHIDMessageFromRemote__RequestResponse *response) {
     CHIDMessageFromRemote outMessage = CHIDMESSAGE_FROM_REMOTE__INIT;
     outMessage.command_case = CHIDMESSAGE_FROM_REMOTE__COMMAND_RESPONSE;
@@ -323,6 +355,7 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     chiddevice_info__init(info);
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationLocal);
     info->path = strdup(hid->path);
+    info->product_string = strdup(hid->name);
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);
         PROTOBUF_C_P_SET_VALUE(info, product_id, hid->product_id);
@@ -330,7 +363,6 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     }
     PROTOBUF_C_P_SET_VALUE(info, usage_page, 1);
     PROTOBUF_C_P_SET_VALUE(info, usage, 5/*For SDL_GameController*/);
-    info->product_string = "SDL Gamepad";
     PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
     PROTOBUF_C_P_SET_VALUE(info, ostype, IHS_SteamOSTypeLinux);
 
