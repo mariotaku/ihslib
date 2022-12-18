@@ -191,7 +191,6 @@ void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider) 
     IHS_BaseLock(&session->base);
     assert(provider->session == NULL);
     IHS_HIDManagerAddProvider(session->hidManager, provider);
-    provider->session = session;
     IHS_BaseUnlock(&session->base);
 }
 

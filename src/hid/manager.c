@@ -122,6 +122,7 @@ void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDev
 }
 
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
+    provider->session = manager->session;
     IHS_ArrayListAppend(&manager->providers, &provider);
 }
 

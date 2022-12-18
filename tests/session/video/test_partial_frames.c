@@ -36,7 +36,7 @@ int main() {
     };
     IHS_Buffer data1 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data1, 0, 0, 16);
-    IHS_VideoPartialFrame *partial1 = IHS_VideoPartialFramesAppend(&frames, &header1, &data1);
+    IHS_VideoPartialFrame *partial1 = IHS_VideoPartialFramesAppend(&frames, 500, &header1, &data1);
     assert(IHS_VideoPartialFramesCount(&frames) == 1);
 
     IHS_VideoFrameHeader header2 = {
@@ -48,7 +48,7 @@ int main() {
     IHS_Buffer data2 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data2, 0, 0, 16);
 
-    IHS_VideoPartialFrame *partial2 = IHS_VideoPartialFramesInsertBefore(&frames, partial1, &header2, &data2);
+    IHS_VideoPartialFrame *partial2 = IHS_VideoPartialFramesInsertBefore(&frames, partial1, 500, &header2, &data2);
     assert(IHS_VideoPartialFramesCount(&frames) == 2);
     assert(partial2->next == partial1);
 
@@ -61,7 +61,7 @@ int main() {
     IHS_Buffer data3 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data3, 0, 0, 16);
 
-    IHS_VideoPartialFrame *partial3 = IHS_VideoPartialFramesInsertBefore(&frames, partial1, &header3, &data3);
+    IHS_VideoPartialFrame *partial3 = IHS_VideoPartialFramesInsertBefore(&frames, partial1, 500, &header3, &data3);
     assert(IHS_VideoPartialFramesCount(&frames) == 3);
     assert(partial3->next == partial1);
     assert(partial2->next == partial3);
@@ -76,7 +76,7 @@ int main() {
     IHS_Buffer data4 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data4, 0, 0, 16);
 
-    IHS_VideoPartialFrame *partial4 = IHS_VideoPartialFramesAppend(&frames, &header4, &data4);
+    IHS_VideoPartialFrame *partial4 = IHS_VideoPartialFramesAppend(&frames, 500, &header4, &data4);
     assert(IHS_VideoPartialFramesCount(&frames) == 4);
     assert(frames.tail == partial4);
 

@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     IHS_Session *session = IHS_TestSessionCreate();
     IHS_HIDManager *manager = session->hidManager;
     IHS_HIDProvider *provider = IHS_HIDProviderSDLCreate(true);
-    IHS_HIDManagerAddProvider(manager, provider);
+    IHS_SessionHIDAddProvider(session, provider);
 
     IHS_Enumeration *enumeration = IHS_HIDProviderEnumerateDevices(provider);
     assert(IHS_EnumerationCount(enumeration) == 4);
