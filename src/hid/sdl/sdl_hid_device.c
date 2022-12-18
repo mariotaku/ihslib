@@ -79,6 +79,8 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameControl
     device->instanceId = SDL_JoystickInstanceID(joystick);
     device->controller = controller;
     device->playerIndex = -1;
+
+#if !IHS_SDL_TARGET_ATLEAST(2, 0, 9)
     device->hapticEffectId = -1;
     SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
     if (haptic != NULL) {
@@ -92,6 +94,7 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameControl
         IHS_SessionLog(provider->session, IHS_LogLevelWarn, "HID.SDL", "Device haptic is not supported: %s",
                        SDL_GetError());
     }
+#endif
     return (IHS_HIDDevice *) device;
 }
 
@@ -117,6 +120,7 @@ static void DeviceFree(IHS_HIDDevice *device) {
 
 static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
+#if !IHS_SDL_TARGET_ATLEAST(2, 0, 9)
     if (deviceSdl->haptic != NULL) {
         if (deviceSdl->hapticEffectId != -1) {
             SDL_HapticDestroyEffect(deviceSdl->haptic, deviceSdl->hapticEffectId);
@@ -124,6 +128,7 @@ static void DeviceClose(IHS_HIDDevice *device) {
         SDL_HapticClose(deviceSdl->haptic);
         deviceSdl->haptic = NULL;
     }
+#endif
 
     if (deviceSdl->controllerManaged) {
         SDL_GameControllerClose(deviceSdl->controller);
