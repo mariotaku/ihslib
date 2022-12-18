@@ -54,12 +54,17 @@ typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_START = 0x00000100,
     IHS_HID_CAP_GUIDE = 0x00000200,
     IHS_HID_CAP_PADDLE_1 = 0x00000400 /*Paddle 1*/,
-    IHS_HID_CAP_XINPUT_HIDAPI = 0x00004000 /*XInput and HIDAPI*/,
+    IHS_HID_CAP_UNK_1 = 0x00000800 /*Gamepad uses this: PS4, PS5*/,
+    IHS_HID_CAP_UNK_2 = 0x00001000 /*Gamepad uses this: PS4, PS5*/,
+    IHS_HID_CAP_XINPUT_OR_HIDAPI = 0x00004000 /*XInput and HIDAPI*/,
+    IHS_HID_CAP_UNK_3 = 0x00010000 /*Gamepad uses this: PS4, PS5, Xbox Elite*/,
+    IHS_HID_CAP_UNK_4 = 0x00020000 /*Gamepad uses this: PS4, PS5, Xbox Elite*/,
+    IHS_HID_CAP_UNK_5 = 0x00040000 /*Gamepad uses this: PS4, PS5*/,
+    IHS_HID_CAP_NOT_XINPUT_HIDAPI = 0x00100000 /*Not XInput and not HIDAPI?*/,
     IHS_HID_CAP_PADDLE_3 = 0x00400000 /*Paddle 3*/,
     IHS_HID_CAP_MISC_1 = 0x00800000 /*Misc 1*/,
-    IHS_HID_CAP_XBOX_ELITE_2 = 0x00030000 /*Xbox elite 2?*/,
-    IHS_HID_CAP_PS4_PS5 = 0x02071800 /*PS4/PS5, gyro and touchpad?*/,
-    IHS_HID_CAP_NOT_XINPUT_NOT_HIDAPI = 0x00010000 /*Not XInput and not HIDAPI?*/,
+    IHS_HID_CAP_UNK_6 = 0x01000000,
+    IHS_HID_CAP_UNK_7 = 0x02000000 /*Gamepad uses this: PS4, PS5*/,
 } IHS_HIDDeviceCaps;
 #pragma clang diagnostic pop
 
@@ -146,6 +151,7 @@ struct IHS_HIDDeviceClass {
 
 struct IHS_HIDProvider {
     const IHS_HIDProviderClass *cls;
+    IHS_Session *session;
 };
 
 struct IHS_HIDProviderClass {
@@ -177,3 +183,7 @@ void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous,
 void IHS_HIDDeviceLock(IHS_HIDDevice *device);
 
 void IHS_HIDDeviceUnlock(IHS_HIDDevice *device);
+
+IHS_Session *IHS_HIDDeviceGetSession(IHS_HIDDevice *device);
+
+#define IHS_HIDDeviceLog(device, level, tag, ...) IHS_SessionLog(IHS_HIDDeviceGetSession(device), (level), (tag), __VA_ARGS__)

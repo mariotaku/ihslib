@@ -43,6 +43,11 @@ IHS_HIDManager *IHS_HIDManagerCreate() {
 }
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
+    for (size_t i = 0, j = manager->providers.size; i < j; ++i) {
+        IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, i));
+        assert(provider->session == manager->session);
+        provider->session = NULL;
+    }
     IHS_ArrayListDeinit(&manager->devices);
     IHS_ArrayListDeinit(&manager->providers);
     IHS_ArrayListDeinit(&manager->inputReports);

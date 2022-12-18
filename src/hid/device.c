@@ -110,3 +110,7 @@ void IHS_HIDDeviceUnlock(IHS_HIDDevice *device) {
     assert(device->managed != NULL);
     IHS_MutexUnlock(device->managed->lock);
 }
+
+IHS_Session *IHS_HIDDeviceGetSession(IHS_HIDDevice *device) {
+    return device->managed->manager->session;
+}

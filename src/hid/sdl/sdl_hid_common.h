@@ -62,7 +62,7 @@ typedef struct IHS_HIDDeviceSDL {
     } states;
 } IHS_HIDDeviceSDL;
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool managed);
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameController *controller, bool managed);
 
 bool IHS_HIDDeviceIsSDL(const IHS_HIDDevice *device);
 

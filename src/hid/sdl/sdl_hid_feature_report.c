@@ -31,21 +31,37 @@ typedef enum GetFeatureReportCommand {
     GetFeatureReportGetSerial = 0x07,
 } GetFeatureReportCommand;
 
+/**
+ * @see https://github.com/libsdl-org/SDL/blob/53dea9830964eee8b5c2a7ee0a65d6e268dc78a1/src/joystick/controller_type.h
+ */
 typedef enum EControllerType {
-    k_ControllerTypeSteamController_a = 0x2,
-    k_ControllerTypeSteamController_b = 0x3,
-    k_ControllerTypeSteamController_c = 0x4,
-    k_ControllerTypeGen = 0x1e,
-    k_ControllerTypeXB360 = 0x1f,
-    k_ControllerTypeXB1 = 0x20,
-    k_ControllerTypePS3 = 0x21,
-    k_ControllerTypePS4 = 0x22,
-    k_ControllerTypeSwitch_a = 0x26,
-    k_ControllerTypeSwitch_b = 0x27,
-    k_ControllerTypeSwitch_c = 0x28,
-    k_ControllerTypeSwitchGen = 0x2a,
-    k_ControllerTypeMobileTouch = 0x2b,
-    k_ControllerTypePS5 = 0x2d,
+    k_ControllerTypeNone = -1,
+    k_ControllerTypeUnknown = 0,
+
+    // Steam Controllers
+    k_ControllerTypeUnknownSteamController = 1,
+    k_ControllerTypeSteamController = 2,
+    k_ControllerTypeSteamControllerV2 = 3,
+
+    // Other Controllers
+    k_ControllerTypeUnknownNonSteamController = 30,
+    k_ControllerTypeXBox360Controller = 31,
+    k_ControllerTypeXBoxOneController = 32,
+    k_ControllerTypePS3Controller = 33,
+    k_ControllerTypePS4Controller = 34,
+    k_ControllerTypeWiiController = 35,
+    k_ControllerTypeAppleController = 36,
+    k_ControllerTypeAndroidController = 37,
+    k_ControllerTypeSwitchProController = 38,
+    k_ControllerTypeSwitchJoyConLeft = 39,
+    k_ControllerTypeSwitchJoyConRight = 40,
+    k_ControllerTypeSwitchJoyConPair = 41,
+    k_ControllerTypeSwitchInputOnlyController = 42,
+    k_ControllerTypeMobileTouch = 43,
+    k_ControllerTypeXInputSwitchController = 44,  // Client-side only, used to mark Switch-compatible controllers as not supporting Switch controller protocol
+    k_ControllerTypePS5Controller = 45,
+    k_ControllerTypeXboxEliteController = 46,
+    k_ControllerTypeLastController, // Don't add game controllers below this enumeration - this enumeration can change value
 } EControllerType;
 
 typedef struct __attribute__((__packed__)) {
@@ -109,7 +125,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
                     .xinput = xinput,
                     .playerIndex = playerIndex,
                     .controllerType = InferControllerType(&guid),
-                    .hid = IsHIDAPIDevice(&guid)/* Vibration needs this to be true? */,
+                    .hid = IsHIDAPIDevice(&guid),
             };
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferWriteMem(dest, 1, (const unsigned char *) &report, 20);
@@ -129,8 +145,7 @@ bool IsXinputDevice(const SDL_JoystickGUID *guid) {
 }
 
 bool IsHIDAPIDevice(const SDL_JoystickGUID *guid) {
-    return true;
-//    return guid->data[14] == 'h';
+    return guid->data[14] == 'h';
 }
 
 enum UsbVendorId {
@@ -143,23 +158,23 @@ enum UsbVendorId {
 EControllerType InferControllerType(const SDL_JoystickGUID *guid) {
     uint16_t vendorId, productId;
     if (!IHS_HIDDeviceSDLGetJoystickGUIDInfo(guid, &vendorId, &productId, NULL, NULL)) {
-        return k_ControllerTypeGen;
+        return k_ControllerTypeUnknownNonSteamController;
     }
     switch (vendorId) {
         case UsbVendorIdMicrosoft: {
-            return k_ControllerTypeXB1;
+            return k_ControllerTypeXBoxOneController;
         }
         case UsbVendorIdSony: {
-            return k_ControllerTypePS4;
+            return k_ControllerTypePS4Controller;
         }
         case UsbVendorIdNintendo: {
-            return k_ControllerTypeSwitchGen;
+            return k_ControllerTypeXInputSwitchController;
         }
         case UsbVendorIdValve: {
-            return k_ControllerTypeSteamController_a;
+            return k_ControllerTypeSteamController;
         }
         default: {
-            return k_ControllerTypeGen;
+            return k_ControllerTypeUnknownNonSteamController;
         }
     }
 }

@@ -27,6 +27,7 @@
 #include "ihslib/hid.h"
 
 #include "sdl_hid_common.h"
+#include "session/session_pri.h"
 
 #include <SDL2/SDL.h>
 
@@ -71,7 +72,7 @@ static const IHS_HIDDeviceClass DeviceClass = {
         .requestDisconnect = DeviceRequestDisconnect,
 };
 
-IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool managed) {
+IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameController *controller, bool managed) {
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) IHS_HIDDeviceCreate(&DeviceClass);
     SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
     device->controllerManaged = managed;
@@ -87,6 +88,9 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(SDL_GameController *controller, bool manag
         } else {
             SDL_HapticClose(haptic);
         }
+    } else {
+        IHS_SessionLog(provider->session, IHS_LogLevelWarn, "HID.SDL", "Device haptic is not supported: %s",
+                       SDL_GetError());
     }
     return (IHS_HIDDevice *) device;
 }
@@ -187,5 +191,5 @@ static int DeviceRequestFullReport(IHS_HIDDevice *device) {
 }
 
 static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {
-
+    return 0;
 }

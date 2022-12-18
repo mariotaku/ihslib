@@ -36,23 +36,6 @@
 
 #include <stdlib.h>
 
-const static char *const ToRemoteCommandNames[CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_DISCONNECT + 1] = {
-        "Not set",
-        "",
-        "DeviceOpen",
-        "DeviceClose",
-        "DeviceWrite",
-        "DeviceRead",
-        "DeviceSendFeatureReport",
-        "DeviceGetFeatureReport",
-        "DeviceGetVendorString",
-        "DeviceGetProductString",
-        "DeviceGetSerialNumberString",
-        "DeviceStartInputReports",
-        "DeviceRequestFullReport",
-        "DeviceDisconnect",
-};
-
 static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
 
 static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
@@ -183,6 +166,9 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
             IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
             IHS_HIDDeviceRequestDisconnect(managed->device, cmd->disconnectmethod, cmd->data.data, cmd->data.len);
             // TODO send response
+            break;
+        }
+        default: {
             break;
         }
     }
@@ -370,6 +356,6 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
                                  IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
                                  IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE |
-                                 IHS_HID_CAP_XINPUT_HIDAPI;
+                                 IHS_HID_CAP_XINPUT_OR_HIDAPI;
     PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
 }

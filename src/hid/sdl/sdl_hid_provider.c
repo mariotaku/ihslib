@@ -126,7 +126,7 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
     if (controller == NULL) {
         return NULL;
     }
-    return IHS_HIDDeviceSDLCreate(controller, sdlProvider->manageDevice);
+    return IHS_HIDDeviceSDLCreate(provider, controller, sdlProvider->manageDevice);
 }
 
 static bool ProviderHasChange(IHS_HIDProvider *provider) {

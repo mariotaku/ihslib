@@ -24,12 +24,12 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 #include "provider.h"
 
 IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = cls->alloc(cls);
     assert(provider->cls == cls);
+    provider->session = NULL;
     return provider;
 }
 
