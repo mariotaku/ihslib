@@ -284,9 +284,9 @@ static void HandleDeviceWrite(IHS_SessionChannel *channel, IHS_HIDManager *manag
 static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message) {
     CHIDMessageToRemote__DeviceRead *cmd = message->device_read;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
-    if (managed != NULL) {
+    if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Read(id=%u) => no device",
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Read(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -318,9 +318,9 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
     CHIDMessageToRemote__DeviceGetFeatureReport *cmd = message->device_get_feature_report;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetFeatureReport(id=%u) => no device",
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetFeatureReport(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -338,6 +338,9 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
         response.data.len = str.size;
     }
     SendRequestResponse(channel, &response);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
+                   "Message %u: GetFeatureReport(id=%u) => ret=%d, %u byte(s)",
+                   message->request_id, cmd->device, response.result, response.data.len);
     IHS_BufferClear(&str, true);
 }
 
@@ -346,9 +349,9 @@ static void HandleDeviceGetVendorString(IHS_SessionChannel *channel, IHS_HIDMana
     CHIDMessageToRemote__DeviceGetVendorString *cmd = message->device_get_vendor_string;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetVendorString(id=%u) => no device",
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetVendorString(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -374,9 +377,9 @@ static void HandleDeviceGetProductString(IHS_SessionChannel *channel, IHS_HIDMan
     CHIDMessageToRemote__DeviceGetProductString *cmd = message->device_get_product_string;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetProductString(id=%u) => no device",
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetProductString(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -402,10 +405,10 @@ static void HandleDeviceGetSerialNumberString(IHS_SessionChannel *channel, IHS_H
     CHIDMessageToRemote__DeviceGetSerialNumberString *cmd = message->device_get_serial_number_string;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
         IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                       "Message %u: GetSerialNumberString(id=%u) => no device",
+                       "Message %u: GetSerialNumberString(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -431,9 +434,9 @@ static void HandleDeviceStartInputReports(IHS_SessionChannel *channel, IHS_HIDMa
     CHIDMessageToRemote__DeviceStartInputReports *cmd = message->device_start_input_reports;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                       "Message %u: StartInputReports(id=%u) => no device",
+                       "Message %u: StartInputReports(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -451,9 +454,9 @@ static void HandleDeviceRequestFullReport(IHS_SessionChannel *channel, IHS_HIDMa
     CHIDMessageToRemote__DeviceRequestFullReport *cmd = message->device_request_full_report;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                       "Message %u: RequestFullReport(id=%u) => no device",
+                       "Message %u: RequestFullReport(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -470,9 +473,9 @@ static void HandleDeviceDisconnect(IHS_SessionChannel *channel, IHS_HIDManager *
     CHIDMessageToRemote__DeviceDisconnect *cmd = message->device_disconnect;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
 
-    if (managed != NULL) {
+    if (managed == NULL) {
         IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                       "Message %u: Disconnect(id=%u) => no device", message->request_id, cmd->device);
+                       "Message %u: Disconnect(id=%u) => (no device)", message->request_id, cmd->device);
         return;
     }
 
