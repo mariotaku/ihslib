@@ -13,12 +13,12 @@ env:
 
 jobs:
   test-linux:
-    name: Test with Target SDL2 ${{ matrix.sdl_target }} on Linux
+    name: SDL2 ${{ matrix.sdl_target }} on Linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        sdl_target: [ '2.0.0', '2.0.14' ]
+        sdl_target: [ '2.0.0', '2.0.5', '2.0.9', '2.0.14' ]
 
     steps:
       - uses: actions/checkout@v3
