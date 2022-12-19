@@ -28,7 +28,7 @@
 #include "ihslib.h"
 #include "common.h"
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *info, void *context);
 
 static void InterruptHandler(int sig);
 
@@ -54,9 +54,9 @@ int main(int argc, char *argv[]) {
     IHS_Quit();
 }
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
-    printf("[Sample] Found device: %s, port: %d, universe: %d\n", info.hostname, info.address.port,
-           info.universe);
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *info, void *context) {
+    printf("[Sample] Found device: %s, port: %d, universe: %d\n", info->hostname, info->address.port,
+           info->universe);
 }
 
 static void InterruptHandler(int sig) {
