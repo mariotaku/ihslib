@@ -1,5 +1,6 @@
 # All IDEA related config
 .idea/
+!.idea/fileTemplates
 
 # CMake
 cmake-build-*/
