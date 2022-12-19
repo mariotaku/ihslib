@@ -13,7 +13,7 @@ env:
 
 jobs:
   test-linux:
-    name: Test SDL2-${{ matrix.sdl_target }} on Linux
+    name: Test with Target SDL2 ${{ matrix.sdl_target }} on Linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
