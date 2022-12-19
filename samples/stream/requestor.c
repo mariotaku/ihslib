@@ -37,14 +37,14 @@ typedef struct RequestorCallbacksContext {
     bool succeeded;
 } RequestorCallbacksContext;
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *host, void *context);
 
-static void OnStreamingInProgress(IHS_Client *client, void *context);
+static void OnStreamingInProgress(IHS_Client *client, const IHS_HostInfo *host, void *context);
 
-static void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey,
-                               size_t sessionKeyLen, void *context);
+static void OnStreamingSuccess(IHS_Client *client, const IHS_HostInfo *host, const IHS_SocketAddress *address,
+                               const uint8_t *sessionKey, size_t sessionKeyLen, void *context);
 
-static void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result, void *context);
+static void OnStreamingFailed(IHS_Client *client, const IHS_HostInfo *host, IHS_StreamingResult result, void *context);
 
 bool RequestStream(IHS_SessionInfo *info) {
     IHS_Client *client = IHS_ClientCreate(&clientConfig);
@@ -85,7 +85,7 @@ bool RequestStream(IHS_SessionInfo *info) {
     return ret;
 }
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *info, void *context) {
     RequestorCallbacksContext *reqContext = context;
     if (reqContext->requested) return;
     reqContext->requested = true;
@@ -94,22 +94,22 @@ static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
             .streamingEnable = {true, true, true},
             .audioChannelCount = 2,
     };
-    if (!IHS_ClientStreamingRequest(client, &info, &req)) {
-        fprintf(stderr, "IHS_ClientStreamingRequest failed: %s\n", info.hostname);
+    if (!IHS_ClientStreamingRequest(client, info, &req)) {
+        fprintf(stderr, "IHS_ClientStreamingRequest failed: %s\n", info->hostname);
         return;
     }
 }
 
 
-void OnStreamingInProgress(IHS_Client *client, void *context) {
+void OnStreamingInProgress(IHS_Client *client, const IHS_HostInfo *host, void *context) {
     printf("OnStreamingInProgress\n");
 }
 
-void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uint8_t *sessionKey, size_t sessionKeyLen,
-                        void *context) {
+void OnStreamingSuccess(IHS_Client *client, const IHS_HostInfo *host, const IHS_SocketAddress *address,
+                        const uint8_t *sessionKey, size_t sessionKeyLen, void *context) {
     RequestorCallbacksContext *reqContext = context;
 
-    reqContext->address = address;
+    reqContext->address = *address;
     reqContext->sessionKeyLen = sessionKeyLen;
     memcpy(reqContext->sessionKey, sessionKey, sessionKeyLen);
     reqContext->succeeded = true;
@@ -117,7 +117,7 @@ void OnStreamingSuccess(IHS_Client *client, IHS_SocketAddress address, const uin
     IHS_ClientStop(client);
 }
 
-void OnStreamingFailed(IHS_Client *client, IHS_StreamingResult result, void *context) {
+void OnStreamingFailed(IHS_Client *client, const IHS_HostInfo *host, IHS_StreamingResult result, void *context) {
     printf("OnStreamingFailed(result=%d)\n", result);
     IHS_ClientStop(client);
 }

@@ -176,6 +176,8 @@ bool IHS_SessionHIDSendReport(IHS_Session *session);
 
 void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider);
 
+IHS_Session *IHS_HIDProviderGetSession(IHS_HIDProvider *provider);
+
 void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, size_t len);
 
 void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len);

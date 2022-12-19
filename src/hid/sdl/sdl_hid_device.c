@@ -91,8 +91,8 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameControl
             SDL_HapticClose(haptic);
         }
     } else {
-        IHS_SessionLog(provider->session, IHS_LogLevelWarn, "HID.SDL", "Device haptic is not supported: %s",
-                       SDL_GetError());
+        IHS_SessionLog(IHS_HIDProviderGetSession(provider), IHS_LogLevelWarn, "HID.SDL",
+                       "Device haptic is not supported: %s", SDL_GetError());
     }
 #endif
     return (IHS_HIDDevice *) device;

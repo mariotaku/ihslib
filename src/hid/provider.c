@@ -24,7 +24,9 @@
  */
 
 #include <assert.h>
+
 #include "provider.h"
+#include "manager.h"
 
 IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = cls->alloc(cls);
@@ -36,6 +38,11 @@ IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls) {
 void IHS_SessionHIDProviderDestroy(IHS_HIDProvider *provider) {
     assert(provider->manager == NULL);
     provider->cls->free(provider);
+}
+
+IHS_Session *IHS_HIDProviderGetSession(IHS_HIDProvider *provider) {
+    assert(provider->manager != NULL);
+    return provider->manager->session;
 }
 
 bool IHS_HIDProviderSupportsDevice(IHS_HIDProvider *provider, const char *path) {
