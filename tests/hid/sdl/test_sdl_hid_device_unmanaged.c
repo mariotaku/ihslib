@@ -38,39 +38,46 @@
 #include "test_session.h"
 #include "ihslib/session.h"
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "UnreachableCode"
-#pragma ide diagnostic ignored "ConstantConditionsOC"
+typedef struct OpenedController {
+    SDL_GameController *controller;
+    SDL_JoystickID id;
+} OpenedController;
 
-static bool SupportsManaged();
+static int DeviceListCount(void *context);
+
+static int DeviceListIndex(SDL_JoystickID id, void *context);
+
+static SDL_GameController *DeviceListController(int index, void *context);
+
+static SDL_JoystickID DeviceListInstanceId(int index, void *context);
+
+static const IHS_HIDProviderSDLDeviceList DeviceList = {
+        .count = DeviceListCount,
+        .index = DeviceListIndex,
+        .controller = DeviceListController,
+        .instanceId = DeviceListInstanceId,
+};
+
+#define NUM_CONTROLLERS 4
 
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
-    if (!SupportsManaged()) {
-        return 127;
-    }
 
     IHS_Init();
 
-    SDL_Init(SDL_INIT_GAMECONTROLLER);
-    if (SDL_NumJoysticks() > 0) {
-        SDL_Quit();
-        return 127;
+    SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+
+
+    OpenedController controllers[NUM_CONTROLLERS];
+    for (int i = 0; i < NUM_CONTROLLERS; i++) {
+        int index = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
+        SDL_GameController *controller = SDL_GameControllerOpen(index);
+        controllers[i].controller = controller;
+        controllers[i].id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
     }
-    int indices[8];
-    indices[0] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
-    indices[1] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_WHEEL, 4, 8, 0);
-    indices[2] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
-    indices[3] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_UNKNOWN, 8, 8, 0);
-    indices[4] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_UNKNOWN, 8, 8, 0);
-    indices[5] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
-    indices[6] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_DRUM_KIT, 0, 16, 0);
-    indices[7] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
 
-    assert(SDL_NumJoysticks() == 8);
-
-    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreateManaged();
+    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreateUnmanaged(&DeviceList, controllers);
 
     IHS_Session *session = IHS_TestSessionCreate();
     IHS_HIDManager *manager = session->hidManager;
@@ -91,7 +98,7 @@ int main(int argc, char *argv[]) {
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://9999") == NULL);
     assert(IHS_HIDManagerOpenDevice(manager, "sdl://aaaa") == NULL);
 
-    SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(0);
+    SDL_JoystickID id = controllers[0].id;
 
     char path[16];
     snprintf(path, 16, "sdl://%d", id);
@@ -107,7 +114,8 @@ int main(int argc, char *argv[]) {
 
     const static uint8_t setPlayerIndexTo7[21] = {0xb, 0x7,};
     IHS_HIDDeviceWrite(device, setPlayerIndexTo7, 21);
-    assert(SDL_JoystickGetDevicePlayerIndex(0) == 7);
+    IHS_HIDDeviceSDL *sdlDevice = (IHS_HIDDeviceSDL *) device;
+    assert(sdlDevice->playerIndex == 7);
 
     const static uint8_t setLedRed[21] = {0x5, 0xff, 0x0, 0x0,};
     IHS_HIDDeviceWrite(device, setLedRed, 21);
@@ -149,8 +157,33 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-static bool SupportsManaged() {
-    return IHS_SDL_TARGETVERSION >= SDL_VERSIONNUM(2, 0, 6);
+static int DeviceListCount(void *context) {
+    (void) context;
+    return NUM_CONTROLLERS;
 }
 
-#pragma clang diagnostic pop
+static int DeviceListIndex(SDL_JoystickID id, void *context) {
+    OpenedController *controllers = context;
+    for (int i = 0; i < NUM_CONTROLLERS; i++) {
+        if (id == controllers[i].id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static SDL_GameController *DeviceListController(int index, void *context) {
+    if (index < 0 || index >= NUM_CONTROLLERS) {
+        return NULL;
+    }
+    OpenedController *controllers = context;
+    return controllers[index].controller;
+}
+
+static SDL_JoystickID DeviceListInstanceId(int index, void *context) {
+    if (index < 0 || index >= NUM_CONTROLLERS) {
+        return -1;
+    }
+    OpenedController *controllers = context;
+    return controllers[index].id;
+}

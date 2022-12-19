@@ -23,12 +23,11 @@
  *
  */
 
-#include <stdlib.h>
 #include <assert.h>
 #include "ihs_enumeration.h"
 
-IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls) {
-    IHS_Enumeration *enumeration = cls->alloc(cls);
+IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls, void *arg) {
+    IHS_Enumeration *enumeration = cls->alloc(cls, arg);
     assert(enumeration->cls == cls);
     return enumeration;
 }

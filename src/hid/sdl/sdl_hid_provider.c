@@ -135,8 +135,8 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
     }
 #else
     // SDL_GameControllerOpen will return opened controller, so no extra check needed
-    assert(sdlProvider->deviceList != NULL && sdlProvider->deviceList->controller != NULL);
-    controller = sdlProvider->deviceList->controller(instanceId, sdlProvider->deviceListContext);
+    int index = sdlProvider->deviceList->index(instanceId, sdlProvider->deviceListContext);
+    controller = sdlProvider->deviceList->controller(index, sdlProvider->deviceListContext);
 #endif
     if (controller == NULL) {
         return NULL;

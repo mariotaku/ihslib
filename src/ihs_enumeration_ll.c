@@ -35,7 +35,7 @@ typedef struct IHS_EnumerationLinkedList {
     IHS_EnumerationFreeUnderlying llFree;
 } IHS_EnumerationLinkedList;
 
-static IHS_Enumeration *EnumerationLLAlloc(const IHS_EnumerationClass *cls);
+static IHS_Enumeration *EnumerationLLAlloc(const IHS_EnumerationClass *cls, void *arg);
 
 static void EnumerationLLFree(IHS_Enumeration *enumeration);
 
@@ -62,14 +62,16 @@ const static IHS_EnumerationClass LinkedListClass = {
 IHS_Enumeration *IHS_EnumerationLinkedListCreate(void *ll, IHS_EnumerationLinkedListNext next,
                                                  IHS_EnumerationFreeUnderlying free) {
     assert(next != NULL);
-    IHS_EnumerationLinkedList *enumeration = (IHS_EnumerationLinkedList *) IHS_EnumerationCreate(&LinkedListClass);
+    IHS_EnumerationLinkedList *enumeration = (IHS_EnumerationLinkedList *) IHS_EnumerationCreate(&LinkedListClass,
+                                                                                                 NULL);
     enumeration->head = ll;
     enumeration->llNext = next;
     enumeration->llFree = free;
     return (IHS_Enumeration *) enumeration;
 }
 
-static IHS_Enumeration *EnumerationLLAlloc(const IHS_EnumerationClass *cls) {
+static IHS_Enumeration *EnumerationLLAlloc(const IHS_EnumerationClass *cls, void *arg) {
+    (void) arg;
     IHS_Enumeration *enumeration = calloc(1, sizeof(IHS_EnumerationLinkedList));
     enumeration->cls = cls;
     return enumeration;

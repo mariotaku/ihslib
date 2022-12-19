@@ -34,7 +34,7 @@ typedef struct IHS_EnumerationArray {
     IHS_EnumerationFreeUnderlying arrFree;
 } IHS_EnumerationArray;
 
-static IHS_Enumeration *EnumerationArrayAlloc(const IHS_EnumerationClass *cls);
+static IHS_Enumeration *EnumerationArrayAlloc(const IHS_EnumerationClass *cls, void *arg);
 
 static void EnumerationArrayFree(IHS_Enumeration *enumeration);
 
@@ -60,7 +60,7 @@ const static IHS_EnumerationClass ArrayClass = {
 
 IHS_Enumeration *IHS_EnumerationArrayCreate(void *array, size_t itemSize, size_t count,
                                             IHS_EnumerationFreeUnderlying free) {
-    IHS_EnumerationArray *enumeration = (IHS_EnumerationArray *) IHS_EnumerationCreate(&ArrayClass);
+    IHS_EnumerationArray *enumeration = (IHS_EnumerationArray *) IHS_EnumerationCreate(&ArrayClass, NULL);
     enumeration->array = array;
     enumeration->itemSize = itemSize;
     enumeration->count = count;
@@ -68,7 +68,8 @@ IHS_Enumeration *IHS_EnumerationArrayCreate(void *array, size_t itemSize, size_t
     return (IHS_Enumeration *) enumeration;
 }
 
-static IHS_Enumeration *EnumerationArrayAlloc(const IHS_EnumerationClass *cls) {
+static IHS_Enumeration *EnumerationArrayAlloc(const IHS_EnumerationClass *cls, void *arg) {
+    (void) arg;
     IHS_Enumeration *enumeration = calloc(1, sizeof(IHS_EnumerationArray));
     enumeration->cls = cls;
     return enumeration;

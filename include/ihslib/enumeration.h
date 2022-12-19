@@ -32,7 +32,7 @@ typedef struct IHS_EnumerationClass IHS_EnumerationClass;
 typedef struct IHS_Enumeration IHS_Enumeration;
 
 typedef struct IHS_EnumerationClass {
-    IHS_Enumeration *(*alloc)(const struct IHS_EnumerationClass *cls);
+    IHS_Enumeration *(*alloc)(const struct IHS_EnumerationClass *cls, void *arg);
 
     void (*free)(IHS_Enumeration *enumeration);
 
@@ -56,7 +56,7 @@ typedef void *(*IHS_EnumerationLinkedListNext)(void *cur);
 
 typedef void (*IHS_EnumerationFreeUnderlying)(void *p);
 
-IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls);
+IHS_Enumeration *IHS_EnumerationCreate(const IHS_EnumerationClass *cls, void *arg);
 
 IHS_Enumeration *IHS_EnumerationLinkedListCreate(void *ll, IHS_EnumerationLinkedListNext next,
                                                  IHS_EnumerationFreeUnderlying free);

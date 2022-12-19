@@ -33,6 +33,8 @@
 typedef struct IHS_HIDProviderSDLJoystickIDMapping {
     int (*count)(void *context);
 
+    int (*index)(SDL_JoystickID joystickId, void *context);
+
     SDL_JoystickID (*instanceId)(int index, void *context);
 
     SDL_GameController *(*controller)(int index, void *context);

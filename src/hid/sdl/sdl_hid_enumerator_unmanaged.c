@@ -33,13 +33,18 @@
 #include "ihslib/hid.h"
 #include "ihslib/hid/sdl.h"
 
+typedef struct UnmanagedEnumerationAllocArg {
+    const IHS_HIDProviderSDLDeviceList *list;
+    void *listContext;
+} UnmanagedEnumerationAllocArg;
+
 typedef struct UnmanagedEnumeration {
     GameControllerEnumeration base;
     const IHS_HIDProviderSDLDeviceList *list;
     void *listContext;
 } UnmanagedEnumeration;
 
-static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls);
+static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls, void *arg);
 
 static size_t EnumerationCount(const IHS_Enumeration *enumeration);
 
@@ -67,20 +72,21 @@ const static IHS_HIDDeviceSDLEnumerationClass UnmanagedEnumerationClass = {
 };
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerateUnmanaged(const IHS_HIDProviderSDLDeviceList *list, void *listContext) {
-    IHS_Enumeration *e = IHS_EnumerationCreate((const IHS_EnumerationClass *) &UnmanagedEnumerationClass);
-    UnmanagedEnumeration *ue = (UnmanagedEnumeration *) e;
     assert(list != NULL);
     assert(list->count != NULL);
+    assert(list->index != NULL);
     assert(list->instanceId != NULL);
     assert(list->controller != NULL);
-    ue->list = list;
-    ue->listContext = listContext;
-    return e;
+    UnmanagedEnumerationAllocArg arg = {.list = list, .listContext =listContext};
+    return IHS_EnumerationCreate((const IHS_EnumerationClass *) &UnmanagedEnumerationClass, &arg);
 }
 
-static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls) {
+static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls, void *arg) {
     UnmanagedEnumeration *enumeration = calloc(1, sizeof(UnmanagedEnumeration));
     enumeration->base.base.cls = cls;
+    UnmanagedEnumerationAllocArg *ua = arg;
+    enumeration->list = ua->list;
+    enumeration->listContext = ua->listContext;
     EnumerationReset((IHS_Enumeration *) enumeration);
     return (IHS_Enumeration *) enumeration;
 }

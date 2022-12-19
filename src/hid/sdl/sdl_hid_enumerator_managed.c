@@ -35,7 +35,7 @@
 #include "ihslib/hid.h"
 #include "ihslib/hid/sdl.h"
 
-static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls);
+static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls, void *arg);
 
 static size_t EnumerationCount(const IHS_Enumeration *enumeration);
 
@@ -65,10 +65,11 @@ const static IHS_HIDDeviceSDLEnumerationClass ManagedEnumerationClass = {
 };
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerateManaged() {
-    return IHS_EnumerationCreate((const IHS_EnumerationClass *) &ManagedEnumerationClass);
+    return IHS_EnumerationCreate((const IHS_EnumerationClass *) &ManagedEnumerationClass, NULL);
 }
 
-static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls) {
+static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls, void *arg) {
+    (void) arg;
     GameControllerEnumeration *enumeration = calloc(1, sizeof(GameControllerEnumeration));
     enumeration->base.cls = cls;
     EnumerationReset((IHS_Enumeration *) enumeration);
