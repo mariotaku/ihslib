@@ -242,8 +242,9 @@ static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manage
     IHS_HIDManagedDevice *managed = IHS_HIDManagerOpenDevice(manager, cmd->info->path);
     if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Open(path=%s) => (nil)",
-                       message->request_id, cmd->info->path, managed->id);
+        IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
+                       "Message %u: Open(path=%s, product_string=%s) => (nil)",
+                       message->request_id, cmd->info->product_string, cmd->info->path);
         return;
     }
     // Send managed ID as result
@@ -251,8 +252,8 @@ static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manage
     PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
     PROTOBUF_C_SET_VALUE(response, result, managed->id);
     SendRequestResponse(channel, &response);
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Open(path=%s) => id=%u",
-                   message->request_id, cmd->info->path, managed->id);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Open(path=%s, product_string=%s) => id=%u",
+                   message->request_id, cmd->info->product_string, cmd->info->path, managed->id);
 }
 
 static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager,
@@ -308,6 +309,7 @@ static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manage
 
 static void HandleDeviceSendFeatureReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
                                           const CHIDMessageToRemote *message) {
+    (void) channel;
     CHIDMessageToRemote__DeviceSendFeatureReport *cmd = message->device_send_feature_report;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
     IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
@@ -366,9 +368,8 @@ static void HandleDeviceGetVendorString(IHS_SessionChannel *channel, IHS_HIDMana
     response.data.data = IHS_BufferPointer(&str);
     response.data.len = str.size;
     SendRequestResponse(channel, &response);
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                   "Message %u: GetVendorString(id=%u) => ret=%d, %u byte(s)",
-                   message->request_id, cmd->device, response.result, response.data.len);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetVendorString(id=%u) => \"%s\"",
+                   message->request_id, cmd->device, IHS_BufferPointer(&str));
     IHS_BufferClear(&str, true);
 }
 
@@ -394,9 +395,8 @@ static void HandleDeviceGetProductString(IHS_SessionChannel *channel, IHS_HIDMan
     response.data.data = IHS_BufferPointer(&str);
     response.data.len = str.size;
     SendRequestResponse(channel, &response);
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                   "Message %u: GetProductString(id=%u) => ret=%d, %u byte(s)",
-                   message->request_id, cmd->device, response.result, response.data.len);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetProductString(id=%u) => \"%s\"",
+                   message->request_id, cmd->device, IHS_BufferPointer(&str));
     IHS_BufferClear(&str, true);
 }
 
@@ -423,9 +423,8 @@ static void HandleDeviceGetSerialNumberString(IHS_SessionChannel *channel, IHS_H
     response.data.data = IHS_BufferPointer(&str);
     response.data.len = str.size;
     SendRequestResponse(channel, &response);
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
-                   "Message %u: GetSerialNumberString(id=%u) => ret=%d, %u byte(s)",
-                   message->request_id, cmd->device, response.result, response.data.len);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: GetSerialNumberString(id=%u) => \"%s\"",
+                   message->request_id, cmd->device, IHS_BufferPointer(&str));
     IHS_BufferClear(&str, true);
 }
 

@@ -80,7 +80,8 @@ void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction);
 
 void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context);
 
-void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char *fmt, ...);
+void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag,
+                 const char *fmt, ...) __attribute__ ((format (printf, 4, 5)));
 
 bool IHS_BaseStartWorker(IHS_Base *base, const char *name);
 
