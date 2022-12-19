@@ -151,7 +151,7 @@ struct IHS_HIDDeviceClass {
 
 struct IHS_HIDProvider {
     const IHS_HIDProviderClass *cls;
-    IHS_Session *session;
+    IHS_HIDManager *manager;
 };
 
 struct IHS_HIDProviderClass {

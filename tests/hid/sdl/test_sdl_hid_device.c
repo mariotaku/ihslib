@@ -61,10 +61,12 @@ int main(int argc, char *argv[]) {
 
     assert(SDL_NumJoysticks() == 8);
 
+    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreateManaged();
+
     IHS_Session *session = IHS_TestSessionCreate();
     IHS_HIDManager *manager = session->hidManager;
-    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreate(true);
     IHS_SessionHIDAddProvider(session, provider);
+    assert(provider->manager == manager);
 
     IHS_Enumeration *enumeration = IHS_HIDProviderEnumerateDevices(provider);
     assert(IHS_EnumerationCount(enumeration) == 4);
@@ -128,9 +130,9 @@ int main(int argc, char *argv[]) {
 
     IHS_HIDManagedDeviceClose(managed);
 
-    IHS_HIDProviderSDLDestroy(provider);
-
     IHS_SessionDestroy(session);
+
+    IHS_HIDProviderSDLDestroy(provider);
 
     SDL_Quit();
 

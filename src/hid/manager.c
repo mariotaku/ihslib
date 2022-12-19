@@ -45,8 +45,8 @@ IHS_HIDManager *IHS_HIDManagerCreate() {
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
     for (size_t i = 0, j = manager->providers.size; i < j; ++i) {
         IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, i));
-        assert(provider->session == manager->session);
-        provider->session = NULL;
+        assert(provider->manager == manager);
+        provider->manager = NULL;
     }
     IHS_ArrayListDeinit(&manager->devices);
     IHS_ArrayListDeinit(&manager->providers);
@@ -123,12 +123,13 @@ void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDev
 }
 
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
-    provider->session = manager->session;
+    provider->manager = manager;
     IHS_ArrayListAppend(&manager->providers, &provider);
 }
 
 void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
     bool removed = IHS_ArrayListRemoveFirst(&manager->providers, &provider);
+    provider->manager = NULL;
     assert(removed);
 }
 

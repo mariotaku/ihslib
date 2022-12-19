@@ -86,6 +86,7 @@ IHS_HIDProvider *IHS_HIDProviderSDLCreateUnmanaged(const IHS_HIDProviderSDLDevic
 }
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
+    // Must be unused provider
     if (((HIDProviderSDL *) provider)->managed) {
         SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
     }

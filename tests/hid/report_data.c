@@ -69,5 +69,7 @@ int main() {
     assert(memcmp(report->reports[1]->delta_report.data, deltaExpected, 10) == 0);
     assert(report->reports[1]->delta_report_crc == 406293423);
 
+    IHS_HIDReportHolderResetMessage(&holder);
+
     IHS_HIDReportHolderDeinit(&holder);
 }

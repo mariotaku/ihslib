@@ -28,13 +28,13 @@
 #include "ihslib/client.h"
 
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context);
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *info, void *context);
 
-void OnAuthorizationInProgress(IHS_Client *client, void *context);
+void OnAuthorizationInProgress(IHS_Client *client, const IHS_HostInfo *info, void *context);
 
-void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId, void *context);
+void OnAuthorizationSuccess(IHS_Client *client, const IHS_HostInfo *info, uint64_t steamId, void *context);
 
-void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result, void *context);
+void OnAuthorizationFailed(IHS_Client *client, const IHS_HostInfo *info, IHS_AuthorizationResult result, void *context);
 
 static bool AuthorizationStart = false;
 
@@ -59,24 +59,25 @@ int main(int argc, char *argv[]) {
     IHS_Quit();
 }
 
-static void OnHostStatus(IHS_Client *client, IHS_HostInfo info, void *context) {
+static void OnHostStatus(IHS_Client *client, const IHS_HostInfo *info, void *context) {
     if (AuthorizationStart) return;
     AuthorizationStart = true;
     printf("IHS_ClientAuthorizationRequest");
-    IHS_ClientAuthorizationRequest(client, &info, "1919");
+    IHS_ClientAuthorizationRequest(client, info, "1919");
 }
 
 
-void OnAuthorizationInProgress(IHS_Client *client, void *context) {
+void OnAuthorizationInProgress(IHS_Client *client, const IHS_HostInfo *info, void *context) {
 }
 
-void OnAuthorizationSuccess(IHS_Client *client, uint64_t steamId, void *context) {
+void OnAuthorizationSuccess(IHS_Client *client, const IHS_HostInfo *info, uint64_t steamId, void *context) {
     printf("OnStreamingSuccess(steamId=%llu)\n", steamId);
     IHS_ClientStop(client);
 
 }
 
-void OnAuthorizationFailed(IHS_Client *client, IHS_AuthorizationResult result, void *context) {
+void
+OnAuthorizationFailed(IHS_Client *client, const IHS_HostInfo *info, IHS_AuthorizationResult result, void *context) {
     printf("OnStreamingFailed(result=%d)\n", result);
     IHS_ClientStop(client);
 }

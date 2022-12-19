@@ -29,11 +29,12 @@
 IHS_HIDProvider *IHS_SessionHIDProviderCreate(const IHS_HIDProviderClass *cls) {
     IHS_HIDProvider *provider = cls->alloc(cls);
     assert(provider->cls == cls);
-    provider->session = NULL;
+    provider->manager = NULL;
     return provider;
 }
 
 void IHS_SessionHIDProviderDestroy(IHS_HIDProvider *provider) {
+    assert(provider->manager == NULL);
     provider->cls->free(provider);
 }
 
