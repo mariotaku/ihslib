@@ -105,9 +105,7 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
         return false;
     }
     IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
-    if (device == NULL) {
-        return false;
-    }
+    assert(device != NULL);
     IHS_HIDDeviceLock(managed->device);
     bool changed = IHS_HIDReportSDLSetButton(&device->states.current, event->button,
                                              event->state == SDL_PRESSED);
@@ -122,10 +120,11 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
 
 static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEvent *event) {
     IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
-    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
-    if (device == NULL) {
+    if (managed == NULL) {
         return false;
     }
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
+    assert(device != NULL);
     IHS_HIDDeviceLock(managed->device);
     bool changed = IHS_HIDReportSDLSetAxis(&device->states.current, event->axis, event->value);
     if (changed) {

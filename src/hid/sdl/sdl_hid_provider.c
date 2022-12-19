@@ -30,12 +30,16 @@
 #include "ihslib/hid.h"
 #include "sdl_hid_common.h"
 #include "hid/provider.h"
+#include "ihslib/hid/sdl.h"
+#include "sdl_hid_enumerators.h"
 
 #include <SDL2/SDL.h>
 
 typedef struct HIDProviderSDL {
     IHS_HIDProvider base;
-    bool manageDevice;
+    bool managed;
+    const IHS_HIDProviderSDLDeviceList *deviceList;
+    void *deviceListContext;
 } HIDProviderSDL;
 
 static IHS_HIDProvider *ProviderAlloc(const IHS_HIDProviderClass *cls);
@@ -63,19 +67,28 @@ static const IHS_HIDProviderClass ProviderClass = {
         .deviceInfo = ProviderDeviceInfo,
 };
 
-IHS_Enumeration *IHS_HIDDeviceSDLEnumerate();
-
-bool IHS_HIDDeviceSDLDeviceInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info);
-
-IHS_HIDProvider *IHS_HIDProviderSDLCreate(bool manageDevice) {
+IHS_HIDProvider *IHS_HIDProviderSDLCreateManaged() {
+    assert(IHS_SDL_TARGET_ATLEAST(2, 0, 6));
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
     HIDProviderSDL *provider = (HIDProviderSDL *) IHS_SessionHIDProviderCreate(&ProviderClass);
-    provider->manageDevice = manageDevice;
+    provider->managed = true;
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+    return (IHS_HIDProvider *) provider;
+#endif
+}
+
+IHS_HIDProvider *IHS_HIDProviderSDLCreateUnmanaged(const IHS_HIDProviderSDLDeviceList *list, void *listContext) {
+    HIDProviderSDL *provider = (HIDProviderSDL *) IHS_SessionHIDProviderCreate(&ProviderClass);
+    provider->managed = false;
+    provider->deviceList = list;
+    provider->deviceListContext = listContext;
     return (IHS_HIDProvider *) provider;
 }
 
 void IHS_HIDProviderSDLDestroy(IHS_HIDProvider *provider) {
-    SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+    if (((HIDProviderSDL *) provider)->managed) {
+        SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+    }
     IHS_SessionHIDProviderDestroy(provider);
 }
 
@@ -99,16 +112,16 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
     assert(strstr(path, "sdl://") == path);
     char *endptr = NULL;
     const char *begin = &path[6];
-    int deviceId = (int) strtol(begin, &endptr, 10);
+    SDL_JoystickID instanceId = (int) strtol(begin, &endptr, 10);
     if (endptr == begin) {
         return NULL;
     }
     SDL_GameController *controller = NULL;
 #if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
-    if (sdlProvider->manageDevice) {
+    if (sdlProvider->managed) {
         int index = -1;
         for (int i = 0, numJoysticks = SDL_NumJoysticks(); i < numJoysticks; i++) {
-            if (deviceId == SDL_JoystickGetDeviceInstanceID(i)) {
+            if (instanceId == SDL_JoystickGetDeviceInstanceID(i)) {
                 index = i;
                 break;
             }
@@ -117,16 +130,17 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
             controller = SDL_GameControllerOpen(index);
         }
     } else {
-        controller = SDL_GameControllerFromInstanceID((SDL_JoystickID) deviceId);
+        controller = SDL_GameControllerFromInstanceID(instanceId);
     }
 #else
     // SDL_GameControllerOpen will return opened controller, so no extra check needed
-    controller = SDL_GameControllerOpen(deviceId);
+    assert(sdlProvider->deviceList != NULL && sdlProvider->deviceList->controller != NULL);
+    controller = sdlProvider->deviceList->controller(instanceId, sdlProvider->deviceListContext);
 #endif
     if (controller == NULL) {
         return NULL;
     }
-    return IHS_HIDDeviceSDLCreate(provider, controller, sdlProvider->manageDevice);
+    return IHS_HIDDeviceSDLCreate(provider, controller, sdlProvider->managed);
 }
 
 static bool ProviderHasChange(IHS_HIDProvider *provider) {
@@ -135,12 +149,19 @@ static bool ProviderHasChange(IHS_HIDProvider *provider) {
 }
 
 static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider) {
-    (void) provider;
-    return IHS_HIDDeviceSDLEnumerate();
+    HIDProviderSDL *sdlProvider = (HIDProviderSDL *) provider;
+    if (sdlProvider->managed) {
+        assert(IHS_SDL_TARGET_ATLEAST(2, 0, 6));
+#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+        return IHS_HIDDeviceSDLEnumerateManaged();
+#endif
+    } else {
+        return IHS_HIDDeviceSDLEnumerateUnmanaged(sdlProvider->deviceList, sdlProvider->deviceListContext);
+    }
 }
 
 static void ProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration,
                                IHS_HIDDeviceInfo *info) {
     (void) provider;
-    IHS_HIDDeviceSDLDeviceInfo(enumeration, info);
+    IHS_HIDDeviceSDLEnumerationGetInfo(enumeration, info);
 }

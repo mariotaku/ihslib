@@ -1,6 +1,8 @@
 add_library(ihslib-hid-sdl STATIC
         sdl_hid_provider.c
-        sdl_hid_enumerator.c
+        sdl_hid_enumerator_managed.c
+        sdl_hid_enumerator_unmanaged.c
+        sdl_hid_enumerator_common.c
         sdl_hid_device.c
         sdl_hid_write.c
         sdl_hid_feature_report.c

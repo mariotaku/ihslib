@@ -207,8 +207,8 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
                 IHS_HIDDeviceInfo hid;
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
-                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x", hid.path,
-                               hid.vendor_id, hid.product_id);
+                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x, name=%s", hid.path,
+                               hid.vendor_id, hid.product_id, hid.product_string);
                 numAllDevices++;
             }
         }
@@ -296,12 +296,12 @@ static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manag
                               const CHIDMessageToRemote *message) {
     CHIDMessageToRemote__DeviceClose *cmd = message->device_close;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceClose(id=%u), found=%u",
+                   message->request_id, cmd->device, managed != NULL);
     // If the device got closed on client side, it should be NULL here.
     if (managed != NULL) {
         IHS_HIDManagedDeviceClose(managed);
     }
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: DeviceClose(id=%u), found=%u",
-                   message->request_id, cmd->device, managed != NULL);
 }
 
 static void HandleDeviceWrite(IHS_SessionChannel *channel, IHS_HIDManager *manager,
@@ -341,7 +341,7 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     chiddevice_info__init(info);
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationLocal);
     info->path = strdup(hid->path);
-    info->product_string = strdup(hid->name);
+    info->product_string = strdup(hid->product_string);
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);
         PROTOBUF_C_P_SET_VALUE(info, product_id, hid->product_id);

@@ -115,6 +115,7 @@ bool IHS_HIDManagerNotifyDeviceClosed(IHS_HIDManager *manager, IHS_HIDManagedDev
 void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed) {
     int index = IHS_ArrayListBinarySearch(&manager->devices, &managed->id, (IHS_ArrayListSearchFn) CompareDeviceID);
     assert(index >= 0);
+    IHS_SessionLog(manager->session, IHS_LogLevelDebug, "HID", "RemoveClosedDevice, id=%u", managed->id);
     IHS_HIDReportHolderDeinit(&managed->reportHolder);
     IHS_MutexDestroy(managed->lock);
     bool removed = IHS_ArrayListRemove(&manager->devices, index);
