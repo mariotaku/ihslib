@@ -38,9 +38,18 @@
 #include "test_session.h"
 #include "ihslib/session.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnreachableCode"
+#pragma ide diagnostic ignored "ConstantConditionsOC"
+
+static bool SupportsManaged();
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
+    if (!SupportsManaged()) {
+        return 127;
+    }
 
     IHS_Init();
 
@@ -139,3 +148,9 @@ int main(int argc, char *argv[]) {
     IHS_Quit();
     return 0;
 }
+
+static bool SupportsManaged() {
+    return SDL_TARGETVERSION >= SDL_VERSIONNUM(2, 0, 6);
+}
+
+#pragma clang diagnostic pop
