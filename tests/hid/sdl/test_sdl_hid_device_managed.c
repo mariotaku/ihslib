@@ -150,11 +150,7 @@ int main(int argc, char *argv[]) {
 }
 
 static bool SupportsManaged() {
-#ifdef SDL_TARGETVERSION
-    return SDL_TARGETVERSION >= SDL_VERSIONNUM(2, 0, 6);
-#else
-    return SDL_VERSION_ATLEAST(2, 0, 6);
-#endif
+    return IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6);
 }
 
 #pragma clang diagnostic pop
