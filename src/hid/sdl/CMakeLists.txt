@@ -26,4 +26,4 @@ add_library(ihslib-hid-sdl STATIC
         sdl_hid_report.c
         sdl_hid_utils.c)
 target_link_libraries(ihslib-hid-sdl PUBLIC ihslib PRIVATE ihs-protobuf ${SDL2_LIBRARIES})
-target_include_directories(ihslib-hid-sdl PUBLIC include ${GEN_INCLUDE_DIR} PRIVATE ../.. SYSTEM PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(ihslib-hid-sdl PUBLIC include ${GEN_INCLUDE_DIR} SYSTEM PUBLIC ${SDL2_INCLUDE_DIRS} PRIVATE ../..)
