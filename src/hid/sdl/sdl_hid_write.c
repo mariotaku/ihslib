@@ -122,7 +122,7 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
 }
 
 void HandleRumble(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
     IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL", "Rumble(dur=%u, lo=%u, hi=%u)", rumble->durationMs,
                      rumble->lowFreq, rumble->highFreq);
     SDL_GameControllerRumble(sdl->controller, rumble->lowFreq, rumble->highFreq, rumble->durationMs);
@@ -155,19 +155,19 @@ void HandleRumble(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
 static void HandleRumbleTriggers(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
     IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL", "RumbleTriggers(dur=%u, lo=%u, hi=%u)",
                      rumble->durationMs, rumble->lowFreq, rumble->highFreq);
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     SDL_GameControllerRumbleTriggers(sdl->controller, rumble->lowFreq, rumble->highFreq, rumble->durationMs);
 #endif
 }
 
 static void HandleSetLED(IHS_HIDDeviceSDL *sdl, const LEDCommand *led) {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     SDL_GameControllerSetLED(sdl->controller, led->r, led->g, led->b);
 #endif
 }
 
 static void HandleSetSensorEnabled(IHS_HIDDeviceSDL *sdl, const ByteCommand *byte) {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     SDL_GameControllerSetSensorEnabled(sdl->controller, SDL_SENSOR_ACCEL, byte->value);
     SDL_GameControllerSetSensorEnabled(sdl->controller, SDL_SENSOR_GYRO, byte->value);
 #endif
@@ -181,7 +181,7 @@ static void HandleSetPS5Rumble(IHS_HIDDeviceSDL *sdl, const ByteCommand *byte) {
 }
 
 static void HandleSetPlayerIndex(IHS_HIDDeviceSDL *sdl, const ByteCommand *byte) {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
     SDL_GameControllerSetPlayerIndex(sdl->controller, byte->value);
 #endif
     sdl->playerIndex = byte->value;

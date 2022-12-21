@@ -80,7 +80,7 @@ IHS_HIDDevice *IHS_HIDDeviceSDLCreate(IHS_HIDProvider *provider, SDL_GameControl
     device->controller = controller;
     device->playerIndex = -1;
 
-#if !IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+#if !IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
     device->hapticEffectId = -1;
     SDL_Haptic *haptic = SDL_HapticOpenFromJoystick(joystick);
     if (haptic != NULL) {
@@ -120,7 +120,7 @@ static void DeviceFree(IHS_HIDDevice *device) {
 
 static void DeviceClose(IHS_HIDDevice *device) {
     IHS_HIDDeviceSDL *deviceSdl = (IHS_HIDDeviceSDL *) device;
-#if !IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+#if !IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
     if (deviceSdl->haptic != NULL) {
         if (deviceSdl->hapticEffectId != -1) {
             SDL_HapticDestroyEffect(deviceSdl->haptic, deviceSdl->hapticEffectId);
@@ -165,7 +165,7 @@ static int DeviceProductString(IHS_HIDDevice *device, IHS_Buffer *dest) {
 }
 
 static int DeviceSerialNumber(IHS_HIDDevice *device, IHS_Buffer *dest) {
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 14)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     const char *serial = SDL_GameControllerGetSerial(sdl->controller);
     if (serial != NULL) {

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "ihslib/hid/sdl.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -35,16 +37,6 @@
 #include "sdl_hid_report.h"
 #include "hid/report.h"
 
-#ifndef IHS_SDL_TARGETVERSION
-#define IHS_SDL_TARGETVERSION SDL_COMPILEDVERSION
-#endif
-
-/**
- *  This macro will evaluate to true if compiled with SDL at least X.Y.Z.
- */
-#define IHS_SDL_TARGET_ATLEAST(X, Y, Z) \
-    (IHS_SDL_TARGETVERSION >= SDL_VERSIONNUM(X, Y, Z))
-
 typedef struct IHS_HIDDeviceSDL {
     IHS_HIDDevice base;
     /**
@@ -54,7 +46,7 @@ typedef struct IHS_HIDDeviceSDL {
     SDL_JoystickID instanceId;
     SDL_GameController *controller;
     int playerIndex;
-#if !IHS_SDL_TARGET_ATLEAST(2, 0, 9)
+#if !IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
     SDL_Haptic *haptic;
     int hapticEffectId;
 #endif

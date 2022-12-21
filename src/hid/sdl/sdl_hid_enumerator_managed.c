@@ -22,18 +22,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "sdl_hid_common.h"
+#include "ihslib/hid/sdl.h"
 
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6)
 
 #include <stddef.h>
 #include <stdlib.h>
+#include "sdl_hid_common.h"
 #include "sdl_hid_utils.h"
 #include "sdl_hid_enumerators.h"
 
 #include "ihslib/enumeration.h"
 #include "ihslib/hid.h"
-#include "ihslib/hid/sdl.h"
 
 static IHS_Enumeration *EnumerationAlloc(const IHS_EnumerationClass *cls, void *arg);
 

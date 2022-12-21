@@ -47,7 +47,7 @@ typedef struct GameControllerEnumeration {
     } temp;
 } GameControllerEnumeration;
 
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6)
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerateManaged();
 

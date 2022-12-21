@@ -26,9 +26,18 @@
 #pragma once
 
 #include "ihslib/hid.h"
+#include "ihslib/hid/sdl/config.h"
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_joystick.h>
+
+/**
+ *  This macro will evaluate to true if targeting SDL at least X.Y.Z.
+ */
+#define IHS_HID_SDL_TARGET_ATLEAST(X, Y, Z) \
+    ((IHS_HID_SDL_TARGET_MAJOR >= X) && \
+     (IHS_HID_SDL_TARGET_MAJOR > X || IHS_HID_SDL_TARGET_MINOR >= Y) && \
+     (IHS_HID_SDL_TARGET_MAJOR > X || IHS_HID_SDL_TARGET_MINOR > Y || IHS_HID_SDL_TARGET_PATCH >= Z))
 
 typedef struct IHS_HIDProviderSDLJoystickIDMapping {
     int (*count)(void *context);

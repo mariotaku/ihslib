@@ -86,8 +86,6 @@ if (HIDAPI_FOUND)
     target_compile_definitions(ihslib PUBLIC IHSLIB_HIDAPI)
 endif ()
 
-configure_file(src/config.h.in config.h @ONLY)
-
 target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(src/protobuf)

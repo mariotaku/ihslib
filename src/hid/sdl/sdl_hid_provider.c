@@ -23,6 +23,8 @@
  *
  */
 
+#include "ihslib/hid/sdl.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +32,6 @@
 #include "ihslib/hid.h"
 #include "sdl_hid_common.h"
 #include "hid/provider.h"
-#include "ihslib/hid/sdl.h"
 #include "sdl_hid_enumerators.h"
 
 #include <SDL2/SDL.h>
@@ -68,8 +69,8 @@ static const IHS_HIDProviderClass ProviderClass = {
 };
 
 IHS_HIDProvider *IHS_HIDProviderSDLCreateManaged() {
-    assert(IHS_SDL_TARGET_ATLEAST(2, 0, 6));
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+    assert(IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6));
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6)
     HIDProviderSDL *provider = (HIDProviderSDL *) IHS_SessionHIDProviderCreate(&ProviderClass);
     provider->managed = true;
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
@@ -118,7 +119,7 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
         return NULL;
     }
     SDL_GameController *controller = NULL;
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6)
     if (sdlProvider->managed) {
         int index = -1;
         for (int i = 0, numJoysticks = SDL_NumJoysticks(); i < numJoysticks; i++) {
@@ -152,8 +153,8 @@ static bool ProviderHasChange(IHS_HIDProvider *provider) {
 static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider) {
     HIDProviderSDL *sdlProvider = (HIDProviderSDL *) provider;
     if (sdlProvider->managed) {
-        assert(IHS_SDL_TARGET_ATLEAST(2, 0, 6));
-#if IHS_SDL_TARGET_ATLEAST(2, 0, 6)
+        assert(IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6));
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 6)
         return IHS_HIDDeviceSDLEnumerateManaged();
 #endif
     } else {
