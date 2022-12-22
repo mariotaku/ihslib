@@ -244,7 +244,7 @@ static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manage
         SendRequestCodeResponse(channel, message->request_id, -1);
         IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID",
                        "Message %u: Open(path=%s, product_string=%s) => (nil)",
-                       message->request_id, cmd->info->product_string, cmd->info->path);
+                       message->request_id, cmd->info->path, cmd->info->product_string);
         return;
     }
     // Send managed ID as result
