@@ -253,7 +253,7 @@ static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manage
     PROTOBUF_C_SET_VALUE(response, result, managed->id);
     SendRequestResponse(channel, &response);
     IHS_SessionLog(channel->session, IHS_LogLevelDebug, "HID", "Message %u: Open(path=%s, product_string=%s) => id=%u",
-                   message->request_id, cmd->info->product_string, cmd->info->path, managed->id);
+                   message->request_id, cmd->info->path, cmd->info->product_string, managed->id);
 }
 
 static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager,
