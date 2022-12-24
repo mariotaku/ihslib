@@ -82,13 +82,22 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
             }
         }
     }
-    for (int i = 0; i < message->n_supported_video_codecs; i++) {
-        EStreamVideoCodec codec = message->supported_video_codecs[i];
-        if (ihsConf.enableHevc && codec == k_EStreamVideoCodecHEVC) {
-            videoCodec = codec;
-            break;
-        } else if (codec == k_EStreamVideoCodecH264) {
-            videoCodec = codec;
+    if (ihsConf.enableHevc) {
+        for (int i = 0; i < message->n_supported_video_codecs; i++) {
+            EStreamVideoCodec codec = message->supported_video_codecs[i];
+            if (codec == k_EStreamVideoCodecHEVC) {
+                videoCodec = codec;
+                break;
+            }
+        }
+    }
+    if (videoCodec == IHS_StreamVideoCodecNone) {
+        for (int i = 0; i < message->n_supported_video_codecs; i++) {
+            EStreamVideoCodec codec = message->supported_video_codecs[i];
+            if (codec == k_EStreamVideoCodecH264) {
+                videoCodec = codec;
+                break;
+            }
         }
     }
 
