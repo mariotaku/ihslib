@@ -28,7 +28,7 @@
 #include "base.h"
 #include "session/session_pri.h"
 
-static uint64_t SendKeepAlive(void *data);
+static uint64_t SendKeepAlive(int runCount, void *data);
 
 void IHS_SessionChannelControlStartHeartbeat(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
@@ -44,7 +44,8 @@ void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel) {
     control->keepAliveTimer = NULL;
 }
 
-static uint64_t SendKeepAlive(void *data) {
+static uint64_t SendKeepAlive(int runCount, void *data) {
+    (void) runCount;
     IHS_SessionChannel *channel = data;
     CKeepAliveMsg message = CKEEP_ALIVE_MSG__INIT;
     IHS_SessionChannelControlSend(channel, k_EStreamControlKeepAlive, (const ProtobufCMessage *) &message,

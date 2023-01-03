@@ -86,7 +86,7 @@ static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buff
 
 static void SubmitFrame(IHS_SessionChannel *channel, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags);
 
-static uint64_t ReportVideoStats(void *data);
+static uint64_t ReportVideoStats(int runCount, void *data);
 
 /**
  * Append one data frame into partial video frames list
@@ -352,7 +352,8 @@ static void SubmitFrame(IHS_SessionChannel *channel, IHS_Buffer *data, IHS_Strea
     }
 }
 
-static uint64_t ReportVideoStats(void *data) {
+static uint64_t ReportVideoStats(int runCount, void *data) {
+    (void) runCount;
     IHS_SessionChannel *channel = data;
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_MutexLock(videoCh->stateMutex);

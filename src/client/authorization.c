@@ -37,7 +37,7 @@ typedef struct IHS_AuthorizationState {
     char pin[16];
 } IHS_AuthorizationState;
 
-static uint64_t AuthorizationRequestTimer(void *data);
+static uint64_t AuthorizationRequestTimer(int runCount, void *data);
 
 static void AuthorizationRequestCleanup(void *data);
 
@@ -134,7 +134,8 @@ bool IHS_ClientAuthorizationPubKey(IHS_Client *client, IHS_SteamUniverse univers
     return true;
 }
 
-static uint64_t AuthorizationRequestTimer(void *data) {
+static uint64_t AuthorizationRequestTimer(int runCount, void *data) {
+    (void) runCount;
     IHS_AuthorizationState *state = data;
     IHS_Client *client = state->client;
     uint8_t pubKey[384];

@@ -37,7 +37,7 @@ typedef struct IHS_StreamingState {
     uint64_t lastMsgTime;
 } IHS_StreamingState;
 
-static uint64_t StreamingRequestTimer(void *context);
+static uint64_t StreamingRequestTimer(int runCount, void *context);
 
 static void StreamingRequestCleanup(void *context);
 
@@ -131,7 +131,8 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
     }
 }
 
-static uint64_t StreamingRequestTimer(void *context) {
+static uint64_t StreamingRequestTimer(int runCount, void *context) {
+    (void) runCount;
     IHS_StreamingState *state = context;
     IHS_Client *client = state->client;
     if ((IHS_TimerNow() - state->lastMsgTime) > 15000) {

@@ -43,6 +43,7 @@ struct IHS_TimerTask {
     IHS_TimerEndFunction *end;
     void *context;
     uint64_t nextExecution;
+    int runCount;
 };
 
 static struct {
@@ -144,6 +145,10 @@ void *IHS_TimerTaskGetContext(IHS_TimerTask *task) {
     return task->context;
 }
 
+int IHS_TimerTaskGetRunCount(const IHS_TimerTask *task) {
+    return task->runCount;
+}
+
 uint64_t IHS_TimerNow() {
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);
@@ -202,7 +207,8 @@ static bool TaskExecute(IHS_TimerTask *task, IHS_Timer *timer) {
     if (task->nextExecution > IHS_TimerNow()) {
         return false;
     }
-    uint64_t timeout = task->run(task->context);
+    uint64_t timeout = task->run(task->runCount, task->context);
+    task->runCount += 1;
     if (timeout == 0) {
         return true;
     }

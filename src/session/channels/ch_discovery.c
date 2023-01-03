@@ -42,10 +42,14 @@ static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *p
 
 static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
 
-static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
+static void OnDisconnect(IHS_SessionChannel *channel);
 
 static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *packet,
                           const CDiscoveryPingRequest *request);
+
+static uint64_t DisconnectTimerRun(int runCount, void *context);
+
+static void DisconnectTimerEnd(void *context);
 
 static const IHS_SessionChannelClass ChannelClass = {
         .received = OnDiscoveryReceived,
@@ -58,10 +62,7 @@ IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
 }
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
-    IHS_SessionPacket packet;
-    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeDisconnect, true, 0);
-    IHS_SessionChannelQueuePacket(channel, &packet, false);
-    IHS_SessionPacketClear(&packet, true);
+    IHS_TimerTaskStart(channel->session->timers, DisconnectTimerRun, DisconnectTimerEnd, 0, channel);
 }
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
@@ -73,7 +74,8 @@ static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *
             OnUnconnected(channel, packet);
             break;
         case IHS_SessionPacketTypeDisconnect:
-            OnDisconnect(channel, packet);
+            /* It's not possible to get packet after interruption, so we can safely call OnDisconnect. */
+            OnDisconnect(channel);
             break;
         default:
             break;
@@ -104,9 +106,13 @@ static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *
     }
 }
 
-static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
-    (void) packet;
+static void OnDisconnect(IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
+    IHS_BaseLock((IHS_Base *) session);
+    if (session->base.interrupted) {
+        IHS_BaseUnlock((IHS_Base *) session);
+        return;
+    }
     if (session->callbacks.session && session->callbacks.session->disconnected) {
         session->callbacks.session->disconnected(session, session->callbackContexts.session);
     }
@@ -115,6 +121,7 @@ static void OnDisconnect(IHS_SessionChannel *channel, const IHS_SessionPacket *p
     IHS_SessionChannelControlStopHeartbeat(control);
     IHS_HIDManagerCloseAll(session->hidManager);
     IHS_SessionInterrupt(session);
+    IHS_BaseUnlock((IHS_Base *) session);
 }
 
 static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *packet,
@@ -133,4 +140,22 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
     IHS_SessionPacketPadTo(&outPacket, request->packet_size_requested);
     IHS_SessionQueuePacket(channel->session, &outPacket, false);
     IHS_SessionPacketClear(&outPacket, true);
+}
+
+static uint64_t DisconnectTimerRun(int runCount, void *context) {
+    IHS_SessionChannel *channel = context;
+    if (channel->session->base.interrupted || runCount > 10) {
+        return 0;
+    }
+    IHS_SessionPacket packet;
+    IHS_SessionChannelInitializePacket(channel, &packet, IHS_SessionPacketTypeDisconnect, true, 0);
+    packet.header.retransmitCount = runCount;
+    IHS_SessionChannelQueuePacket(channel, &packet, false);
+    IHS_SessionPacketClear(&packet, true);
+    return 100;
+}
+
+static void DisconnectTimerEnd(void *context) {
+    IHS_SessionChannel *channel = context;
+    OnDisconnect(channel);
 }

@@ -30,7 +30,7 @@
 typedef struct IHS_Timer IHS_Timer;
 typedef struct IHS_TimerTask IHS_TimerTask;
 
-typedef uint64_t (IHS_TimerRunFunction)(void *context);
+typedef uint64_t (IHS_TimerRunFunction)(int runCount, void *context);
 
 typedef void (IHS_TimerEndFunction)(void *context);
 
@@ -56,5 +56,7 @@ IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, I
 void IHS_TimerTaskStop(IHS_TimerTask *task);
 
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task);
+
+int IHS_TimerTaskGetRunCount(const IHS_TimerTask *task);
 
 uint64_t IHS_TimerNow();

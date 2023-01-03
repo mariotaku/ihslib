@@ -28,7 +28,7 @@
 
 #include <string.h>
 
-static uint64_t DiscoveryTimerRun(IHS_Client *client);
+static uint64_t DiscoveryTimerRun(int runCount, IHS_Client *client);
 
 static void DiscoveryTimerEnd(IHS_Client *client);
 
@@ -79,7 +79,7 @@ void IHS_ClientDiscoveryCallback(IHS_Client *client, const IHS_SocketAddress *ad
     }
 }
 
-static uint64_t DiscoveryTimerRun(IHS_Client *client) {
+static uint64_t DiscoveryTimerRun(int runCount, IHS_Client *client) {
     if (client->discoveryTimer == NULL) {
         return 0;
     }
