@@ -34,7 +34,7 @@ typedef struct task_t {
     int until;
 } task_ctx_t;
 
-static uint64_t task_run(void *context);
+static uint64_t task_run(int runCount, void *context);
 
 static void task_end(void *context);
 
@@ -71,8 +71,9 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-static uint64_t task_run(void *context) {
+static uint64_t task_run(int runCount, void *context) {
     task_ctx_t *task = context;
+    assert(runCount == task->counter);
     task->counter++;
     printf("Timer #%d task %d counter %d\n", task->timer, task->id, task->counter);
     if (task->until > 0 && task->counter >= task->until) {
