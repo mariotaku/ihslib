@@ -178,7 +178,7 @@ static uint64_t StreamingRequestTimer(int runCount, void *context) {
     message.restricted = false;
 
     message.has_stream_interface = true;
-    message.stream_interface = k_EStreamInterfaceDefault;
+    message.stream_interface = (EStreamInterface) request.streamingInterface;
 
     message.has_stream_desktop = true;
     message.stream_desktop = true;

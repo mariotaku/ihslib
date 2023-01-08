@@ -33,19 +33,6 @@
 
 typedef struct IHS_Client IHS_Client;
 
-typedef struct IHS_StreamingRequest {
-    char pin[16];
-    struct {
-        bool video;
-        bool audio;
-        bool input;
-    } streamingEnable;
-    struct {
-        int32_t x;
-        int32_t y;
-    } maxResolution;
-    int32_t audioChannelCount;
-} IHS_StreamingRequest;
 
 /**
  * Corresponding to ERemoteDeviceAuthorizationResult
@@ -80,6 +67,28 @@ typedef enum IHS_StreamingResult {
     IHS_StreamingGameLaunchFailed = 14,
     IHS_StreamingTimeout = -1,
 } IHS_StreamingResult;
+
+typedef enum IHS_StreamInterface {
+    IHS_StreamInterfaceDefault = 0,
+    IHS_StreamInterfaceRecentGames = 1,
+    IHS_StreamInterfaceBigPicture = 2,
+    IHS_StreamInterfaceDesktop = 3
+} IHS_StreamInterface;
+
+typedef struct IHS_StreamingRequest {
+    char pin[16];
+    struct {
+        bool video;
+        bool audio;
+        bool input;
+    } streamingEnable;
+    struct {
+        int32_t x;
+        int32_t y;
+    } maxResolution;
+    int32_t audioChannelCount;
+    IHS_StreamInterface streamingInterface;
+} IHS_StreamingRequest;
 
 typedef struct IHS_ClientDiscoveryCallbacks {
     void (*discovered)(IHS_Client *client, const IHS_HostInfo *host, void *context);
