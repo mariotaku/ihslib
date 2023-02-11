@@ -36,6 +36,13 @@
 #include "ihs_buffer_ext.h"
 #include "hid/manager.h"
 
+typedef struct {
+    IHS_SessionChannel base;
+    IHS_TimerTask *disconnectTimerTask;
+} DiscoveryChannel;
+
+static void OnDiscoveryDeinit(IHS_SessionChannel *channel);
+
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
 static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *packet);
@@ -53,7 +60,8 @@ static void DisconnectTimerEnd(void *context);
 
 static const IHS_SessionChannelClass ChannelClass = {
         .received = OnDiscoveryReceived,
-        .instanceSize = sizeof(IHS_SessionChannel)
+        .deinit = OnDiscoveryDeinit,
+        .instanceSize = sizeof(DiscoveryChannel)
 };
 
 IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
@@ -62,7 +70,16 @@ IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
 }
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
-    IHS_TimerTaskStart(channel->session->timers, DisconnectTimerRun, DisconnectTimerEnd, 0, channel);
+    DiscoveryChannel *discoveryCh = (DiscoveryChannel *) channel;
+    discoveryCh->disconnectTimerTask = IHS_TimerTaskStart(channel->session->timers, DisconnectTimerRun,
+                                                          DisconnectTimerEnd, 0, channel);
+}
+
+static void OnDiscoveryDeinit(IHS_SessionChannel *channel) {
+    DiscoveryChannel *discoveryCh = (DiscoveryChannel *) channel;
+    if (discoveryCh->disconnectTimerTask != NULL) {
+        IHS_TimerTaskStop(discoveryCh->disconnectTimerTask);
+    }
 }
 
 static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {
@@ -108,6 +125,7 @@ static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *
 
 static void OnDisconnect(IHS_SessionChannel *channel) {
     IHS_Session *session = channel->session;
+    assert(session != NULL);
     IHS_BaseLock((IHS_Base *) session);
     if (session->base.interrupted) {
         IHS_BaseUnlock((IHS_Base *) session);
