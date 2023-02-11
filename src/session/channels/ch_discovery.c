@@ -144,7 +144,7 @@ static void OnPingRequest(IHS_SessionChannel *channel, const IHS_SessionPacket *
 
 static uint64_t DisconnectTimerRun(int runCount, void *context) {
     IHS_SessionChannel *channel = context;
-    if (channel->session->base.interrupted || runCount > 10) {
+    if (channel->session == NULL || channel->session->base.interrupted || runCount > 10) {
         return 0;
     }
     IHS_SessionPacket packet;

@@ -49,6 +49,7 @@ void IHS_Quit() {
 }
 
 void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceivedFunction recvCb, bool broadcast) {
+    assert(base != NULL);
     assert(initialized);
     memset(base, 0, sizeof(IHS_Base));
     base->broadcast = broadcast;
@@ -67,12 +68,14 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
 }
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction) {
+    assert(base != NULL);
     IHS_BaseLock(base);
     base->callbacks.log = logFunction;
     IHS_BaseUnlock(base);
 }
 
 void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context) {
+    assert(base != NULL);
     IHS_BaseLock(base);
     base->callbacks.run = callbacks;
     base->callbackContexts.run = context;
@@ -80,6 +83,7 @@ void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbac
 }
 
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag, const char *fmt, ...) {
+    assert(base != NULL);
     if (!base->callbacks.log) return;
     char buf[4096];
     va_list args;
@@ -109,6 +113,7 @@ const char *IHS_LogLevelName(IHS_LogLevel level) {
 }
 
 bool IHS_BaseStartWorker(IHS_Base *base, const char *name) {
+    assert(base != NULL);
     IHS_BaseLock(base);
     if (base->worker != NULL) {
         IHS_BaseUnlock(base);
@@ -121,6 +126,7 @@ bool IHS_BaseStartWorker(IHS_Base *base, const char *name) {
 }
 
 void IHS_BaseInterruptWorker(IHS_Base *base) {
+    assert(base != NULL);
     if (base->interrupted) {
         return;
     }
@@ -128,15 +134,18 @@ void IHS_BaseInterruptWorker(IHS_Base *base) {
 }
 
 void IHS_BaseWaitWorker(IHS_Base *base) {
+    assert(base != NULL);
     IHS_ThreadJoin(base->worker);
     base->worker = NULL;
 }
 
 void IHS_BaseDestroy(IHS_Base *base) {
+    assert(base != NULL);
     IHS_MutexDestroy(base->lock);
 }
 
 bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const IHS_Buffer *data) {
+    assert(base != NULL);
     if (base->socket == NULL) {
         return false;
     }
@@ -145,14 +154,17 @@ bool IHS_BaseSend(IHS_Base *base, IHS_SocketAddress address, const IHS_Buffer *d
 }
 
 void IHS_BaseLock(IHS_Base *base) {
+    assert(base != NULL);
     IHS_MutexLock(base->lock);
 }
 
 void IHS_BaseUnlock(IHS_Base *base) {
+    assert(base != NULL);
     IHS_MutexUnlock(base->lock);
 }
 
 static void BaseWorker(IHS_Base *base) {
+    assert(base != NULL);
     base->socket = IHS_UDPSocketOpen(base->broadcast);
     if (base->callbacks.run && base->callbacks.run->initialized) {
         base->callbacks.run->initialized(base, base->callbackContexts.run);

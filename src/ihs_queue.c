@@ -48,6 +48,7 @@ IHS_Queue *IHS_QueueCreate(size_t itemSize) {
 }
 
 void IHS_QueueDestroy(IHS_Queue *queue, IHS_QueueConsumerFunction *destroy, void *destroyContext) {
+    assert(queue != NULL);
     QueueNode *head = queue->head;
     QueueNode *tmp;
     while (head != NULL) {
@@ -62,6 +63,8 @@ void IHS_QueueDestroy(IHS_Queue *queue, IHS_QueueConsumerFunction *destroy, void
 }
 
 void IHS_QueueAppend(IHS_Queue *queue, IHS_QueueItem *item) {
+    assert(queue != NULL);
+    assert(item != NULL);
     QueueNode *node = NodeFromItem(item);
     assert(node->next == NULL);
     QueueNode *cur = queue->head;
@@ -76,6 +79,7 @@ void IHS_QueueAppend(IHS_Queue *queue, IHS_QueueItem *item) {
 }
 
 IHS_QueueItem *IHS_QueuePoll(IHS_Queue *queue) {
+    assert(queue != NULL);
     QueueNode *head = queue->head;
     if (head == NULL) {
         return NULL;
@@ -88,6 +92,8 @@ IHS_QueueItem *IHS_QueuePoll(IHS_Queue *queue) {
 }
 
 IHS_QueueItem *IHS_QueuePollBy(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate, void *predicateContext) {
+    assert(queue != NULL);
+    assert(predicate != NULL);
     QueueNode *cur = queue->head, *prev = NULL;
     while (cur != NULL) {
         IHS_QueueItem *item = ItemFromNode(cur);
@@ -108,6 +114,9 @@ IHS_QueueItem *IHS_QueuePollBy(IHS_Queue *queue, IHS_QueuePredicateFunction *pre
 
 size_t IHS_QueuePollEach(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate, void *predicateContext,
                          IHS_QueueConsumerFunction *destroy, void *destroyContext) {
+    assert(queue != NULL);
+    assert(predicate != NULL);
+    assert(destroy != NULL);
     size_t iterated = 0;
     QueueNode *cur = queue->head, *prev = NULL;
     while (cur != NULL) {
@@ -132,23 +141,28 @@ size_t IHS_QueuePollEach(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate
 
 
 bool IHS_QueueIsEmpty(const IHS_Queue *queue) {
+    assert(queue != NULL);
     return queue->head == NULL;
 }
 
 IHS_QueueItem *IHS_QueueItemObtain(IHS_Queue *queue) {
+    assert(queue != NULL);
     QueueNode *item = calloc(1, sizeof(QueueNode) + queue->itemSize);
     return ItemFromNode(item);
 }
 
 void IHS_QueueItemFree(IHS_QueueItem *item) {
+    assert(item != NULL);
     free(NodeFromItem(item));
 }
 
 static IHS_QueueItem *ItemFromNode(QueueNode *node) {
+    assert(node != NULL);
     return (IHS_QueueItem *) ((void *) node + sizeof(QueueNode));
 }
 
 static QueueNode *NodeFromItem(IHS_QueueItem *item) {
+    assert(item != NULL);
     return (QueueNode *) ((void *) item - sizeof(QueueNode));
 }
 
