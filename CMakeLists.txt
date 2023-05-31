@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
 
 project(ihslib C)
+
+cmake_policy(SET CMP0076 NEW)
 
 set(CMAKE_C_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
@@ -32,49 +34,8 @@ if (NOT MBEDTLS_FOUND)
     find_package(OpenSSL)
 endif ()
 
-add_library(ihslib
-        src/base.c
-        src/crc32.c
-        src/crc32c.c
-        src/ihs_timer.c
-        src/ihs_ip.c
-        src/ihs_buffer.c
-        src/ihs_queue.c
-        src/ihs_arraylist.c
-        src/ihs_enumeration.c
-        src/ihs_enumeration_ll.c
-        src/ihs_enumeration_array.c
-        src/client/client.c
-        src/client/discovery.c
-        src/client/authorization.c
-        src/client/streaming.c
-        src/session/session.c
-        src/session/packet.c
-        src/session/frame.c
-        src/session/window.c
-        src/session/frame_crypto.c
-        src/session/channels/channel.c
-        src/session/channels/ch_discovery.c
-        src/session/channels/ch_control.c
-        src/session/channels/ch_control_authentication.c
-        src/session/channels/ch_control_negotiation.c
-        src/session/channels/ch_control_keepalive.c
-        src/session/channels/ch_control_audio.c
-        src/session/channels/ch_control_video.c
-        src/session/channels/ch_data.c
-        src/session/channels/ch_data_audio.c
-        src/session/channels/video/frame_h264.c
-        src/session/channels/video/frame_hevc.c
-        src/session/channels/video/partial_frames.c
-        src/session/channels/video/ch_data_video.c
-        src/session/channels/control/control_cursor.c
-        src/session/channels/control/control_input.c
-        src/session/channels/control/control_hid.c
-        src/session/channels/ch_stats.c
-        src/hid/device.c
-        src/hid/provider.c
-        src/hid/manager.c
-        src/hid/report.c)
+add_library(ihslib)
+add_subdirectory(src)
 
 if (SDL2_VERSION VERSION_GREATER_EQUAL 2.0.18)
     set(IHSLIB_SDL2_HIDAPI 1)

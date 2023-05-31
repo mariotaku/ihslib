@@ -101,3 +101,7 @@ bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton b
 bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button);
 
 bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction);
+
+bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode);
+
+bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode);
