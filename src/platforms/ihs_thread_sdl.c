@@ -70,5 +70,6 @@ void IHS_CondSignal(IHS_Cond *cond) {
 
 bool IHS_CondWait(IHS_Cond *cond, IHS_Mutex *mutex) {
     SDL_assert(cond != NULL);
+    SDL_assert(mutex != NULL);
     return SDL_CondWait((SDL_cond *) cond, (SDL_mutex *) mutex) == 0;
 }
