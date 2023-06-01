@@ -61,6 +61,9 @@ typedef enum IHS_SessionChannelId {
 } IHS_SessionChannelId;
 
 typedef struct IHS_SessionPacketHeader {
+    /**
+     * \p true if this packet has CRC. If a packet has CRC, its body MUST contain 4 bytes suffix.
+     */
     bool hasCrc;
     IHS_SessionPacketType type;
     uint8_t retransmitCount;
@@ -126,7 +129,6 @@ void IHS_SessionPacketPadTo(IHS_SessionPacket *packet, size_t padTo);
 /**
  * Update header bytes and CRC for packet
  * @param packet Packet pointer
- * @return
  */
 void IHS_SessionPacketPopulateBuffer(IHS_SessionPacket *packet);
 
