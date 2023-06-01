@@ -35,8 +35,8 @@
 #include "session/session_pri.h"
 #include "session/frame.h"
 
-static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
-                                              bool enableRetransmit);
+static bool SessionChannelQueueFramePackets(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
+                                            bool enableRetransmit);
 
 static IHS_SessionPacketType FragmentedPacketType(IHS_SessionPacketType type);
 
@@ -192,7 +192,7 @@ bool IHS_SessionChannelQueueFrame(IHS_SessionChannel *channel, IHS_SessionFrame 
         ret = IHS_SessionQueuePacket(channel->session, &packet, enableRetransmit);
         IHS_SessionPacketClear(&packet, true);
     } else {
-        ret = SessionChannelSendFrameFragmented(channel, frame, packetBodySizeLimit, enableRetransmit);
+        ret = SessionChannelQueueFramePackets(channel, frame, packetBodySizeLimit, enableRetransmit);
     }
     return ret;
 }
@@ -206,8 +206,8 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
     IHS_SessionPacketClear(&packet, true);
 }
 
-static bool SessionChannelSendFrameFragmented(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
-                                              bool enableRetransmit) {
+static bool SessionChannelQueueFramePackets(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
+                                            bool enableRetransmit) {
     int fragmentSize = (int) (frame->body.size / bodyLimit + 1);
     assert(fragmentSize <= INT16_MAX);
     int16_t fragmentId = -1;

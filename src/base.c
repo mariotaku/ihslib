@@ -127,10 +127,13 @@ bool IHS_BaseStartWorker(IHS_Base *base, const char *name) {
 
 void IHS_BaseInterruptWorker(IHS_Base *base) {
     assert(base != NULL);
+    IHS_BaseLock(base);
     if (base->interrupted) {
+        IHS_BaseUnlock(base);
         return;
     }
     base->interrupted = true;
+    IHS_BaseUnlock(base);
 }
 
 void IHS_BaseWaitWorker(IHS_Base *base) {

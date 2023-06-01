@@ -182,6 +182,7 @@ void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
 }
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to) {
+    assert(buffer != to);
 #ifndef IHSLIB_SANITIZE_ADDRESS
     *to = *buffer;
 #else
