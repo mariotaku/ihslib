@@ -203,12 +203,12 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
         IHS_SessionCancelRetransmission(session, channelId, packet.header.packetId, packet.header.fragmentId);
     }
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, channelId);
-    if (!channel) {
+    if (channel != NULL) {
+        IHS_SessionChannelReceivedPacket(channel, &packet);
+    } else {
         IHS_SessionLog(session, IHS_LogLevelDebug, "Session", "Unknown channel for packet(type=%u, ch=%u)", packetType,
                        channelId);
-        return;
     }
-    IHS_SessionChannelReceivedPacket(channel, &packet);
     IHS_SessionPacketClear(&packet, true);
 }
 

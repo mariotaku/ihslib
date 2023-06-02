@@ -69,7 +69,9 @@ void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity) {
     if (wantedCapacity <= buffer->capacity) {
         return;
     }
-    buffer->data = realloc(buffer->data, wantedCapacity);
+    void *allocated = realloc(buffer->data, wantedCapacity);
+    assert(allocated != NULL);
+    buffer->data = allocated;
     buffer->capacity = wantedCapacity;
     assert(buffer->data != NULL);
 }
@@ -183,10 +185,8 @@ void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to) {
     assert(buffer != to);
-#ifndef IHSLIB_SANITIZE_ADDRESS
     *to = *buffer;
-#else
-    *to = *buffer;
+#ifdef IHSLIB_SANITIZE_ADDRESS
     to->data = malloc(buffer->capacity);
     memcpy(to->data, buffer->data, buffer->capacity);
     free(buffer->data);
