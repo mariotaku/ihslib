@@ -123,17 +123,17 @@ int IHS_HIDDeviceSDLWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dat
 
 void HandleRumble(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
-    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL", "Rumble(dur=%u, lo=%u, hi=%u)", rumble->durationMs,
+    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelVerbose, "HID.SDL", "Rumble(dur=%u, lo=%u, hi=%u)", rumble->durationMs,
                      rumble->lowFreq, rumble->highFreq);
     SDL_GameControllerRumble(sdl->controller, rumble->lowFreq, rumble->highFreq, rumble->durationMs);
 #else
     if (sdl->haptic == NULL) {
-        IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL",
+        IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelVerbose, "HID.SDL",
                          "Rumble(dur=%u, lo=%u, hi=%u) (haptic not supported)", rumble->durationMs, rumble->lowFreq,
                          rumble->highFreq);
         return;
     }
-    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL", "Rumble(dur=%u, lo=%u, hi=%u)", rumble->durationMs,
+    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelVerbose, "HID.SDL", "Rumble(dur=%u, lo=%u, hi=%u)", rumble->durationMs,
                      rumble->lowFreq, rumble->highFreq);
     SDL_HapticEffect effect = {.leftright = {
             .type = SDL_HAPTIC_LEFTRIGHT,
@@ -153,7 +153,7 @@ void HandleRumble(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
 }
 
 static void HandleRumbleTriggers(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
-    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelDebug, "HID.SDL", "RumbleTriggers(dur=%u, lo=%u, hi=%u)",
+    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelVerbose, "HID.SDL", "RumbleTriggers(dur=%u, lo=%u, hi=%u)",
                      rumble->durationMs, rumble->lowFreq, rumble->highFreq);
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     SDL_GameControllerRumbleTriggers(sdl->controller, rumble->lowFreq, rumble->highFreq, rumble->durationMs);

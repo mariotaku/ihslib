@@ -362,7 +362,7 @@ static uint64_t ReportVideoStats(int runCount, void *data) {
     message.data_type = k_EStreamingVideoData;
     message.latest_frame_id = videoCh->states.lastFrameId;
 
-    IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Video", "%.2f FPS", videoCh->states.frameCounter / 1.0);
+    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "Video", "%.2f FPS", videoCh->states.frameCounter / 1.0);
     videoCh->states.frameCounter = 0;
     IHS_MutexUnlock(videoCh->stateMutex);
     return 1000;

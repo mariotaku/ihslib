@@ -41,14 +41,16 @@ void IHS_ArrayListInit(IHS_ArrayList *list, size_t itemSize) {
 void IHS_ArrayListDeinit(IHS_ArrayList *list) {
     if (list->data != NULL) {
         free(list->data);
-        list->data = NULL;
     }
+    memset(list, 0, sizeof(IHS_ArrayList));
 }
 
 void *IHS_ArrayListAppend(IHS_ArrayList *list, const void *itemPtr) {
     if (list->size + 1 >= list->capacity) {
         list->capacity = list->capacity * 2;
-        list->data = realloc(list->data, list->capacity * list->itemSize);
+        void *allocated = realloc(list->data, list->capacity * list->itemSize);
+        assert(allocated != NULL);
+        list->data = allocated;
     }
     void *elementPtr = IHS_ArrayListGet(list, list->size);
     if (itemPtr != NULL) {
