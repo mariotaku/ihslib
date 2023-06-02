@@ -58,7 +58,9 @@ void IHS_RetransmissionInit(IHS_SessionRetransmission *retransmission, IHS_Sessi
 }
 
 void IHS_RetransmissionDeinit(IHS_SessionRetransmission *retransmission) {
+    IHS_MutexLock(retransmission->lock);
     IHS_QueueDestroy(retransmission->queue, RetransmissionQueueItemDestroy, retransmission);
+    IHS_MutexUnlock(retransmission->lock);
     IHS_MutexDestroy(retransmission->lock);
 }
 
@@ -68,7 +70,6 @@ bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_Sess
     if (packet->header.retransmitCount >= RETRANSMISSION_ATTEMPTS) {
         return false;
     }
-    IHS_MutexLock(retransmission->lock);
     PendingRetransmission *pending = IHS_QueueItemObtain(retransmission->queue);
     pending->packet = *packet;
     pending->retransmission = retransmission;
@@ -76,6 +77,7 @@ bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_Sess
     IHS_BufferTransferOwnership(&packet->body, &pending->packet.body);
     pending->task = IHS_TimerTaskStart(retransmission->session->timers, RetransmissionTimerRun, RetransmissionTimerEnd,
                                        RETRANSMISSION_INTERVAL, pending);
+    IHS_MutexLock(retransmission->lock);
     IHS_QueueAppend(retransmission->queue, pending);
     IHS_MutexUnlock(retransmission->lock);
     IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
@@ -94,12 +96,11 @@ bool IHS_RetransmissionCancel(IHS_SessionRetransmission *retransmission, IHS_Ses
     };
     IHS_MutexLock(retransmission->lock);
     PendingRetransmission *match = IHS_QueuePollBy(retransmission->queue, RetransmissionPacketPredicate, &query);
+    IHS_MutexUnlock(retransmission->lock);
     if (match == NULL) {
-        IHS_MutexUnlock(retransmission->lock);
         return false;
     }
     IHS_TimerTaskStop(match->task);
-    IHS_MutexUnlock(retransmission->lock);
     IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
                    "Cancelled Packet(channelId=%u, packetId=%u, fragmentId=%u), retransmitCount=%u",
                    channelId, packetId, fragmentId, match->packet.header.retransmitCount);
@@ -115,26 +116,24 @@ static uint64_t RetransmissionTimerRun(int runCount, void *context) {
     (void) runCount;
     PendingRetransmission *pending = context;
     IHS_SessionRetransmission *retransmission = pending->retransmission;
-    IHS_MutexLock(retransmission->lock);
     IHS_SessionPacket *packet = &pending->packet;
-    IHS_SessionQueuePacket(pending->retransmission->session, packet,
-                           packet->header.retransmitCount < RETRANSMISSION_ATTEMPTS);
-    IHS_MutexUnlock(retransmission->lock);
+    IHS_SessionQueuePacket(retransmission->session, packet, packet->header.retransmitCount < RETRANSMISSION_ATTEMPTS);
+    assert(packet->body.data == NULL);
     return 0;
 }
 
 static void RetransmissionTimerEnd(void *context) {
     PendingRetransmission *pending = context;
     IHS_SessionRetransmission *retransmission = pending->retransmission;
-    IHS_MutexLock(retransmission->lock);
     IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
                    "Timer ended for Packet(channelId=%u, packetId=%u, fragmentId=%u), retransmitCount=%u",
                    pending->packet.header.channelId, pending->packet.header.packetId, pending->packet.header.fragmentId,
                    pending->packet.header.retransmitCount);
+    IHS_MutexLock(retransmission->lock);
     IHS_QueuePollBy(retransmission->queue, RetransmissionTimerPredicate, pending->task);
+    IHS_MutexUnlock(retransmission->lock);
     IHS_SessionPacketClear(&pending->packet, true);
     IHS_QueueItemFree(pending);
-    IHS_MutexUnlock(retransmission->lock);
 }
 
 static bool RetransmissionTimerPredicate(PendingRetransmission *item, void *context) {
