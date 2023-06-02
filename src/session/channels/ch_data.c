@@ -23,8 +23,7 @@
  *
  */
 
-#include <memory.h>
-#include <stdlib.h>
+#include <stdio.h>
 
 #include "ch_data.h"
 #include "endianness.h"
@@ -56,8 +55,9 @@ void IHS_SessionChannelDataInit(IHS_SessionChannel *channel, uint16_t windowCapa
     dataCh->windowCond = IHS_CondCreate();
     dataCh->window = IHS_SessionPacketsWindowCreate(windowCapacity);
     dataCh->interrupted = false;
-    dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker,
-                                      DataChannelName(channel->type), dataCh);
+    char threadName[16];
+    snprintf(threadName, 16, "IHS%s", DataChannelName(channel->type));
+    dataCh->worker = IHS_ThreadCreate((IHS_ThreadFunction *) DataThreadWorker, threadName, dataCh);
 }
 
 void IHS_SessionChannelDataDeinit(IHS_SessionChannel *channel) {

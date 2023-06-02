@@ -215,7 +215,7 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
 static void SessionInitialized(IHS_Base *base, void *context) {
     (void) context;
     IHS_Session *session = (IHS_Session *) base;
-    session->sendThread = IHS_ThreadCreate(SessionSendWorker, "ihs-sess-send", session);
+    session->sendThread = IHS_ThreadCreate(SessionSendWorker, "IHSSessSend", session);
 
     if (session->callbacks.session && session->callbacks.session->initialized) {
         session->callbacks.session->initialized(session, session->callbackContexts.session);
