@@ -43,6 +43,7 @@
 
 typedef struct IHS_QueueItem {
     IHS_SessionPacket packet;
+    bool retransmit;
 } QueuedPacket;
 
 static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data);
@@ -53,7 +54,9 @@ static void SessionFinalized(IHS_Base *base, void *context);
 
 static void SessionSendWorker(void *context);
 
-static void QueuedPacketDestroy(QueuedPacket *queued, void *context);
+static QueuedPacket *QueuedPacketCreate(IHS_Session *session, IHS_SessionPacket *packet);
+
+static void QueuedPacketDestroy(QueuedPacket *queued, void *unused);
 
 static const IHS_BaseRunCallbacks SessionRunCallbacks = {
         .initialized = SessionInitialized,
@@ -69,6 +72,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->sendQueueCond = IHS_CondCreate();
     session->sendQueue = IHS_QueueCreate(sizeof(QueuedPacket));
     session->timers = IHS_TimerCreate();
+    IHS_RetransmissionInit(&session->retransmission, session);
     session->hidManager = IHS_HIDManagerCreate();
 
     session->numChannels = 3;
@@ -105,6 +109,7 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_HIDManagerDestroy(session->hidManager);
+    IHS_RetransmissionDeinit(&session->retransmission);
     IHS_TimerDestroy(session->timers);
     IHS_CondDestroy(session->sendQueueCond);
     IHS_MutexDestroy(session->sendQueueMutex);
@@ -130,27 +135,34 @@ void IHS_SessionInterrupt(IHS_Session *session) {
 
 bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet) {
     const IHS_SessionInfo *config = &session->info;
+    // Write header and CRC to the buffer
     IHS_SessionPacketPopulateBuffer(packet);
+    // Shallow copied buffer - offset & suffix changes will be temporary
     IHS_Buffer serialized = packet->body;
     IHS_BufferExtendSize(&serialized);
+
+    if (packet->header.retransmitCount > 0) {
+        IHS_SessionLog(session, IHS_LogLevelVerbose, "Retransmission",
+                       "Send Packet(channelId=%u, packetId=%u, fragmentId=%u), retransmitCount=%u",
+                       packet->header.channelId, packet->header.packetId, packet->header.fragmentId,
+                       packet->header.retransmitCount);
+    }
     return IHS_BaseSend(&session->base, config->address, &serialized);
 }
 
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit) {
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
+    // If the packet has CRC, require 4 bytes extra space at the end of body
     assert(!packet->header.hasCrc || packet->body.suffix == 4);
     IHS_MutexLock(session->sendQueueMutex);
-    QueuedPacket *item = IHS_QueueItemObtain(session->sendQueue);
-    item->packet.header = packet->header;
-    item->packet.crc = packet->crc;
-    IHS_BufferTransferOwnership(&packet->body, &item->packet.body);
+    // Move buffer ownership from packet to QueuedPacket
+    QueuedPacket *item = QueuedPacketCreate(session, packet);
+    item->retransmit = retransmit;
+
     IHS_QueueAppend(session->sendQueue, item);
+
     IHS_CondSignal(session->sendQueueCond);
     IHS_MutexUnlock(session->sendQueueMutex);
-    return true;
-}
-
-bool IHS_SessionCancelQueuePacket(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId) {
     return true;
 }
 
@@ -159,42 +171,15 @@ bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage t
     return IHS_SessionChannelControlSend(channel, type, message, IHS_PACKET_ID_NEXT);
 }
 
-void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context) {
-    IHS_BaseLock(&session->base);
-    session->callbacks.session = callbacks;
-    session->callbackContexts.session = context;
-    IHS_BaseUnlock(&session->base);
-}
-
-void IHS_SessionSetAudioCallbacks(IHS_Session *session, const IHS_StreamAudioCallbacks *callbacks, void *context) {
-    IHS_BaseLock(&session->base);
-    session->callbacks.audio = callbacks;
-    session->callbackContexts.audio = context;
-    IHS_BaseUnlock(&session->base);
-}
-
-void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCallbacks *callbacks, void *context) {
-    IHS_BaseLock(&session->base);
-    session->callbacks.video = callbacks;
-    session->callbackContexts.video = context;
-    IHS_BaseUnlock(&session->base);
-}
-
-void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context) {
-    IHS_BaseLock(&session->base);
-    session->callbacks.input = callbacks;
-    session->callbackContexts.input = context;
-    IHS_BaseUnlock(&session->base);
+bool IHS_SessionCancelRetransmission(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId,
+                                     uint16_t fragmentId) {
+    return IHS_RetransmissionCancel(&session->retransmission, channelId, packetId, fragmentId);
 }
 
 void IHS_SessionHIDAddProvider(IHS_Session *session, IHS_HIDProvider *provider) {
     IHS_BaseLock(&session->base);
     IHS_HIDManagerAddProvider(session->hidManager, provider);
     IHS_BaseUnlock(&session->base);
-}
-
-void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {
-    IHS_BaseSetLogFunction(&session->base, logFunction);
 }
 
 const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session) {
@@ -214,7 +199,8 @@ static void SessionRecvCallback(IHS_Base *base, const IHS_SocketAddress *address
     IHS_SessionChannelId channelId = packet.header.channelId;
     IHS_SessionPacketType packetType = packet.header.type;
     if (packetType == IHS_SessionPacketTypeACK || packetType == IHS_SessionPacketTypeNACK) {
-        IHS_SessionCancelQueuePacket(session, channelId, packet.header.packetId);
+        // Stop retransmission task
+        IHS_SessionCancelRetransmission(session, channelId, packet.header.packetId, packet.header.fragmentId);
     }
     IHS_SessionChannel *channel = IHS_SessionChannelFor(session, channelId);
     if (!channel) {
@@ -268,22 +254,37 @@ static void SessionSendWorker(void *context) {
     IHS_Session *session = (IHS_Session *) context;
     while (!session->base.interrupted) {
         IHS_MutexLock(session->sendQueueMutex);
-        IHS_QueueItem *item;
-        while ((item = IHS_QueuePoll(session->sendQueue)) == NULL) {
+        QueuedPacket *queued;
+        // Poll the first item in the queue
+        while ((queued = IHS_QueuePoll(session->sendQueue)) == NULL) {
+            // Wait till someone add item into the queue
             IHS_CondWait(session->sendQueueCond, session->sendQueueMutex);
             if (session->base.interrupted) {
                 IHS_MutexUnlock(session->sendQueueMutex);
                 return;
             }
         }
-        IHS_SessionSendPacket(session, &item->packet);
-        QueuedPacketDestroy(item, NULL);
-        IHS_QueueItemFree(item);
         IHS_MutexUnlock(session->sendQueueMutex);
+
+        IHS_SessionSendPacket(session, &queued->packet);
+
+        if (queued->retransmit) {
+            IHS_RetransmissionQueue(&session->retransmission, &queued->packet);
+        }
+        QueuedPacketDestroy(queued, NULL);
+        IHS_QueueItemFree(queued);
     }
 }
 
-static void QueuedPacketDestroy(QueuedPacket *queued, void *context) {
-    (void) context;
+static QueuedPacket *QueuedPacketCreate(IHS_Session *session, IHS_SessionPacket *packet) {
+    QueuedPacket *item = IHS_QueueItemObtain(session->sendQueue);
+    item->packet.header = packet->header;
+    item->packet.crc = packet->crc;
+    IHS_BufferTransferOwnership(&packet->body, &item->packet.body);
+    return item;
+}
+
+static void QueuedPacketDestroy(QueuedPacket *queued, void *unused) {
+    (void) unused;
     IHS_SessionPacketClear(&queued->packet, true);
 }

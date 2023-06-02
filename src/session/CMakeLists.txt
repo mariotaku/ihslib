@@ -3,5 +3,7 @@ target_sources(ihslib PRIVATE
         packet.c
         frame.c
         window.c
-        frame_crypto.c)
+        frame_crypto.c
+        callbacks.c
+        retransmission.c)
 add_subdirectory(channels)

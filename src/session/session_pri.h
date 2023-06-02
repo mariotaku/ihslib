@@ -28,6 +28,7 @@
 #include "ihslib/session.h"
 #include "base.h"
 #include "packet.h"
+#include "retransmission.h"
 
 #include "channels/channel.h"
 
@@ -51,6 +52,7 @@ struct IHS_Session {
     IHS_Mutex *sendQueueMutex;
     IHS_Queue *sendQueue;
     IHS_Timer *timers;
+    IHS_SessionRetransmission retransmission;
     IHS_HIDManager *hidManager;
     struct {
         const IHS_StreamSessionCallbacks *session;
@@ -81,6 +83,7 @@ bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
  */
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit);
 
-bool IHS_SessionCancelQueuePacket(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId);
-
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message);
+
+bool IHS_SessionCancelRetransmission(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId,
+                                     uint16_t fragmentId);

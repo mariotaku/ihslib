@@ -103,7 +103,7 @@ static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *p
     IHS_Session *session = channel->session;
     if (session->state.connectionId != packet->header.dstConnectionId) return;
     session->state.hostConnectionId = packet->header.srcConnectionId;
-    IHS_SessionCancelQueuePacket(session, IHS_SessionChannelIdDiscovery, 0);
+    IHS_SessionCancelRetransmission(session, IHS_SessionChannelIdDiscovery, 0, 0);
 
     IHS_SessionChannel *control = IHS_SessionChannelFor(session, IHS_SessionChannelIdControl);
     IHS_SessionChannelControlHandshake(control, false);
