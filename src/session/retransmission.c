@@ -47,7 +47,7 @@ static uint64_t RetransmissionTimerRun(int runCount, void *context);
 
 static void RetransmissionTimerEnd(void *context);
 
-static bool RetransmissionTimerPredicate(PendingRetransmission *item, void *context);
+static bool RetransmissionIdenticalPredicate(PendingRetransmission *item, void *context);
 
 static bool RetransmissionPacketPredicate(PendingRetransmission *item, void *context);
 
@@ -99,17 +99,24 @@ bool IHS_RetransmissionCancel(IHS_SessionRetransmission *retransmission, IHS_Ses
     IHS_MutexUnlock(retransmission->lock);
     if (match == NULL) {
         return false;
+    } else if (match->task != NULL) {
+        IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
+                       "Cancelling Packet(channelId=%u, packetId=%u, fragmentId=%u), retransmitCount=%u",
+                       channelId, packetId, fragmentId, match->packet.header.retransmitCount);
+        IHS_TimerTask *task = match->task;
+        match->task = NULL;
+        IHS_TimerTaskStopImmediate(task);
     }
-    IHS_TimerTaskStop(match->task);
-    IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
-                   "Cancelled Packet(channelId=%u, packetId=%u, fragmentId=%u), retransmitCount=%u",
-                   channelId, packetId, fragmentId, match->packet.header.retransmitCount);
     return true;
 }
 
 static void RetransmissionQueueItemDestroy(PendingRetransmission *item, void *context) {
     (void) context;
-    IHS_TimerTaskStop(item->task);
+    IHS_TimerTask *task = item->task;
+    item->task = NULL;
+    if (task != NULL) {
+        IHS_TimerTaskStopImmediate(task);
+    }
 }
 
 static uint64_t RetransmissionTimerRun(int runCount, void *context) {
@@ -130,14 +137,14 @@ static void RetransmissionTimerEnd(void *context) {
                    pending->packet.header.channelId, pending->packet.header.packetId, pending->packet.header.fragmentId,
                    pending->packet.header.retransmitCount);
     IHS_MutexLock(retransmission->lock);
-    IHS_QueuePollBy(retransmission->queue, RetransmissionTimerPredicate, pending->task);
+    IHS_QueuePollBy(retransmission->queue, RetransmissionIdenticalPredicate, pending);
     IHS_MutexUnlock(retransmission->lock);
     IHS_SessionPacketClear(&pending->packet, true);
     IHS_QueueItemFree(pending);
 }
 
-static bool RetransmissionTimerPredicate(PendingRetransmission *item, void *context) {
-    return item->task == context;
+static bool RetransmissionIdenticalPredicate(PendingRetransmission *item, void *context) {
+    return item == context;
 }
 
 static bool RetransmissionPacketPredicate(PendingRetransmission *item, void *context) {

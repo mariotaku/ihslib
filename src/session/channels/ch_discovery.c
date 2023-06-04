@@ -174,6 +174,7 @@ static uint64_t DisconnectTimerRun(int runCount, void *context) {
 }
 
 static void DisconnectTimerEnd(void *context) {
-    IHS_SessionChannel *channel = context;
-    OnDisconnect(channel);
+    DiscoveryChannel *discoveryChannel = context;
+    discoveryChannel->disconnectTimerTask = NULL;
+    OnDisconnect(&discoveryChannel->base);
 }

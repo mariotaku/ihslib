@@ -53,7 +53,17 @@ void IHS_TimerDestroy(IHS_Timer *timer);
 IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, IHS_TimerEndFunction *end,
                                   uint64_t timeout, void *context);
 
+/**
+ * Ask a timer task to stop. It will be ended and freed in next timer loop.
+ * @param task Timer task to stop
+ */
 void IHS_TimerTaskStop(IHS_TimerTask *task);
+
+/**
+ * Stop and free the timer task immediately.
+ * @param task Timer task to stop
+ */
+void IHS_TimerTaskStopImmediate(IHS_TimerTask *task);
 
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task);
 

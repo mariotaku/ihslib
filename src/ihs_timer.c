@@ -54,14 +54,14 @@ static struct {
 
 static void TimerThreadWorker();
 
+static bool ItemIdentical(IHS_QueueItem *item, void *context);
+
 /*
  * Timer functions
  */
 
 
 static bool TimerExecute(IHS_Timer *timer, void *context);
-
-static bool TimerEquals(IHS_Timer *timer, void *context);
 
 static void TimerDestroy(IHS_Timer *timer, void *context);
 
@@ -101,8 +101,7 @@ IHS_Timer *IHS_TimerCreate() {
 void IHS_TimerDestroy(IHS_Timer *timer) {
     IHS_MutexLock(state.lock);
 
-    IHS_Timer *matched = (IHS_Timer *) IHS_QueuePollBy(state.timers, (IHS_QueuePredicateFunction *) TimerEquals,
-                                                       timer);
+    IHS_Timer *matched = (IHS_Timer *) IHS_QueuePollBy(state.timers, ItemIdentical, timer);
     assert(matched == timer);
     TimerDestroy(matched, NULL);
     IHS_QueueItemFree((IHS_QueueItem *) matched);
@@ -141,6 +140,17 @@ void IHS_TimerTaskStop(IHS_TimerTask *task) {
     IHS_MutexUnlock(task->timer->mutex);
 }
 
+void IHS_TimerTaskStopImmediate(IHS_TimerTask *task) {
+    IHS_Timer *timer = task->timer;
+    IHS_MutexLock(timer->mutex);
+    IHS_TimerTask *removed = (IHS_TimerTask *) IHS_QueuePollBy(timer->tasks, ItemIdentical, timer);
+    if (removed != NULL) {
+        TaskDestroy(removed, timer);
+        IHS_QueueItemFree((IHS_QueueItem *) removed);
+    }
+    IHS_MutexUnlock(timer->mutex);
+}
+
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task) {
     return task->context;
 }
@@ -166,6 +176,10 @@ static void TimerThreadWorker() {
     } while (iterated > 0);
 }
 
+static bool ItemIdentical(IHS_QueueItem *item, void *context) {
+    return (void *) item == context;
+}
+
 /*
  * Timer functions
  */
@@ -180,10 +194,6 @@ static bool TimerExecute(IHS_Timer *timer, void *context) {
                       (IHS_QueueConsumerFunction *) TaskDestroy, timer);
     IHS_MutexUnlock(timer->mutex);
     return false;
-}
-
-static bool TimerEquals(IHS_Timer *timer, void *context) {
-    return (void *) timer == context;
 }
 
 static void TimerDestroy(IHS_Timer *timer, void *context) {
