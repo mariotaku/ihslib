@@ -189,9 +189,7 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         // Wait for 200ms after requesting keyframe. Then request again.
         uint64_t now = IHS_TimerNow();
         if (now - videoCh->states.waitingKeyFrame >= 200) {
-            IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video",
-                           "Keyframe wait timeout, re-request keyframe", vhead.sequence,
-                           videoCh->states.expectedSequence);
+            IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video", "Keyframe wait timeout, re-request keyframe");
             IHS_SessionChannelDataLost(channel);
             videoCh->states.waitingKeyFrame = IHS_TimerNow();
         }
