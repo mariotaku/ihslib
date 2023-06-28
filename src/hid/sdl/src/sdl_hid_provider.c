@@ -30,8 +30,8 @@
 #include <string.h>
 
 #include "ihslib/hid.h"
-#include "sdl_hid_common.h"
 #include "hid/provider.h"
+#include "sdl_hid_common.h"
 #include "sdl_hid_enumerators.h"
 
 #include <SDL2/SDL.h>

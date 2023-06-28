@@ -11,19 +11,8 @@ endif ()
 
 set(GEN_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen_include)
 
-configure_file(config.h.in ${GEN_INCLUDE_DIR}/ihslib/hid/sdl/config.h @ONLY)
-
-add_library(ihslib-hid-sdl STATIC
-        sdl_hid_provider.c
-        sdl_hid_enumerator_managed.c
-        sdl_hid_enumerator_unmanaged.c
-        sdl_hid_enumerator_common.c
-        sdl_hid_device.c
-        sdl_hid_write.c
-        sdl_hid_feature_report.c
-        sdl_hid_event.c
-        sdl_hid_manager.c
-        sdl_hid_report.c
-        sdl_hid_utils.c)
+add_library(ihslib-hid-sdl STATIC)
 target_link_libraries(ihslib-hid-sdl PUBLIC ihslib PRIVATE ihs-protobuf ${SDL2_LIBRARIES})
 target_include_directories(ihslib-hid-sdl PUBLIC include ${GEN_INCLUDE_DIR} SYSTEM PUBLIC ${SDL2_INCLUDE_DIRS} PRIVATE ../..)
+
+add_subdirectory(src)
