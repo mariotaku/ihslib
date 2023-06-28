@@ -25,6 +25,8 @@
 
 #include "sdl_hid_report.h"
 
+#define clamp(x, a, b) (((x) < (a)) ? (a) : (((x) > (b)) ? (b) : (x)))
+
 static float RemapValClamped(float val, float A, float B, float C, float D);
 
 bool IHS_HIDReportSDLInit(IHS_HIDStateSDL *report) {
@@ -97,7 +99,7 @@ static float RemapValClamped(float val, float A, float B, float C, float D) {
         return (val - B) >= 0.0f ? D : C;
     } else {
         float cVal = (val - A) / (B - A);
-        cVal = SDL_clamp(cVal, 0.0f, 1.0f);
+        cVal = clamp(cVal, 0.0f, 1.0f);
 
         return C + (D - C) * cVal;
     }
