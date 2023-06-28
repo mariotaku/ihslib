@@ -64,4 +64,6 @@ IHS_Enumeration *IHS_EnumerationLinkedListCreate(void *ll, IHS_EnumerationLinked
 IHS_Enumeration *IHS_EnumerationArrayCreate(void *array, size_t itemSize, size_t count,
                                             IHS_EnumerationFreeUnderlying free);
 
+IHS_Enumeration *IHS_EnumerationEmptyCreate();
+
 size_t IHS_EnumerationCount(const IHS_Enumeration *enumeration);
