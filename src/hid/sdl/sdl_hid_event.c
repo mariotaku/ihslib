@@ -36,6 +36,8 @@ static bool HandleCButtonEvent(IHS_HIDManager *manager, const SDL_ControllerButt
 
 static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEvent *event);
 
+static bool HandleSensorEvent(IHS_HIDManager *manager, const SDL_ControllerSensorEvent *event);
+
 bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
     switch (event->type) {
         case SDL_CONTROLLERDEVICEADDED: {
@@ -57,6 +59,13 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
         }
         case SDL_CONTROLLERAXISMOTION: {
             bool changed = HandleCAxisEvent(session->hidManager, &event->caxis);
+            if (changed) {
+                IHS_SessionHIDSendReport(session);
+            }
+            return changed;
+        }
+        case SDL_CONTROLLERSENSORUPDATE: {
+            bool changed = HandleSensorEvent(session->hidManager, &event->csensor);
             if (changed) {
                 IHS_SessionHIDSendReport(session);
             }
@@ -127,6 +136,29 @@ static bool HandleCAxisEvent(IHS_HIDManager *manager, const SDL_ControllerAxisEv
     assert(device != NULL);
     IHS_HIDDeviceLock(managed->device);
     bool changed = IHS_HIDReportSDLSetAxis(&device->states.current, event->axis, event->value);
+    if (changed) {
+        IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
+                                    (const uint8_t *) &device->states.current, 48);
+        device->states.previous = device->states.current;
+    }
+    IHS_HIDDeviceUnlock(managed->device);
+    return changed;
+}
+
+static bool HandleSensorEvent(IHS_HIDManager *manager, const SDL_ControllerSensorEvent *event) {
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerDeviceByJoystickID(manager, event->which);
+    if (managed == NULL) {
+        return false;
+    }
+    IHS_HIDDeviceSDL *device = (IHS_HIDDeviceSDL *) managed->device;
+    assert(device != NULL);
+    IHS_HIDDeviceLock(managed->device);
+    bool changed = false;
+    if (event->sensor == SDL_SENSOR_ACCEL) {
+        changed = IHS_HIDReportSDLSetAccel(&device->states.current, event->data);
+    } else if (event->sensor == SDL_SENSOR_GYRO) {
+        changed = IHS_HIDReportSDLSetGyro(&device->states.current, event->data);
+    }
     if (changed) {
         IHS_HIDDeviceReportAddDelta(managed->device, (const uint8_t *) &device->states.previous,
                                     (const uint8_t *) &device->states.current, 48);

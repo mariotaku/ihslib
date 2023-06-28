@@ -34,12 +34,12 @@ typedef struct __attribute__((__packed__)) IHS_HIDReportSDL {
     int16_t axes[6];
     uint32_t flags;
     uint16_t buttons;
-    uint8_t pad1[9];
+    uint8_t padding1[9];
     uint8_t reportUnknown;
     int16_t gyro[3];
     int16_t accel[3];
     int16_t touch[2];
-    uint8_t pad2[4];
+    uint8_t padding2[4];
 } IHS_HIDStateSDL;
 
 _Static_assert(sizeof(IHS_HIDStateSDL) == 48, "");
@@ -51,5 +51,9 @@ bool IHS_HIDReportSDLSetRequestedReportVersion(IHS_HIDStateSDL *report, uint8_t 
 bool IHS_HIDReportSDLSetButton(IHS_HIDStateSDL *report, SDL_GameControllerButton button, bool pressed);
 
 bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axis, int16_t value);
+
+bool IHS_HIDReportSDLSetAccel(IHS_HIDStateSDL *report, const float accel[3]);
+
+bool IHS_HIDReportSDLSetGyro(IHS_HIDStateSDL *report, const float gyro[3]);
 
 bool IHS_HIDReportSDLClear(IHS_HIDStateSDL *report);

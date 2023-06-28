@@ -25,6 +25,7 @@
 
 #include "sdl_hid_report.h"
 
+static float RemapValClamped(float val, float A, float B, float C, float D);
 
 bool IHS_HIDReportSDLInit(IHS_HIDStateSDL *report) {
     memset(report, 0, sizeof(IHS_HIDStateSDL));
@@ -58,9 +59,46 @@ bool IHS_HIDReportSDLSetAxis(IHS_HIDStateSDL *report, SDL_GameControllerAxis axi
     return prev != value;
 }
 
+bool IHS_HIDReportSDLSetAccel(IHS_HIDStateSDL *report, const float accel[3]) {
+    bool changed = false;
+    for (int i = 0; i < 3; i++) {
+        int16_t newValue = (int16_t) RemapValClamped(accel[i], -19.6133f, 19.6133f, -32768.0f, 32767.0f);
+        if (report->accel[i] == newValue) {
+            continue;
+        }
+        report->gyro[i] = newValue;
+        changed = true;
+    }
+    return changed;
+}
+
+bool IHS_HIDReportSDLSetGyro(IHS_HIDStateSDL *report, const float gyro[3]) {
+    bool changed = false;
+    for (int i = 0; i < 3; i++) {
+        int16_t newValue = (int16_t) RemapValClamped(gyro[i], -34.90659f, 34.90659f, -32768.0f, 32767.0f);
+        if (report->gyro[i] == newValue) {
+            continue;
+        }
+        report->gyro[i] = newValue;
+        changed = true;
+    }
+    return changed;
+}
+
 bool IHS_HIDReportSDLClear(IHS_HIDStateSDL *report) {
     uint8_t version = report->reportUnknown;
     memset(report, 0, sizeof(IHS_HIDStateSDL));
     report->reportUnknown = version;
     return true;
+}
+
+static float RemapValClamped(float val, float A, float B, float C, float D) {
+    if (A == B) {
+        return (val - B) >= 0.0f ? D : C;
+    } else {
+        float cVal = (val - A) / (B - A);
+        cVal = SDL_clamp(cVal, 0.0f, 1.0f);
+
+        return C + (D - C) * cVal;
+    }
 }
