@@ -109,8 +109,8 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_HIDManagerDestroy(session->hidManager);
-    IHS_RetransmissionDeinit(&session->retransmission);
     IHS_TimerDestroy(session->timers);
+    IHS_RetransmissionDeinit(&session->retransmission);
     IHS_CondDestroy(session->sendQueueCond);
     IHS_MutexDestroy(session->sendQueueMutex);
     IHS_QueueDestroy(session->sendQueue, QueuedPacketDestroy, NULL);
