@@ -11,4 +11,4 @@ target_sources(ihslib-hid-sdl PRIVATE
         sdl_hid_report.c
         sdl_hid_utils.c)
 
-configure_file(config.h.in ${GEN_INCLUDE_DIR}/config.h @ONLY)
+configure_file(config.h.in ${GEN_INCLUDE_DIR}/ihslib/hid/sdl/config.h @ONLY)
