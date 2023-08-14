@@ -1,1 +1,0 @@
-target_sources(ihslib-hid-hidapi PRIVATE hidapi_provider.c)

@@ -19,8 +19,9 @@ option(IHSLIB_SANITIZE_ADDRESS "Link Address Sanitizer" OFF)
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(SDL2 sdl2)
-pkg_check_modules(HIDAPI hidapi-hidraw)
+if (NOT SDL2_FOUND)
+    pkg_check_modules(SDL2 sdl2)
+endif ()
 
 if (NOT PROTOBUF_C_FOUND)
     pkg_check_modules(PROTOBUF_C libprotobuf-c REQUIRED)
@@ -36,16 +37,6 @@ endif ()
 
 add_library(ihslib)
 add_subdirectory(src)
-
-if (SDL2_VERSION VERSION_GREATER_EQUAL 2.0.18)
-    set(IHSLIB_SDL2_HIDAPI 1)
-    target_compile_definitions(ihslib PUBLIC IHSLIB_SDL2_HIDAPI)
-endif ()
-
-if (HIDAPI_FOUND)
-    set(IHSLIB_HIDAPI 1)
-    target_compile_definitions(ihslib PUBLIC IHSLIB_HIDAPI)
-endif ()
 
 target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
 

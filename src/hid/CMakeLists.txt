@@ -5,4 +5,3 @@ target_sources(ihslib PRIVATE
         report.c)
 
 add_subdirectory(sdl)
-add_subdirectory(hidapi)
