@@ -113,18 +113,67 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
             SDL_JoystickGUID guid = SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(sdl->controller));
 
             bool xinput = IsXinputDevice(&guid);
+            EControllerType controllerType;
             if (!xinput) {
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
                 playerIndex = SDL_GameControllerGetPlayerIndex(sdl->controller);
 #else
                 playerIndex = sdl->playerIndex;
 #endif
+#if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 12)
+                switch (SDL_GameControllerGetType(sdl->controller)) {
+                    case SDL_CONTROLLER_TYPE_XBOX360:
+                        controllerType = k_ControllerTypeXBox360Controller;
+                        break;
+                    case SDL_CONTROLLER_TYPE_XBOXONE:
+                        controllerType = k_ControllerTypeXBoxOneController;
+                        break;
+                    case SDL_CONTROLLER_TYPE_PS3:
+                        controllerType = k_ControllerTypePS3Controller;
+                        break;
+                    case SDL_CONTROLLER_TYPE_PS4:
+                        controllerType = k_ControllerTypePS4Controller;
+                        break;
+                    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+                        controllerType = k_ControllerTypeSwitchProController;
+                        break;
+                    case SDL_CONTROLLER_TYPE_VIRTUAL:
+                        controllerType = k_ControllerTypeMobileTouch;
+                        break;
+                    case SDL_CONTROLLER_TYPE_PS5:
+                        controllerType = k_ControllerTypePS5Controller;
+                        break;
+                    case SDL_CONTROLLER_TYPE_AMAZON_LUNA:
+                        controllerType = k_ControllerTypeXBoxOneController;
+                        break;
+                    case SDL_CONTROLLER_TYPE_GOOGLE_STADIA:
+                        controllerType = k_ControllerTypeUnknownNonSteamController;
+                        break;
+                    case SDL_CONTROLLER_TYPE_NVIDIA_SHIELD:
+                        controllerType = k_ControllerTypeXBoxOneController;
+                        break;
+                    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
+                        controllerType = k_ControllerTypeSwitchJoyConLeft;
+                        break;
+                    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
+                        controllerType = k_ControllerTypeSwitchJoyConRight;
+                        break;
+                    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
+                        controllerType = k_ControllerTypeSwitchJoyConPair;
+                        break;
+                    default:
+                        controllerType = k_ControllerTypeUnknownNonSteamController;
+                        break;
+                }
+#else
+                controllerType = InferControllerType(&guid);
+#endif
             }
             DeviceFeatureReport report = {
                     .valid = true,
                     .xinput = xinput,
                     .playerIndex = playerIndex,
-                    .controllerType = InferControllerType(&guid),
+                    .controllerType = controllerType,
                     .hid = IsHIDAPIDevice(&guid),
             };
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);

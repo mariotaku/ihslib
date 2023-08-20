@@ -118,6 +118,7 @@ void IHS_TimerDestroy(IHS_Timer *timer) {
 
 IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, IHS_TimerEndFunction *end,
                                   uint64_t timeout, void *context) {
+    assert(timer != NULL);
     IHS_MutexLock(timer->mutex);
     if (timer->tasks == NULL) {
         IHS_MutexUnlock(timer->mutex);
@@ -135,13 +136,18 @@ IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, I
 }
 
 void IHS_TimerTaskStop(IHS_TimerTask *task) {
-    IHS_MutexLock(task->timer->mutex);
+    assert(task != NULL);
+    IHS_Timer *timer = task->timer;
+    assert(timer != NULL);
+    IHS_MutexLock(timer->mutex);
     task->nextExecution = 0;
-    IHS_MutexUnlock(task->timer->mutex);
+    IHS_MutexUnlock(timer->mutex);
 }
 
 void IHS_TimerTaskStopImmediate(IHS_TimerTask *task) {
+    assert(task != NULL);
     IHS_Timer *timer = task->timer;
+    assert(timer != NULL);
     IHS_MutexLock(timer->mutex);
     IHS_TimerTask *removed = (IHS_TimerTask *) IHS_QueuePollBy(timer->tasks, ItemIdentical, timer);
     if (removed != NULL) {
@@ -152,10 +158,12 @@ void IHS_TimerTaskStopImmediate(IHS_TimerTask *task) {
 }
 
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task) {
+    assert(task != NULL);
     return task->context;
 }
 
 int IHS_TimerTaskGetRunCount(const IHS_TimerTask *task) {
+    assert(task != NULL);
     return task->runCount;
 }
 

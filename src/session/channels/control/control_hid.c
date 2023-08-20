@@ -161,7 +161,7 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
         if (numDevices != 0) {
             allDevices = realloc(allDevices, (numAllDevices + numDevices) * sizeof(CHIDDeviceInfo));
             for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
-                IHS_HIDDeviceInfo hid;
+                IHS_HIDDeviceInfo hid = { NULL };
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
                 IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x, name=%s", hid.path,
@@ -322,7 +322,8 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
 
     if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: GetFeatureReport(id=%u) => (no device)",
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: GetFeatureReport(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -353,7 +354,8 @@ static void HandleDeviceGetVendorString(IHS_SessionChannel *channel, IHS_HIDMana
 
     if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: GetVendorString(id=%u) => (no device)",
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: GetVendorString(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -380,7 +382,8 @@ static void HandleDeviceGetProductString(IHS_SessionChannel *channel, IHS_HIDMan
 
     if (managed == NULL) {
         SendRequestCodeResponse(channel, message->request_id, -1);
-        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: GetProductString(id=%u) => (no device)",
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: GetProductString(id=%u) => (no device)",
                        message->request_id, cmd->device);
         return;
     }
@@ -500,6 +503,9 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationLocal);
     info->path = strdup(hid->path);
     info->product_string = strdup(hid->product_string);
+    if (hid->serial_number) {
+        info->serial_number = strdup(hid->serial_number);
+    }
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);
         PROTOBUF_C_P_SET_VALUE(info, product_id, hid->product_id);
@@ -513,7 +519,7 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     // Expect 0x8043ff
     IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
                                  IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
-                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE |
-                                 IHS_HID_CAP_XINPUT_OR_HIDAPI;
+                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE | IHS_HID_CAP_MISC_1 |
+                                 IHS_HID_CAP_XINPUT_OR_HIDAPI | IHS_HID_CAP_UNK_3 | IHS_HID_CAP_UNK_4;
     PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
 }

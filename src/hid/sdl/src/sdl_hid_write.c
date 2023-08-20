@@ -153,7 +153,7 @@ void HandleRumble(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
 }
 
 static void HandleRumbleTriggers(IHS_HIDDeviceSDL *sdl, const RumbleCommand *rumble) {
-    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelVerbose, "HID.SDL", "RumbleTriggers(dur=%u, lo=%u, hi=%u)",
+    IHS_HIDDeviceLog(&sdl->base, IHS_LogLevelInfo, "HID.SDL", "RumbleTriggers(dur=%u, lo=%u, hi=%u)",
                      rumble->durationMs, rumble->lowFreq, rumble->highFreq);
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
     SDL_GameControllerRumbleTriggers(sdl->controller, rumble->lowFreq, rumble->highFreq, rumble->durationMs);

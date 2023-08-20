@@ -72,6 +72,7 @@ typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
     const char *product_string;
+    const char *serial_number;
     /** Device Vendor ID */
     uint16_t vendor_id;
     /** Device Product ID */

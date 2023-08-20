@@ -61,7 +61,7 @@ const static IHS_HIDDeviceSDLEnumerationClass ManagedEnumerationClass = {
                 .get = EnumerationGet,
                 .next = EnumerationNext,
         },
-        .getInfo =EnumerationGetInfo,
+        .getInfo = EnumerationGetInfo,
 };
 
 IHS_Enumeration *IHS_HIDDeviceSDLEnumerateManaged() {

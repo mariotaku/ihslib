@@ -44,6 +44,7 @@ typedef struct GameControllerEnumeration {
     struct {
         char path[16];
         char product_string[64];
+        char serial_number[64];
     } temp;
 } GameControllerEnumeration;
 
