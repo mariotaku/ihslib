@@ -143,12 +143,15 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
                     case SDL_CONTROLLER_TYPE_PS5:
                         controllerType = k_ControllerTypePS5Controller;
                         break;
+#if SDL_VERSION_ATLEAST(2, 0, 16)
                     case SDL_CONTROLLER_TYPE_AMAZON_LUNA:
                         controllerType = k_ControllerTypeXBoxOneController;
                         break;
                     case SDL_CONTROLLER_TYPE_GOOGLE_STADIA:
                         controllerType = k_ControllerTypeUnknownNonSteamController;
                         break;
+#endif
+#if SDL_VERSION_ATLEAST(2, 24, 0)
                     case SDL_CONTROLLER_TYPE_NVIDIA_SHIELD:
                         controllerType = k_ControllerTypeXBoxOneController;
                         break;
@@ -161,6 +164,7 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
                     case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
                         controllerType = k_ControllerTypeSwitchJoyConPair;
                         break;
+#endif
                     default:
                         controllerType = k_ControllerTypeUnknownNonSteamController;
                         break;
