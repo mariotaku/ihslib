@@ -6,7 +6,7 @@
  *  _| |_ | | | |/\__/ /| || || |_) |       Library
  *  \___/ \_| |_/\____/ |_||_||_.__/
  *
- * Copyright (c) 2022 Ningyuan Li <https://github.com/mariotaku>.
+ * Copyright (c) 2022 Mariotaku <https://github.com/mariotaku>.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,3 +105,9 @@ bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDi
 bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode);
 
 bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode);
+
+bool IHS_SessionSendTouchDown(IHS_Session *session, uint64_t fingerId, float x, float y);
+
+bool IHS_SessionSendTouchUp(IHS_Session *session, uint64_t fingerId, float x, float y);
+
+bool IHS_SessionSendTouchMotion(IHS_Session *session, uint64_t fingerId, float x, float y);

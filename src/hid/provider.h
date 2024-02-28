@@ -6,7 +6,7 @@
  *  _| |_ | | | |/\__/ /| || || |_) |       Library
  *  \___/ \_| |_/\____/ |_||_||_.__/
  *
- * Copyright (c) 2022 Ningyuan Li <https://github.com/mariotaku>.
+ * Copyright (c) 2022 Mariotaku <https://github.com/mariotaku>.
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
