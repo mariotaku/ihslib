@@ -23,7 +23,7 @@
  *
  */
 #include <assert.h>
-#include "hid/sdl/sdl_hid_report.h"
+#include "hid/sdl/src/sdl_hid_report.h"
 
 int main() {
     IHS_HIDStateSDL report;

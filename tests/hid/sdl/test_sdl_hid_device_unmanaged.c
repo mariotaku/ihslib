@@ -33,7 +33,7 @@
 #include "hid/manager.h"
 #include "hid/provider.h"
 #include "hid/device.h"
-#include "hid/sdl/sdl_hid_common.h"
+#include "hid/sdl/src/sdl_hid_common.h"
 
 #include "test_session.h"
 #include "ihslib/session.h"
