@@ -11,7 +11,7 @@ def process_gen_src(p: str):
     lines: List[str] = []
     with open(p) as fr:
         for line in fr.readlines():
-            for match in re.findall(r'[ "]([\d\w_]+__)k_', line):
+            for match in re.findall(r'[ "]([\w_]+__)k_', line):
                 line = line.replace(match, '')
             lines.append(line)
     with open(p, 'w') as fw:

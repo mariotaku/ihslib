@@ -70,8 +70,8 @@ endif ()
 
 # Don't include tools and samples if used as library
 if (IHSLIB_CODEGEN)
-    find_program(PROTOC_C protoc-c)
-    find_program(PYTHON python3)
+    find_program(PROTOC_C protoc-c REQUIRED)
+    find_program(PYTHON python3 REQUIRED)
 
     set(PROTOBUF_FILES
             protobuf/discovery.proto
