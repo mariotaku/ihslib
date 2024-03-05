@@ -130,7 +130,10 @@ static bool EnumerationGetInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *
     }
     info->vendor_id = SDL_JoystickGetDeviceVendor(index);
     info->product_id = SDL_JoystickGetDeviceProduct(index);
-    info->product_version = SDL_JoystickGetDeviceProductVersion(index);
+    info->release_number = SDL_JoystickGetDeviceProductVersion(index);
+    info->usage_page = 1;
+    info->usage = 5/*For SDL_GameController*/;
+    info->is_generic_gamepad = true;
     info->path = gce->temp.path;
     info->product_string = gce->temp.product_string;
     return true;

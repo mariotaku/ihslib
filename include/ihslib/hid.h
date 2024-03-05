@@ -66,18 +66,32 @@ typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_UNK_6 = 0x01000000,
     IHS_HID_CAP_UNK_7 = 0x02000000 /*Gamepad uses this: PS4, PS5*/,
 } IHS_HIDDeviceCaps;
+
+typedef enum IHS_HIDDeviceDisconnectMethod {
+    IHS_HIDDeviceDisconnectMethodUnknown = 0,
+    IHS_HIDDeviceDisconnectMethodBluetooth = 1,
+    IHS_HIDDeviceDisconnectMethodFeatureReport = 2,
+    IHS_HIDDeviceDisconnectMethodOutputReport = 3
+} IHS_HIDDeviceDisconnectMethod;
+
 #pragma clang diagnostic pop
 
 typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
-    const char *product_string;
-    const char *serial_number;
     /** Device Vendor ID */
     uint16_t vendor_id;
     /** Device Product ID */
     uint16_t product_id;
     uint16_t product_version;
+    const char *serial_number;
+    int32_t release_number;
+    const char *manufacturer_string;
+    const char *product_string;
+    int32_t usage_page;
+    int32_t usage;
+    int32_t interface_number;
+    bool is_generic_gamepad;
 } IHS_HIDDeviceInfo;
 
 typedef struct IHS_HIDDeviceClass IHS_HIDDeviceClass;
@@ -111,10 +125,23 @@ struct IHS_HIDDeviceClass {
 
     int (*write)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
+    /**
+     *
+     * @param device HID device
+     * @param dest Buffer to write value to
+     * @param length
+     * @param timeoutMs
+     * @return Number of bytes read, 0 if timeout has reached, and -1 for errors
+     */
     int (*read)(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
 
     int (*sendFeatureReport)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
+    /**
+     * @param device HID device
+     * @param dest Buffer to write value to
+     * @return Number of bytes read, 0 if timeout has reached, and -1 for errors
+     */
     int (*getFeatureReport)(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                             IHS_Buffer *dest, size_t length);
 
@@ -146,7 +173,8 @@ struct IHS_HIDDeviceClass {
 
     int (*requestFullReport)(IHS_HIDDevice *device);
 
-    int (*requestDisconnect)(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
+    int (*requestDisconnect)(IHS_HIDDevice *device, IHS_HIDDeviceDisconnectMethod method, const uint8_t *data,
+            size_t dataLen);
 
 };
 

@@ -43,6 +43,7 @@ typedef struct IHS_SessionInfo {
 typedef struct IHS_SessionConfig {
     bool enableAudio;
     bool enableHevc;
+    bool supportsRemoteHid;
 } IHS_SessionConfig;
 
 typedef struct IHS_StreamSessionCallbacks {

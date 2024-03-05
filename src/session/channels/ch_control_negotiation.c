@@ -120,7 +120,9 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     config.n_available_video_modes = 1;
     config.available_video_modes = availableVideoModes;
 
-    PROTOBUF_C_SET_VALUE(config, enable_remote_hid, 0);
+    if (ihsConf.supportsRemoteHid) {
+        PROTOBUF_C_SET_VALUE(config, enable_remote_hid, 1);
+    }
 
     CStreamingClientConfig clientConfig = CSTREAMING_CLIENT_CONFIG__INIT;
 

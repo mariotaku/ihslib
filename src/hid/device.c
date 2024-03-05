@@ -90,7 +90,8 @@ int IHS_HIDDeviceRequestFullReport(IHS_HIDDevice *device) {
     return device->cls->requestFullReport(device);
 }
 
-int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {
+int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, IHS_HIDDeviceDisconnectMethod method, const uint8_t *data,
+                                   size_t dataLen) {
     return device->cls->requestDisconnect(device, method, data, dataLen);
 }
 

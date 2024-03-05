@@ -83,28 +83,31 @@ EControllerType InferControllerType(const SDL_JoystickGUID *guid);
 
 int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                                      IHS_Buffer *dest, size_t length) {
+    (void) reportNumberLen;
+    (void) length;
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
+    size_t result = 0;
     switch (reportNumber[0]) {
         case GetFeatureReportGetSerial: {
-            IHS_BufferWriteMem(dest, 0, reportNumber, 1);
+            result += IHS_BufferWriteMem(dest, 0, reportNumber, 1);
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
             const char *serial = SDL_GameControllerGetSerial(sdl->controller);
-            IHS_BufferWriteMem(dest, 1, (const uint8_t *) serial, strlen(serial) + 1);
+            result += IHS_BufferWriteMem(dest, 1, (const uint8_t *) serial, strlen(serial) + 1);
 #else
             // Write an empty string
-            IHS_BufferFillMem(dest, 1, 0, 1);
+            result += IHS_BufferFillMem(dest, 1, 0, 1);
 #endif
             break;
         }
         case GetFeatureReportGetPowerLevel: {
-            IHS_BufferWriteMem(dest, 0, reportNumber, 1);
+            result += IHS_BufferWriteMem(dest, 0, reportNumber, 1);
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 4)
             SDL_Joystick *joystick = SDL_GameControllerGetJoystick(sdl->controller);
             uint8_t level = SDL_JoystickCurrentPowerLevel(joystick);
-            IHS_BufferWriteMem(dest, 1, &level, 1);
+            result += IHS_BufferWriteMem(dest, 1, &level, 1);
 #else
             // Write an empty string
-            IHS_BufferFillMem(dest, 1, SDL_JOYSTICK_POWER_UNKNOWN, 1);
+            result += IHS_BufferFillMem(dest, 1, SDL_JOYSTICK_POWER_UNKNOWN, 1);
 #endif
             break;
         }
@@ -180,17 +183,17 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
                     .controllerType = controllerType,
                     .hid = IsHIDAPIDevice(&guid),
             };
-            IHS_BufferWriteMem(dest, 0, reportNumber, 1);
-            IHS_BufferWriteMem(dest, 1, (const unsigned char *) &report, 20);
+            result += IHS_BufferWriteMem(dest, 0, reportNumber, 1);
+            result += IHS_BufferWriteMem(dest, 1, (const unsigned char *) &report, 20);
             break;
         }
         default: {
             // Write an empty array
-            IHS_BufferFillMem(dest, 1, 0, 1);
-            return 0;
+            result += IHS_BufferFillMem(dest, 1, 0, 1);
+            break;
         }
     }
-    return 0;
+    return (int) result;
 }
 
 bool IsXinputDevice(const SDL_JoystickGUID *guid) {

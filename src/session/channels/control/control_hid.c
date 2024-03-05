@@ -161,11 +161,16 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
         if (numDevices != 0) {
             allDevices = realloc(allDevices, (numAllDevices + numDevices) * sizeof(CHIDDeviceInfo));
             for (IHS_EnumerationReset(e); !IHS_EnumerationEnded(e); IHS_EnumerationNext(e)) {
-                IHS_HIDDeviceInfo hid = { NULL };
+                IHS_HIDDeviceInfo hid = {
+                        .usage = -1,
+                        .usage_page = -1,
+                        .release_number = -1,
+                        .interface_number = -1,
+                };
                 IHS_HIDProviderDeviceInfo(provider, e, &hid);
                 InfoFromHID(&allDevices[numAllDevices], &hid);
-                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x, name=%s", hid.path,
-                               hid.vendor_id, hid.product_id, hid.product_string);
+                IHS_SessionLog(session, IHS_LogLevelDebug, "HID", "Device found: %s, id=%04x:%04x, name=%s %s", hid.path,
+                               hid.vendor_id, hid.product_id, hid.manufacturer_string, hid.product_string);
                 numAllDevices++;
             }
         }
@@ -188,7 +193,15 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
     }
     if (allDevices != NULL) {
         for (int di = 0; di < numAllDevices; di++) {
-            free(allDevices[di].product_string);
+            if (allDevices[di].product_string != NULL) {
+                free(allDevices[di].product_string);
+            }
+            if (allDevices[di].manufacturer_string != NULL) {
+                free(allDevices[di].manufacturer_string);
+            }
+            if (allDevices[di].serial_number != NULL) {
+                free(allDevices[di].serial_number);
+            }
             free(allDevices[di].path);
         }
         free(allDevices);
@@ -297,13 +310,13 @@ static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manage
     CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
     PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
     PROTOBUF_C_SET_VALUE(response, result, result);
-    if (result == 0) {
+    if (result > 0) {
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        response.data.len = str.size;
+        response.data.len = result;
     }
-    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: Read(id=%u) => ret=%d, %u byte(s)",
-                   message->request_id, cmd->device, response.result, response.data.len);
+    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: Read(id=%u) => ret=%d",
+                   message->request_id, cmd->device, result);
     SendRequestResponse(channel, &response);
 }
 
@@ -335,15 +348,22 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
     CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
     PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
     PROTOBUF_C_SET_VALUE(response, result, result);
-    if (result == 0) {
+    if (result > 0) {
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        response.data.len = str.size;
+        response.data.len = result;
     }
     SendRequestResponse(channel, &response);
-    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
-                   "Message %u: GetFeatureReport(id=%u) => ret=%d, %u byte(s)",
-                   message->request_id, cmd->device, response.result, response.data.len);
+    if (cmd->has_report_number && cmd->report_number.len > 0) {
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: GetFeatureReport(id=%u, report_number=[%02x ...] (%u bytes), len=%u) => ret=%d",
+                       message->request_id, cmd->device, cmd->report_number.data[0], cmd->report_number.len,
+                       cmd->length, response.result);
+    } else {
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: GetFeatureReport(id=%u, len=%u) => ret=%d",
+                       message->request_id, cmd->device, cmd->length, response.result);
+    }
     IHS_BufferClear(&str, true);
 }
 
@@ -445,7 +465,7 @@ static void HandleDeviceStartInputReports(IHS_SessionChannel *channel, IHS_HIDMa
 
     IHS_HIDReportHolderSetReportLength(&managed->reportHolder, cmd->length);
     if (IHS_HIDDeviceStartInputReports(managed->device, cmd->length) == 0) {
-        // Here we assume this managed has generated one full report, and send it right away.
+        // Here we assume this device has generated one full report, and send it right away.
         // This design may require change later...
         IHS_SessionHIDSendReport(channel->session);
     }
@@ -481,7 +501,8 @@ static void HandleDeviceDisconnect(IHS_SessionChannel *channel, IHS_HIDManager *
         return;
     }
 
-    IHS_HIDDeviceRequestDisconnect(managed->device, cmd->disconnectmethod, cmd->data.data, cmd->data.len);
+    IHS_HIDDeviceRequestDisconnect(managed->device, (IHS_HIDDeviceDisconnectMethod) cmd->disconnectmethod,
+                                   cmd->data.data, cmd->data.len);
 }
 
 static void SendRequestResponse(IHS_SessionChannel *channel, CHIDMessageFromRemote__RequestResponse *response) {
@@ -502,24 +523,40 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     chiddevice_info__init(info);
     PROTOBUF_C_P_SET_VALUE(info, location, k_EDeviceLocationLocal);
     info->path = strdup(hid->path);
-    info->product_string = strdup(hid->product_string);
-    if (hid->serial_number) {
+    if (hid->manufacturer_string != NULL) {
+        info->manufacturer_string = strdup(hid->manufacturer_string);
+    }
+    if (hid->product_string != NULL) {
+        info->product_string = strdup(hid->product_string);
+    }
+    if (hid->serial_number != NULL) {
         info->serial_number = strdup(hid->serial_number);
     }
     if (hid->vendor_id && hid->product_id) {
         PROTOBUF_C_P_SET_VALUE(info, vendor_id, hid->vendor_id);
         PROTOBUF_C_P_SET_VALUE(info, product_id, hid->product_id);
-        PROTOBUF_C_P_SET_VALUE(info, release_number, hid->product_version);
     }
-    PROTOBUF_C_P_SET_VALUE(info, usage_page, 1);
-    PROTOBUF_C_P_SET_VALUE(info, usage, 5/*For SDL_GameController*/);
-    PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
+    if (hid->release_number != -1) {
+        PROTOBUF_C_P_SET_VALUE(info, release_number, hid->release_number);
+    }
+    if (hid->usage_page != -1)  {
+        PROTOBUF_C_P_SET_VALUE(info, usage_page, (uint16_t) hid->usage_page);
+    }
+    if (hid->usage != -1) {
+        PROTOBUF_C_P_SET_VALUE(info, usage, (uint16_t) hid->usage);
+    }
+    if (hid->interface_number != -1) {
+        PROTOBUF_C_P_SET_VALUE(info, interface_number, hid->interface_number);
+    }
+    if (hid->is_generic_gamepad) {
+        PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
+    }
     PROTOBUF_C_P_SET_VALUE(info, ostype, IHS_SteamOSTypeLinux);
 
     // Expect 0x8043ff
     IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
                                  IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
-                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE | IHS_HID_CAP_MISC_1 |
-                                 IHS_HID_CAP_XINPUT_OR_HIDAPI | IHS_HID_CAP_UNK_3 | IHS_HID_CAP_UNK_4;
+                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE |
+                                 IHS_HID_CAP_XINPUT_OR_HIDAPI;
     PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
 }

@@ -53,7 +53,8 @@ static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length);
 
 static int DeviceRequestFullReport(IHS_HIDDevice *device);
 
-static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
+static int DeviceRequestDisconnect(IHS_HIDDevice *device, IHS_HIDDeviceDisconnectMethod method, const uint8_t *data,
+                                   size_t dataLen);
 
 static const IHS_HIDDeviceClass DeviceClass = {
         .alloc = DeviceAlloc,
@@ -195,6 +196,11 @@ static int DeviceRequestFullReport(IHS_HIDDevice *device) {
     return 0;
 }
 
-static int DeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen) {
+static int DeviceRequestDisconnect(IHS_HIDDevice *device, IHS_HIDDeviceDisconnectMethod method, const uint8_t *data,
+                                   size_t dataLen) {
+    (void) device;
+    (void) method;
+    (void) data;
+    (void) dataLen;
     return 0;
 }

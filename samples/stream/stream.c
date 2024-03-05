@@ -30,6 +30,7 @@
 #include "ihslib.h"
 #include "stream.h"
 #include "common.h"
+#include "ihslib/hid/sdl.h"
 
 static void InterruptHandler(int sig);
 
@@ -38,6 +39,8 @@ static bool SetCursor(IHS_Session *session, uint64_t cursorId, void *context);
 static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *image, void *context);
 
 static void Configuring(IHS_Session *session, IHS_SessionConfig *config, void *context);
+
+static void Connected(IHS_Session *session, void *context);
 
 static bool Running = true;
 
@@ -50,6 +53,7 @@ static IHS_StreamInputCallbacks InputCallbacks = {
 
 static IHS_StreamSessionCallbacks SessionCallbacks = {
         .configuring = Configuring,
+        .connected = Connected,
 };
 
 int main(int argc, char *argv[]) {
@@ -68,6 +72,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "%02x", sessionConfig.sessionKey[i]);
     }
     fprintf(stderr, "\"\n");
+    IHS_HIDProvider *provider = IHS_HIDProviderSDLCreateManaged();
 
     IHS_Session *session = IHS_SessionCreate(&clientConfig, &sessionConfig);
     IHS_SessionSetLogFunction(session, LogPrint);
@@ -75,6 +80,7 @@ int main(int argc, char *argv[]) {
     IHS_SessionSetAudioCallbacks(session, &AudioCallbacks, NULL);
     IHS_SessionSetVideoCallbacks(session, &VideoCallbacks, NULL);
     IHS_SessionSetInputCallbacks(session, &InputCallbacks, NULL);
+    IHS_SessionHIDAddProvider(session, provider);
     if (!IHS_SessionConnect(session)) {
         fprintf(stderr, "Failed to start session\n");
         goto sessionExit;
@@ -84,6 +90,7 @@ int main(int argc, char *argv[]) {
     sessionExit:
     ActiveSession = NULL;
     IHS_SessionDestroy(session);
+    IHS_HIDProviderSDLDestroy(provider);
 
     VideoDeinit();
     IHS_Quit();
@@ -103,6 +110,12 @@ static void InterruptHandler(int sig) {
 void LogPrint(IHS_LogLevel level, const char *tag, const char *message) {
     const char *levelName = IHS_LogLevelName(level);
     switch (level) {
+        case IHS_LogLevelVerbose:
+            if (strcmp(tag, "Retransmission") == 0) {
+                return;
+            }
+            fprintf(stderr, "[IHS.%s %s]\x1b[34m %s\x1b[0m\n", tag, levelName, message);
+            break;
         case IHS_LogLevelInfo:
             fprintf(stderr, "[IHS.%s %s]\x1b[36m %s\x1b[0m\n", tag, levelName, message);
             break;
@@ -132,4 +145,9 @@ static void CursorImage(IHS_Session *session, const IHS_StreamInputCursorImage *
 static void Configuring(IHS_Session *session, IHS_SessionConfig *config, void *context) {
     config->enableAudio = false;
     config->enableHevc = false;
+    config->supportsRemoteHid = true;
+}
+
+static void Connected(IHS_Session *session, void *context) {
+    IHS_SessionHIDNotifyDeviceChange(session);
 }
