@@ -117,15 +117,15 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
     PROTOBUF_C_SET_VALUE(availableVideoMode, refresh_rate_denominator, 100);
 
     CStreamVideoMode *availableVideoModes[] = {&availableVideoMode};
-    config.n_available_video_modes = 1;
-    config.available_video_modes = availableVideoModes;
+    config.n_available_video_modes_obsolete = 1;
+    config.available_video_modes_obsolete = availableVideoModes;
 
     PROTOBUF_C_SET_VALUE(config, enable_remote_hid, 0);
 
     CStreamingClientConfig clientConfig = CSTREAMING_CLIENT_CONFIG__INIT;
 
-    PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_x, 0);
-    PROTOBUF_C_SET_VALUE(clientConfig, maximum_resolution_y, 0);
+    PROTOBUF_C_SET_VALUE(clientConfig, desired_resolution_x, 1920);
+    PROTOBUF_C_SET_VALUE(clientConfig, desired_resolution_y, 1080);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_hardware_decoding, true);
     PROTOBUF_C_SET_VALUE(clientConfig, enable_performance_overlay, true);
     if (ihsConf.enableAudio) {
@@ -133,10 +133,10 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
         PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
     }
     PROTOBUF_C_SET_VALUE(clientConfig, enable_video_streaming, true);
-    PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_numerator, 5994);
-    PROTOBUF_C_SET_VALUE(clientConfig, maximum_framerate_denominator, 100);
+    PROTOBUF_C_SET_VALUE(clientConfig, desired_framerate_numerator, 5994);
+    PROTOBUF_C_SET_VALUE(clientConfig, desired_framerate_denominator, 100);
     PROTOBUF_C_SET_VALUE(clientConfig, quality, k_EStreamQualityBalanced);
-    PROTOBUF_C_SET_VALUE(clientConfig, maximum_bitrate_kbps, 30000);
+    PROTOBUF_C_SET_VALUE(clientConfig, desired_bitrate_kbps, 30000);
     if (ihsConf.enableHevc) {
         PROTOBUF_C_SET_VALUE(clientConfig, enable_video_hevc, true);
     }

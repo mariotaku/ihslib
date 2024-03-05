@@ -740,12 +740,12 @@ static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_header__field
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "device_id",
+    "device_id_OBSOLETE",
     4,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT64,
-    offsetof(CMsgRemoteClientBroadcastHeader, has_device_id),
-    offsetof(CMsgRemoteClientBroadcastHeader, device_id),
+    offsetof(CMsgRemoteClientBroadcastHeader, has_device_id_obsolete),
+    offsetof(CMsgRemoteClientBroadcastHeader, device_id_obsolete),
     NULL,
     NULL,
     0,             /* flags */
@@ -766,7 +766,7 @@ static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_header__field
 };
 static const unsigned cmsg_remote_client_broadcast_header__field_indices_by_name[] = {
   0,   /* field[0] = client_id */
-  3,   /* field[3] = device_id */
+  3,   /* field[3] = device_id_OBSOLETE */
   4,   /* field[4] = device_token */
   2,   /* field[2] = instance_id */
   1,   /* field[1] = msg_type */
@@ -843,7 +843,8 @@ const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__user__desc
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const int32_t cmsg_remote_client_broadcast_status__ostype__default_value = 0;
-static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field_descriptors[23] =
+static const EVRLinkCaps cmsg_remote_client_broadcast_status__vr_link_caps__default_value = k_EVRLinkCapsUnknown;
+static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field_descriptors[24] =
 {
   {
     "version",
@@ -1121,6 +1122,18 @@ static const ProtobufCFieldDescriptor cmsg_remote_client_broadcast_status__field
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "vr_link_caps",
+    26,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(CMsgRemoteClientBroadcastStatus, has_vr_link_caps),
+    offsetof(CMsgRemoteClientBroadcastStatus, vr_link_caps),
+    &evrlink_caps__descriptor,
+    &cmsg_remote_client_broadcast_status__vr_link_caps__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_client_broadcast_status__field_indices_by_name[] = {
   14,   /* field[14] = broadcasting_active */
@@ -1146,13 +1159,14 @@ static const unsigned cmsg_remote_client_broadcast_status__field_indices_by_name
   7,   /* field[7] = users */
   0,   /* field[0] = version */
   15,   /* field[15] = vr_active */
+  23,   /* field[23] = vr_link_caps */
 };
 static const ProtobufCIntRange cmsg_remote_client_broadcast_status__number_ranges[3 + 1] =
 {
   { 1, 0 },
   { 6, 4 },
   { 11, 8 },
-  { 0, 23 }
+  { 0, 24 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__descriptor =
 {
@@ -1162,7 +1176,7 @@ const ProtobufCMessageDescriptor cmsg_remote_client_broadcast_status__descriptor
   "CMsgRemoteClientBroadcastStatus",
   "",
   sizeof(CMsgRemoteClientBroadcastStatus),
-  23,
+  24,
   cmsg_remote_client_broadcast_status__field_descriptors,
   cmsg_remote_client_broadcast_status__field_indices_by_name,
   3,  cmsg_remote_client_broadcast_status__number_ranges,
@@ -2458,6 +2472,38 @@ const ProtobufCEnumDescriptor eremote_client_service__descriptor =
   eremote_client_service__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
+static const ProtobufCEnumValue evrlink_caps__enum_values_by_number[4] =
+{
+  { "k_EVRLinkCapsUnknown", "k_EVRLinkCapsUnknown", 0 },
+  { "k_EVRLinkCapsAvailable", "k_EVRLinkCapsAvailable", 1 },
+  { "k_EVRLinkCapsUnimplemented", "k_EVRLinkCapsUnimplemented", 2 },
+  { "k_EVRLinkCapsMissingHardwareEncoding", "k_EVRLinkCapsMissingHardwareEncoding", 3 },
+};
+static const ProtobufCIntRange evrlink_caps__value_ranges[] = {
+{0, 0},{0, 4}
+};
+static const ProtobufCEnumValueIndex evrlink_caps__enum_values_by_name[4] =
+{
+  { "k_EVRLinkCapsAvailable", 1 },
+  { "k_EVRLinkCapsMissingHardwareEncoding", 3 },
+  { "k_EVRLinkCapsUnimplemented", 2 },
+  { "k_EVRLinkCapsUnknown", 0 },
+};
+const ProtobufCEnumDescriptor evrlink_caps__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "EVRLinkCaps",
+  "EVRLinkCaps",
+  "EVRLinkCaps",
+  "",
+  4,
+  evrlink_caps__enum_values_by_number,
+  4,
+  evrlink_caps__enum_values_by_name,
+  1,
+  evrlink_caps__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
 static const ProtobufCEnumValue eremote_device_authorization_result__enum_values_by_number[9] =
 {
   { "k_ERemoteDeviceAuthorizationSuccess", "k_ERemoteDeviceAuthorizationSuccess", 0 },
@@ -2500,24 +2546,26 @@ const ProtobufCEnumDescriptor eremote_device_authorization_result__descriptor =
   eremote_device_authorization_result__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_device_form_factor__enum_values_by_number[5] =
+static const ProtobufCEnumValue estream_device_form_factor__enum_values_by_number[6] =
 {
   { "k_EStreamDeviceFormFactorUnknown", "k_EStreamDeviceFormFactorUnknown", 0 },
   { "k_EStreamDeviceFormFactorPhone", "k_EStreamDeviceFormFactorPhone", 1 },
   { "k_EStreamDeviceFormFactorTablet", "k_EStreamDeviceFormFactorTablet", 2 },
   { "k_EStreamDeviceFormFactorComputer", "k_EStreamDeviceFormFactorComputer", 3 },
   { "k_EStreamDeviceFormFactorTV", "k_EStreamDeviceFormFactorTV", 4 },
+  { "k_EStreamDeviceFormFactorVRHeadset", "k_EStreamDeviceFormFactorVRHeadset", 5 },
 };
 static const ProtobufCIntRange estream_device_form_factor__value_ranges[] = {
-{0, 0},{0, 5}
+{0, 0},{0, 6}
 };
-static const ProtobufCEnumValueIndex estream_device_form_factor__enum_values_by_name[5] =
+static const ProtobufCEnumValueIndex estream_device_form_factor__enum_values_by_name[6] =
 {
   { "k_EStreamDeviceFormFactorComputer", 3 },
   { "k_EStreamDeviceFormFactorPhone", 1 },
   { "k_EStreamDeviceFormFactorTV", 4 },
   { "k_EStreamDeviceFormFactorTablet", 2 },
   { "k_EStreamDeviceFormFactorUnknown", 0 },
+  { "k_EStreamDeviceFormFactorVRHeadset", 5 },
 };
 const ProtobufCEnumDescriptor estream_device_form_factor__descriptor =
 {
@@ -2526,9 +2574,9 @@ const ProtobufCEnumDescriptor estream_device_form_factor__descriptor =
   "EStreamDeviceFormFactor",
   "EStreamDeviceFormFactor",
   "",
-  5,
+  6,
   estream_device_form_factor__enum_values_by_number,
-  5,
+  6,
   estream_device_form_factor__enum_values_by_name,
   1,
   estream_device_form_factor__value_ranges,
@@ -2539,7 +2587,7 @@ static const ProtobufCEnumValue estream_transport__enum_values_by_number[7] =
   { "k_EStreamTransportNone", "k_EStreamTransportNone", 0 },
   { "k_EStreamTransportUDP", "k_EStreamTransportUDP", 1 },
   { "k_EStreamTransportUDPRelay", "k_EStreamTransportUDPRelay", 2 },
-  { "k_EStreamTransportWebRTC", "k_EStreamTransportWebRTC", 3 },
+  { "k_EStreamTransportWebRTC_OBSOLETE", "k_EStreamTransportWebRTC_OBSOLETE", 3 },
   { "k_EStreamTransportSDR", "k_EStreamTransportSDR", 4 },
   { "k_EStreamTransportUDP_SNS", "k_EStreamTransportUDP_SNS", 5 },
   { "k_EStreamTransportUDPRelay_SNS", "k_EStreamTransportUDPRelay_SNS", 6 },
@@ -2555,7 +2603,7 @@ static const ProtobufCEnumValueIndex estream_transport__enum_values_by_name[7] =
   { "k_EStreamTransportUDPRelay", 2 },
   { "k_EStreamTransportUDPRelay_SNS", 6 },
   { "k_EStreamTransportUDP_SNS", 5 },
-  { "k_EStreamTransportWebRTC", 3 },
+  { "k_EStreamTransportWebRTC_OBSOLETE", 3 },
 };
 const ProtobufCEnumDescriptor estream_transport__descriptor =
 {
@@ -2572,22 +2620,24 @@ const ProtobufCEnumDescriptor estream_transport__descriptor =
   estream_transport__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_interface__enum_values_by_number[4] =
+static const ProtobufCEnumValue estream_interface__enum_values_by_number[5] =
 {
   { "k_EStreamInterfaceDefault", "k_EStreamInterfaceDefault", 0 },
   { "k_EStreamInterfaceRecentGames", "k_EStreamInterfaceRecentGames", 1 },
   { "k_EStreamInterfaceBigPicture", "k_EStreamInterfaceBigPicture", 2 },
   { "k_EStreamInterfaceDesktop", "k_EStreamInterfaceDesktop", 3 },
+  { "k_EStreamInterfaceSteamVR", "k_EStreamInterfaceSteamVR", 4 },
 };
 static const ProtobufCIntRange estream_interface__value_ranges[] = {
-{0, 0},{0, 4}
+{0, 0},{0, 5}
 };
-static const ProtobufCEnumValueIndex estream_interface__enum_values_by_name[4] =
+static const ProtobufCEnumValueIndex estream_interface__enum_values_by_name[5] =
 {
   { "k_EStreamInterfaceBigPicture", 2 },
   { "k_EStreamInterfaceDefault", 0 },
   { "k_EStreamInterfaceDesktop", 3 },
   { "k_EStreamInterfaceRecentGames", 1 },
+  { "k_EStreamInterfaceSteamVR", 4 },
 };
 const ProtobufCEnumDescriptor estream_interface__descriptor =
 {
@@ -2596,15 +2646,15 @@ const ProtobufCEnumDescriptor estream_interface__descriptor =
   "EStreamInterface",
   "EStreamInterface",
   "",
-  4,
+  5,
   estream_interface__enum_values_by_number,
-  4,
+  5,
   estream_interface__enum_values_by_name,
   1,
   estream_interface__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue eremote_device_streaming_result__enum_values_by_number[15] =
+static const ProtobufCEnumValue eremote_device_streaming_result__enum_values_by_number[16] =
 {
   { "k_ERemoteDeviceStreamingSuccess", "k_ERemoteDeviceStreamingSuccess", 0 },
   { "k_ERemoteDeviceStreamingUnauthorized", "k_ERemoteDeviceStreamingUnauthorized", 1 },
@@ -2621,11 +2671,12 @@ static const ProtobufCEnumValue eremote_device_streaming_result__enum_values_by_
   { "k_ERemoteDeviceStreamingTransportUnavailable", "k_ERemoteDeviceStreamingTransportUnavailable", 12 },
   { "k_ERemoteDeviceStreamingInvisible", "k_ERemoteDeviceStreamingInvisible", 13 },
   { "k_ERemoteDeviceStreamingGameLaunchFailed", "k_ERemoteDeviceStreamingGameLaunchFailed", 14 },
+  { "k_ERemoteDeviceStreamingSteamVRNotInstalled", "k_ERemoteDeviceStreamingSteamVRNotInstalled", 15 },
 };
 static const ProtobufCIntRange eremote_device_streaming_result__value_ranges[] = {
-{0, 0},{0, 15}
+{0, 0},{0, 16}
 };
-static const ProtobufCEnumValueIndex eremote_device_streaming_result__enum_values_by_name[15] =
+static const ProtobufCEnumValueIndex eremote_device_streaming_result__enum_values_by_name[16] =
 {
   { "k_ERemoteDeviceStreamingBroadcastingActive", 9 },
   { "k_ERemoteDeviceStreamingBusy", 4 },
@@ -2638,6 +2689,7 @@ static const ProtobufCEnumValueIndex eremote_device_streaming_result__enum_value
   { "k_ERemoteDeviceStreamingInvisible", 13 },
   { "k_ERemoteDeviceStreamingPINRequired", 11 },
   { "k_ERemoteDeviceStreamingScreenLocked", 2 },
+  { "k_ERemoteDeviceStreamingSteamVRNotInstalled", 15 },
   { "k_ERemoteDeviceStreamingSuccess", 0 },
   { "k_ERemoteDeviceStreamingTransportUnavailable", 12 },
   { "k_ERemoteDeviceStreamingUnauthorized", 1 },
@@ -2650,9 +2702,9 @@ const ProtobufCEnumDescriptor eremote_device_streaming_result__descriptor =
   "ERemoteDeviceStreamingResult",
   "ERemoteDeviceStreamingResult",
   "",
-  15,
+  16,
   eremote_device_streaming_result__enum_values_by_number,
-  15,
+  16,
   eremote_device_streaming_result__enum_values_by_name,
   1,
   eremote_device_streaming_result__value_ranges,

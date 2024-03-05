@@ -114,6 +114,8 @@ enum EStreamControlMessage {
 	k_EStreamControlStopNeptuneData = 142;
 	k_EStreamControlPauseControllerInput = 143;
 	k_EStreamControlResumeControllerInput = 144;
+	k_EStreamControlVRConnectionReady = 145;
+	k_EStreamControlSetCursorScale = 146;
 }
 
 enum EStreamVersion {
@@ -159,6 +161,8 @@ enum EStreamColorspace {
 	k_EStreamColorspace_BT601_Full = 2;
 	k_EStreamColorspace_BT709 = 3;
 	k_EStreamColorspace_BT709_Full = 4;
+	k_EStreamColorspace_BT2020 = 5;
+	k_EStreamColorspace_BT2020_Full = 6;
 }
 
 enum EStreamP2PScope {
@@ -371,6 +375,13 @@ message CStreamVideoMode {
 	optional uint32 refresh_rate_denominator = 5;
 }
 
+message CStreamVideoLimit {
+	optional .EStreamVideoCodec codec = 1 [default = k_EStreamVideoCodecNone];
+	optional .CStreamVideoMode mode = 2;
+	optional int32 bitrate_kbps = 3;
+	optional int32 burst_bitrate_kbps = 4;
+}
+
 message CStreamingClientCaps {
 	optional string system_info = 1;
 	optional bool system_can_suspend = 2;
@@ -389,11 +400,11 @@ message CStreamingClientCaps {
 
 message CStreamingClientConfig {
 	optional .EStreamQualityPreference quality = 1 [default = k_EStreamQualityBalanced];
-	optional uint32 maximum_resolution_x = 2;
-	optional uint32 maximum_resolution_y = 3;
-	optional uint32 maximum_framerate_numerator = 4;
-	optional uint32 maximum_framerate_denominator = 5;
-	optional int32 maximum_bitrate_kbps = 6 [default = -1];
+	optional uint32 desired_resolution_x = 2;
+	optional uint32 desired_resolution_y = 3;
+	optional uint32 desired_framerate_numerator = 4;
+	optional uint32 desired_framerate_denominator = 5;
+	optional int32 desired_bitrate_kbps = 6 [default = -1];
 	optional bool enable_hardware_decoding = 7 [default = true];
 	optional bool enable_performance_overlay = 8 [default = false];
 	optional bool enable_video_streaming = 9 [default = true];
@@ -407,6 +418,11 @@ message CStreamingClientConfig {
 	optional bool enable_touch_controller_OBSOLETE = 17 [default = false];
 	optional .EStreamP2PScope p2p_scope = 19 [default = k_EStreamP2PScopeAutomatic];
 	optional bool enable_audio_uncompressed = 20 [default = false];
+	optional .CStreamVideoLimit display_limit = 21;
+	optional .CStreamVideoLimit quality_limit = 22;
+	optional .CStreamVideoLimit runtime_limit = 23;
+	repeated .CStreamVideoLimit decoder_limit = 24;
+	optional bool enable_unreliable_fec = 25 [default = false];
 }
 
 message CStreamingServerConfig {
@@ -425,7 +441,7 @@ message CNegotiatedConfig {
 	optional bool reliable_data = 1;
 	optional .EStreamAudioCodec selected_audio_codec = 2 [default = k_EStreamAudioCodecNone];
 	optional .EStreamVideoCodec selected_video_codec = 3 [default = k_EStreamVideoCodecNone];
-	repeated .CStreamVideoMode available_video_modes = 4;
+	repeated .CStreamVideoMode available_video_modes_OBSOLETE = 4;
 	optional bool enable_remote_hid = 5;
 	optional bool enable_touch_input = 6;
 	optional bool disable_client_cursor = 7;
@@ -608,6 +624,10 @@ message CSetCursorImageMsg {
 	optional int32 hot_x = 4;
 	optional int32 hot_y = 5;
 	optional bytes image = 6;
+}
+
+message CSetCursorScaleMsg {
+	optional float scale = 1;
 }
 
 message CVideoDecoderInfoMsg {
@@ -826,6 +846,10 @@ message CControllerPersonalizationUpdateMsg {
 	optional bool reverse_diamond_button_layout = 3;
 }
 
+message CVRConnectionReady {
+	optional string connect_params = 1;
+}
+
 message CStreamDataLostMsg {
 	repeated uint32 packets = 1;
 }
@@ -880,6 +904,7 @@ message CStreamingSessionStats {
 	optional float frame_loss_percentage = 1;
 	optional float average_network_time_ms = 2;
 	optional float stddev_network_time_ms = 3;
+	optional string test_data = 4;
 }
 
 message CDebugDumpMsg {

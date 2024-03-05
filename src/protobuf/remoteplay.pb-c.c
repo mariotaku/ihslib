@@ -502,6 +502,51 @@ void   cstream_video_mode__free_unpacked
   assert(message->base.descriptor == &cstream_video_mode__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cstream_video_limit__init
+                     (CStreamVideoLimit         *message)
+{
+  static const CStreamVideoLimit init_value = CSTREAM_VIDEO_LIMIT__INIT;
+  *message = init_value;
+}
+size_t cstream_video_limit__get_packed_size
+                     (const CStreamVideoLimit *message)
+{
+  assert(message->base.descriptor == &cstream_video_limit__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cstream_video_limit__pack
+                     (const CStreamVideoLimit *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cstream_video_limit__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cstream_video_limit__pack_to_buffer
+                     (const CStreamVideoLimit *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cstream_video_limit__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CStreamVideoLimit *
+       cstream_video_limit__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CStreamVideoLimit *)
+     protobuf_c_message_unpack (&cstream_video_limit__descriptor,
+                                allocator, len, data);
+}
+void   cstream_video_limit__free_unpacked
+                     (CStreamVideoLimit *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cstream_video_limit__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cstreaming_client_caps__init
                      (CStreamingClientCaps         *message)
 {
@@ -995,6 +1040,96 @@ void   cstop_video_data_msg__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &cstop_video_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cstart_neptune_data_msg__init
+                     (CStartNeptuneDataMsg         *message)
+{
+  static const CStartNeptuneDataMsg init_value = CSTART_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cstart_neptune_data_msg__get_packed_size
+                     (const CStartNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cstart_neptune_data_msg__pack
+                     (const CStartNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cstart_neptune_data_msg__pack_to_buffer
+                     (const CStartNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CStartNeptuneDataMsg *
+       cstart_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CStartNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cstart_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cstart_neptune_data_msg__free_unpacked
+                     (CStartNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cstop_neptune_data_msg__init
+                     (CStopNeptuneDataMsg         *message)
+{
+  static const CStopNeptuneDataMsg init_value = CSTOP_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cstop_neptune_data_msg__get_packed_size
+                     (const CStopNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cstop_neptune_data_msg__pack
+                     (const CStopNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cstop_neptune_data_msg__pack_to_buffer
+                     (const CStopNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CStopNeptuneDataMsg *
+       cstop_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CStopNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cstop_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cstop_neptune_data_msg__free_unpacked
+                     (CStopNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   crecorded_input__init
@@ -1987,6 +2122,51 @@ void   cset_cursor_image_msg__free_unpacked
   assert(message->base.descriptor == &cset_cursor_image_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cset_cursor_scale_msg__init
+                     (CSetCursorScaleMsg         *message)
+{
+  static const CSetCursorScaleMsg init_value = CSET_CURSOR_SCALE_MSG__INIT;
+  *message = init_value;
+}
+size_t cset_cursor_scale_msg__get_packed_size
+                     (const CSetCursorScaleMsg *message)
+{
+  assert(message->base.descriptor == &cset_cursor_scale_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cset_cursor_scale_msg__pack
+                     (const CSetCursorScaleMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cset_cursor_scale_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cset_cursor_scale_msg__pack_to_buffer
+                     (const CSetCursorScaleMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cset_cursor_scale_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CSetCursorScaleMsg *
+       cset_cursor_scale_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CSetCursorScaleMsg *)
+     protobuf_c_message_unpack (&cset_cursor_scale_msg__descriptor,
+                                allocator, len, data);
+}
+void   cset_cursor_scale_msg__free_unpacked
+                     (CSetCursorScaleMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cset_cursor_scale_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cvideo_decoder_info_msg__init
                      (CVideoDecoderInfoMsg         *message)
 {
@@ -2255,6 +2435,186 @@ void   cdisable_high_res_capture_msg__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &cdisable_high_res_capture_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cenable_neptune_data_msg__init
+                     (CEnableNeptuneDataMsg         *message)
+{
+  static const CEnableNeptuneDataMsg init_value = CENABLE_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cenable_neptune_data_msg__get_packed_size
+                     (const CEnableNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cenable_neptune_data_msg__pack
+                     (const CEnableNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cenable_neptune_data_msg__pack_to_buffer
+                     (const CEnableNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CEnableNeptuneDataMsg *
+       cenable_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CEnableNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cenable_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cenable_neptune_data_msg__free_unpacked
+                     (CEnableNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cdisable_neptune_data_msg__init
+                     (CDisableNeptuneDataMsg         *message)
+{
+  static const CDisableNeptuneDataMsg init_value = CDISABLE_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cdisable_neptune_data_msg__get_packed_size
+                     (const CDisableNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cdisable_neptune_data_msg__pack
+                     (const CDisableNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cdisable_neptune_data_msg__pack_to_buffer
+                     (const CDisableNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CDisableNeptuneDataMsg *
+       cdisable_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CDisableNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cdisable_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cdisable_neptune_data_msg__free_unpacked
+                     (CDisableNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cpause_controller_input_msg__init
+                     (CPauseControllerInputMsg         *message)
+{
+  static const CPauseControllerInputMsg init_value = CPAUSE_CONTROLLER_INPUT_MSG__INIT;
+  *message = init_value;
+}
+size_t cpause_controller_input_msg__get_packed_size
+                     (const CPauseControllerInputMsg *message)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cpause_controller_input_msg__pack
+                     (const CPauseControllerInputMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cpause_controller_input_msg__pack_to_buffer
+                     (const CPauseControllerInputMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CPauseControllerInputMsg *
+       cpause_controller_input_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CPauseControllerInputMsg *)
+     protobuf_c_message_unpack (&cpause_controller_input_msg__descriptor,
+                                allocator, len, data);
+}
+void   cpause_controller_input_msg__free_unpacked
+                     (CPauseControllerInputMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cresume_controller_input_msg__init
+                     (CResumeControllerInputMsg         *message)
+{
+  static const CResumeControllerInputMsg init_value = CRESUME_CONTROLLER_INPUT_MSG__INIT;
+  *message = init_value;
+}
+size_t cresume_controller_input_msg__get_packed_size
+                     (const CResumeControllerInputMsg *message)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cresume_controller_input_msg__pack
+                     (const CResumeControllerInputMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cresume_controller_input_msg__pack_to_buffer
+                     (const CResumeControllerInputMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CResumeControllerInputMsg *
+       cresume_controller_input_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CResumeControllerInputMsg *)
+     protobuf_c_message_unpack (&cresume_controller_input_msg__descriptor,
+                                allocator, len, data);
+}
+void   cresume_controller_input_msg__free_unpacked
+                     (CResumeControllerInputMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   ctoggle_magnification_msg__init
@@ -3883,6 +4243,51 @@ void   ccontroller_personalization_update_msg__free_unpacked
   assert(message->base.descriptor == &ccontroller_personalization_update_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cvrconnection_ready__init
+                     (CVRConnectionReady         *message)
+{
+  static const CVRConnectionReady init_value = CVRCONNECTION_READY__INIT;
+  *message = init_value;
+}
+size_t cvrconnection_ready__get_packed_size
+                     (const CVRConnectionReady *message)
+{
+  assert(message->base.descriptor == &cvrconnection_ready__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cvrconnection_ready__pack
+                     (const CVRConnectionReady *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cvrconnection_ready__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cvrconnection_ready__pack_to_buffer
+                     (const CVRConnectionReady *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cvrconnection_ready__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CVRConnectionReady *
+       cvrconnection_ready__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CVRConnectionReady *)
+     protobuf_c_message_unpack (&cvrconnection_ready__descriptor,
+                                allocator, len, data);
+}
+void   cvrconnection_ready__free_unpacked
+                     (CVRConnectionReady *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cvrconnection_ready__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   cstream_data_lost_msg__init
                      (CStreamDataLostMsg         *message)
 {
@@ -5102,6 +5507,84 @@ const ProtobufCMessageDescriptor cstream_video_mode__descriptor =
   (ProtobufCMessageInit) cstream_video_mode__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const EStreamVideoCodec cstream_video_limit__codec__default_value = k_EStreamVideoCodecNone;
+static const ProtobufCFieldDescriptor cstream_video_limit__field_descriptors[4] =
+{
+  {
+    "codec",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(CStreamVideoLimit, has_codec),
+    offsetof(CStreamVideoLimit, codec),
+    &estream_video_codec__descriptor,
+    &cstream_video_limit__codec__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mode",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CStreamVideoLimit, mode),
+    &cstream_video_mode__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "bitrate_kbps",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(CStreamVideoLimit, has_bitrate_kbps),
+    offsetof(CStreamVideoLimit, bitrate_kbps),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "burst_bitrate_kbps",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(CStreamVideoLimit, has_burst_bitrate_kbps),
+    offsetof(CStreamVideoLimit, burst_bitrate_kbps),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cstream_video_limit__field_indices_by_name[] = {
+  2,   /* field[2] = bitrate_kbps */
+  3,   /* field[3] = burst_bitrate_kbps */
+  0,   /* field[0] = codec */
+  1,   /* field[1] = mode */
+};
+static const ProtobufCIntRange cstream_video_limit__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 4 }
+};
+const ProtobufCMessageDescriptor cstream_video_limit__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CStreamVideoLimit",
+  "CStreamVideoLimit",
+  "CStreamVideoLimit",
+  "",
+  sizeof(CStreamVideoLimit),
+  4,
+  cstream_video_limit__field_descriptors,
+  cstream_video_limit__field_indices_by_name,
+  1,  cstream_video_limit__number_ranges,
+  (ProtobufCMessageInit) cstream_video_limit__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor cstreaming_client_caps__field_descriptors[13] =
 {
   {
@@ -5297,7 +5780,7 @@ const ProtobufCMessageDescriptor cstreaming_client_caps__descriptor =
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const EStreamQualityPreference cstreaming_client_config__quality__default_value = k_EStreamQualityBalanced;
-static const int32_t cstreaming_client_config__maximum_bitrate_kbps__default_value = -1;
+static const int32_t cstreaming_client_config__desired_bitrate_kbps__default_value = -1;
 static const protobuf_c_boolean cstreaming_client_config__enable_hardware_decoding__default_value = 1;
 static const protobuf_c_boolean cstreaming_client_config__enable_performance_overlay__default_value = 0;
 static const protobuf_c_boolean cstreaming_client_config__enable_video_streaming__default_value = 1;
@@ -5310,7 +5793,8 @@ static const protobuf_c_boolean cstreaming_client_config__enable_microphone_stre
 static const protobuf_c_boolean cstreaming_client_config__enable_touch_controller__obsolete__default_value = 0;
 static const EStreamP2PScope cstreaming_client_config__p2p_scope__default_value = k_EStreamP2PScopeAutomatic;
 static const protobuf_c_boolean cstreaming_client_config__enable_audio_uncompressed__default_value = 0;
-static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptors[19] =
+static const protobuf_c_boolean cstreaming_client_config__enable_unreliable_fec__default_value = 0;
+static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptors[24] =
 {
   {
     "quality",
@@ -5325,62 +5809,62 @@ static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptor
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "maximum_resolution_x",
+    "desired_resolution_x",
     2,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(CStreamingClientConfig, has_maximum_resolution_x),
-    offsetof(CStreamingClientConfig, maximum_resolution_x),
+    offsetof(CStreamingClientConfig, has_desired_resolution_x),
+    offsetof(CStreamingClientConfig, desired_resolution_x),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "maximum_resolution_y",
+    "desired_resolution_y",
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(CStreamingClientConfig, has_maximum_resolution_y),
-    offsetof(CStreamingClientConfig, maximum_resolution_y),
+    offsetof(CStreamingClientConfig, has_desired_resolution_y),
+    offsetof(CStreamingClientConfig, desired_resolution_y),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "maximum_framerate_numerator",
+    "desired_framerate_numerator",
     4,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(CStreamingClientConfig, has_maximum_framerate_numerator),
-    offsetof(CStreamingClientConfig, maximum_framerate_numerator),
+    offsetof(CStreamingClientConfig, has_desired_framerate_numerator),
+    offsetof(CStreamingClientConfig, desired_framerate_numerator),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "maximum_framerate_denominator",
+    "desired_framerate_denominator",
     5,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_UINT32,
-    offsetof(CStreamingClientConfig, has_maximum_framerate_denominator),
-    offsetof(CStreamingClientConfig, maximum_framerate_denominator),
+    offsetof(CStreamingClientConfig, has_desired_framerate_denominator),
+    offsetof(CStreamingClientConfig, desired_framerate_denominator),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "maximum_bitrate_kbps",
+    "desired_bitrate_kbps",
     6,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(CStreamingClientConfig, has_maximum_bitrate_kbps),
-    offsetof(CStreamingClientConfig, maximum_bitrate_kbps),
+    offsetof(CStreamingClientConfig, has_desired_bitrate_kbps),
+    offsetof(CStreamingClientConfig, desired_bitrate_kbps),
     NULL,
-    &cstreaming_client_config__maximum_bitrate_kbps__default_value,
+    &cstreaming_client_config__desired_bitrate_kbps__default_value,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -5540,10 +6024,77 @@ static const ProtobufCFieldDescriptor cstreaming_client_config__field_descriptor
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "display_limit",
+    21,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CStreamingClientConfig, display_limit),
+    &cstream_video_limit__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "quality_limit",
+    22,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CStreamingClientConfig, quality_limit),
+    &cstream_video_limit__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "runtime_limit",
+    23,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(CStreamingClientConfig, runtime_limit),
+    &cstream_video_limit__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "decoder_limit",
+    24,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(CStreamingClientConfig, n_decoder_limit),
+    offsetof(CStreamingClientConfig, decoder_limit),
+    &cstream_video_limit__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "enable_unreliable_fec",
+    25,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CStreamingClientConfig, has_enable_unreliable_fec),
+    offsetof(CStreamingClientConfig, enable_unreliable_fec),
+    NULL,
+    &cstreaming_client_config__enable_unreliable_fec__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cstreaming_client_config__field_indices_by_name[] = {
   11,   /* field[11] = audio_channels */
   15,   /* field[15] = controller_overlay_hotkey */
+  22,   /* field[22] = decoder_limit */
+  5,   /* field[5] = desired_bitrate_kbps */
+  4,   /* field[4] = desired_framerate_denominator */
+  3,   /* field[3] = desired_framerate_numerator */
+  1,   /* field[1] = desired_resolution_x */
+  2,   /* field[2] = desired_resolution_y */
+  19,   /* field[19] = display_limit */
   9,   /* field[9] = enable_audio_streaming */
   18,   /* field[18] = enable_audio_uncompressed */
   6,   /* field[6] = enable_hardware_decoding */
@@ -5552,21 +6103,19 @@ static const unsigned cstreaming_client_config__field_indices_by_name[] = {
   13,   /* field[13] = enable_performance_icons */
   7,   /* field[7] = enable_performance_overlay */
   16,   /* field[16] = enable_touch_controller_OBSOLETE */
+  23,   /* field[23] = enable_unreliable_fec */
   12,   /* field[12] = enable_video_hevc */
   8,   /* field[8] = enable_video_streaming */
-  5,   /* field[5] = maximum_bitrate_kbps */
-  4,   /* field[4] = maximum_framerate_denominator */
-  3,   /* field[3] = maximum_framerate_numerator */
-  1,   /* field[1] = maximum_resolution_x */
-  2,   /* field[2] = maximum_resolution_y */
   17,   /* field[17] = p2p_scope */
   0,   /* field[0] = quality */
+  20,   /* field[20] = quality_limit */
+  21,   /* field[21] = runtime_limit */
 };
 static const ProtobufCIntRange cstreaming_client_config__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 19, 17 },
-  { 0, 19 }
+  { 0, 24 }
 };
 const ProtobufCMessageDescriptor cstreaming_client_config__descriptor =
 {
@@ -5576,7 +6125,7 @@ const ProtobufCMessageDescriptor cstreaming_client_config__descriptor =
   "CStreamingClientConfig",
   "",
   sizeof(CStreamingClientConfig),
-  19,
+  24,
   cstreaming_client_config__field_descriptors,
   cstreaming_client_config__field_indices_by_name,
   2,  cstreaming_client_config__number_ranges,
@@ -5767,12 +6316,12 @@ static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[7] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "available_video_modes",
+    "available_video_modes_OBSOLETE",
     4,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_MESSAGE,
-    offsetof(CNegotiatedConfig, n_available_video_modes),
-    offsetof(CNegotiatedConfig, available_video_modes),
+    offsetof(CNegotiatedConfig, n_available_video_modes_obsolete),
+    offsetof(CNegotiatedConfig, available_video_modes_obsolete),
     &cstream_video_mode__descriptor,
     NULL,
     0,             /* flags */
@@ -5816,7 +6365,7 @@ static const ProtobufCFieldDescriptor cnegotiated_config__field_descriptors[7] =
   },
 };
 static const unsigned cnegotiated_config__field_indices_by_name[] = {
-  3,   /* field[3] = available_video_modes */
+  3,   /* field[3] = available_video_modes_OBSOLETE */
   6,   /* field[6] = disable_client_cursor */
   4,   /* field[4] = enable_remote_hid */
   5,   /* field[5] = enable_touch_input */
@@ -6232,6 +6781,62 @@ const ProtobufCMessageDescriptor cstop_video_data_msg__descriptor =
   cstop_video_data_msg__field_indices_by_name,
   0,  cstop_video_data_msg__number_ranges,
   (ProtobufCMessageInit) cstop_video_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor cstart_neptune_data_msg__field_descriptors[1] =
+{
+  {
+    "channel",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CStartNeptuneDataMsg, channel),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cstart_neptune_data_msg__field_indices_by_name[] = {
+  0,   /* field[0] = channel */
+};
+static const ProtobufCIntRange cstart_neptune_data_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cstart_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CStartNeptuneDataMsg",
+  "CStartNeptuneDataMsg",
+  "CStartNeptuneDataMsg",
+  "",
+  sizeof(CStartNeptuneDataMsg),
+  1,
+  cstart_neptune_data_msg__field_descriptors,
+  cstart_neptune_data_msg__field_indices_by_name,
+  1,  cstart_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cstart_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cstop_neptune_data_msg__field_descriptors NULL
+#define cstop_neptune_data_msg__field_indices_by_name NULL
+#define cstop_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cstop_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CStopNeptuneDataMsg",
+  "CStopNeptuneDataMsg",
+  "CStopNeptuneDataMsg",
+  "",
+  sizeof(CStopNeptuneDataMsg),
+  0,
+  cstop_neptune_data_msg__field_descriptors,
+  cstop_neptune_data_msg__field_indices_by_name,
+  0,  cstop_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cstop_neptune_data_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const EStreamControlMessage crecorded_input__type__default_value = k_EStreamControlAuthenticationRequest;
@@ -7613,6 +8218,44 @@ const ProtobufCMessageDescriptor cset_cursor_image_msg__descriptor =
   (ProtobufCMessageInit) cset_cursor_image_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor cset_cursor_scale_msg__field_descriptors[1] =
+{
+  {
+    "scale",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_FLOAT,
+    offsetof(CSetCursorScaleMsg, has_scale),
+    offsetof(CSetCursorScaleMsg, scale),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cset_cursor_scale_msg__field_indices_by_name[] = {
+  0,   /* field[0] = scale */
+};
+static const ProtobufCIntRange cset_cursor_scale_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cset_cursor_scale_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CSetCursorScaleMsg",
+  "CSetCursorScaleMsg",
+  "CSetCursorScaleMsg",
+  "",
+  sizeof(CSetCursorScaleMsg),
+  1,
+  cset_cursor_scale_msg__field_descriptors,
+  cset_cursor_scale_msg__field_indices_by_name,
+  1,  cset_cursor_scale_msg__number_ranges,
+  (ProtobufCMessageInit) cset_cursor_scale_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor cvideo_decoder_info_msg__field_descriptors[2] =
 {
   {
@@ -7772,6 +8415,78 @@ const ProtobufCMessageDescriptor cdisable_high_res_capture_msg__descriptor =
   cdisable_high_res_capture_msg__field_indices_by_name,
   0,  cdisable_high_res_capture_msg__number_ranges,
   (ProtobufCMessageInit) cdisable_high_res_capture_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cenable_neptune_data_msg__field_descriptors NULL
+#define cenable_neptune_data_msg__field_indices_by_name NULL
+#define cenable_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cenable_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CEnableNeptuneDataMsg",
+  "CEnableNeptuneDataMsg",
+  "CEnableNeptuneDataMsg",
+  "",
+  sizeof(CEnableNeptuneDataMsg),
+  0,
+  cenable_neptune_data_msg__field_descriptors,
+  cenable_neptune_data_msg__field_indices_by_name,
+  0,  cenable_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cenable_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cdisable_neptune_data_msg__field_descriptors NULL
+#define cdisable_neptune_data_msg__field_indices_by_name NULL
+#define cdisable_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cdisable_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CDisableNeptuneDataMsg",
+  "CDisableNeptuneDataMsg",
+  "CDisableNeptuneDataMsg",
+  "",
+  sizeof(CDisableNeptuneDataMsg),
+  0,
+  cdisable_neptune_data_msg__field_descriptors,
+  cdisable_neptune_data_msg__field_indices_by_name,
+  0,  cdisable_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cdisable_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cpause_controller_input_msg__field_descriptors NULL
+#define cpause_controller_input_msg__field_indices_by_name NULL
+#define cpause_controller_input_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cpause_controller_input_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CPauseControllerInputMsg",
+  "CPauseControllerInputMsg",
+  "CPauseControllerInputMsg",
+  "",
+  sizeof(CPauseControllerInputMsg),
+  0,
+  cpause_controller_input_msg__field_descriptors,
+  cpause_controller_input_msg__field_indices_by_name,
+  0,  cpause_controller_input_msg__number_ranges,
+  (ProtobufCMessageInit) cpause_controller_input_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cresume_controller_input_msg__field_descriptors NULL
+#define cresume_controller_input_msg__field_indices_by_name NULL
+#define cresume_controller_input_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cresume_controller_input_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CResumeControllerInputMsg",
+  "CResumeControllerInputMsg",
+  "CResumeControllerInputMsg",
+  "",
+  sizeof(CResumeControllerInputMsg),
+  0,
+  cresume_controller_input_msg__field_descriptors,
+  cresume_controller_input_msg__field_indices_by_name,
+  0,  cresume_controller_input_msg__number_ranges,
+  (ProtobufCMessageInit) cresume_controller_input_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 #define ctoggle_magnification_msg__field_descriptors NULL
@@ -9602,6 +10317,44 @@ const ProtobufCMessageDescriptor ccontroller_personalization_update_msg__descrip
   (ProtobufCMessageInit) ccontroller_personalization_update_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor cvrconnection_ready__field_descriptors[1] =
+{
+  {
+    "connect_params",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CVRConnectionReady, connect_params),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cvrconnection_ready__field_indices_by_name[] = {
+  0,   /* field[0] = connect_params */
+};
+static const ProtobufCIntRange cvrconnection_ready__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cvrconnection_ready__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CVRConnectionReady",
+  "CVRConnectionReady",
+  "CVRConnectionReady",
+  "",
+  sizeof(CVRConnectionReady),
+  1,
+  cvrconnection_ready__field_descriptors,
+  cvrconnection_ready__field_indices_by_name,
+  1,  cvrconnection_ready__number_ranges,
+  (ProtobufCMessageInit) cvrconnection_ready__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor cstream_data_lost_msg__field_descriptors[1] =
 {
   {
@@ -10160,7 +10913,7 @@ const ProtobufCMessageDescriptor cframe_stats_list_msg__descriptor =
   (ProtobufCMessageInit) cframe_stats_list_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cstreaming_session_stats__field_descriptors[3] =
+static const ProtobufCFieldDescriptor cstreaming_session_stats__field_descriptors[4] =
 {
   {
     "frame_loss_percentage",
@@ -10198,16 +10951,29 @@ static const ProtobufCFieldDescriptor cstreaming_session_stats__field_descriptor
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "test_data",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(CStreamingSessionStats, test_data),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cstreaming_session_stats__field_indices_by_name[] = {
   1,   /* field[1] = average_network_time_ms */
   0,   /* field[0] = frame_loss_percentage */
   2,   /* field[2] = stddev_network_time_ms */
+  3,   /* field[3] = test_data */
 };
 static const ProtobufCIntRange cstreaming_session_stats__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 3 }
+  { 0, 4 }
 };
 const ProtobufCMessageDescriptor cstreaming_session_stats__descriptor =
 {
@@ -10217,7 +10983,7 @@ const ProtobufCMessageDescriptor cstreaming_session_stats__descriptor =
   "CStreamingSessionStats",
   "",
   sizeof(CStreamingSessionStats),
-  3,
+  4,
   cstreaming_session_stats__field_descriptors,
   cstreaming_session_stats__field_indices_by_name,
   1,  cstreaming_session_stats__number_ranges,
@@ -11020,7 +11786,7 @@ const ProtobufCEnumDescriptor estream_discovery_message__descriptor =
   estream_discovery_message__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_control_message__enum_values_by_number[91] =
+static const ProtobufCEnumValue estream_control_message__enum_values_by_number[99] =
 {
   { "k_EStreamControlAuthenticationRequest", "k_EStreamControlAuthenticationRequest", 1 },
   { "k_EStreamControlAuthenticationResponse", "k_EStreamControlAuthenticationResponse", 2 },
@@ -11113,11 +11879,19 @@ static const ProtobufCEnumValue estream_control_message__enum_values_by_number[9
   { "k_EStreamControlShowOnScreenKeyboard", "k_EStreamControlShowOnScreenKeyboard", 136 },
   { "k_EStreamControlControllerConfigMsg", "k_EStreamControlControllerConfigMsg", 137 },
   { "k_EStreamControlControllerPersonalizationUpdate", "k_EStreamControlControllerPersonalizationUpdate", 138 },
+  { "k_EStreamControlEnableNeptuneData", "k_EStreamControlEnableNeptuneData", 139 },
+  { "k_EStreamControlDisableNeptuneData", "k_EStreamControlDisableNeptuneData", 140 },
+  { "k_EStreamControlStartNeptuneData", "k_EStreamControlStartNeptuneData", 141 },
+  { "k_EStreamControlStopNeptuneData", "k_EStreamControlStopNeptuneData", 142 },
+  { "k_EStreamControlPauseControllerInput", "k_EStreamControlPauseControllerInput", 143 },
+  { "k_EStreamControlResumeControllerInput", "k_EStreamControlResumeControllerInput", 144 },
+  { "k_EStreamControlVRConnectionReady", "k_EStreamControlVRConnectionReady", 145 },
+  { "k_EStreamControlSetCursorScale", "k_EStreamControlSetCursorScale", 146 },
 };
 static const ProtobufCIntRange estream_control_message__value_ranges[] = {
-{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 91}
+{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 99}
 };
-static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[91] =
+static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[99] =
 {
   { "k_EStreamControlAuthenticationRequest", 0 },
   { "k_EStreamControlAuthenticationResponse", 1 },
@@ -11126,7 +11900,9 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlControllerPersonalizationUpdate", 90 },
   { "k_EStreamControlDeleteCursor", 28 },
   { "k_EStreamControlDisableHighResCapture", 77 },
+  { "k_EStreamControlDisableNeptuneData", 92 },
   { "k_EStreamControlEnableHighResCapture", 76 },
+  { "k_EStreamControlEnableNeptuneData", 91 },
   { "k_EStreamControlGamepadRumble_OBSOLETE", 31 },
   { "k_EStreamControlGetCursorImage", 26 },
   { "k_EStreamControlGetTouchConfigData", 63 },
@@ -11157,10 +11933,12 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlNegotiationSetConfig", 3 },
   { "k_EStreamControlOverlayEnabled", 32 },
   { "k_EStreamControlPause", 74 },
+  { "k_EStreamControlPauseControllerInput", 95 },
   { "k_EStreamControlQuitRequest", 40 },
   { "k_EStreamControlRemoteHID", 58 },
   { "k_EStreamControlRemotePlayTogetherGroupUpdate", 84 },
   { "k_EStreamControlResume", 75 },
+  { "k_EStreamControlResumeControllerInput", 96 },
   { "k_EStreamControlSaveTouchConfigLayout", 65 },
   { "k_EStreamControlServerHandshake", 6 },
   { "k_EStreamControlSetActivity", 50 },
@@ -11172,6 +11950,7 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlSetControllerSettings_OBSOLETE", 53 },
   { "k_EStreamControlSetCursor", 25 },
   { "k_EStreamControlSetCursorImage", 27 },
+  { "k_EStreamControlSetCursorScale", 98 },
   { "k_EStreamControlSetFlashState", 73 },
   { "k_EStreamControlSetGammaRamp", 43 },
   { "k_EStreamControlSetIcon", 39 },
@@ -11190,10 +11969,12 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlShowOnScreenKeyboard", 88 },
   { "k_EStreamControlStartAudioData", 10 },
   { "k_EStreamControlStartMicrophoneData", 59 },
+  { "k_EStreamControlStartNeptuneData", 93 },
   { "k_EStreamControlStartNetworkTest", 7 },
   { "k_EStreamControlStartVideoData", 12 },
   { "k_EStreamControlStopAudioData", 11 },
   { "k_EStreamControlStopMicrophoneData", 60 },
+  { "k_EStreamControlStopNeptuneData", 94 },
   { "k_EStreamControlStopRequest", 81 },
   { "k_EStreamControlStopVideoData", 13 },
   { "k_EStreamControlSystemSuspend", 52 },
@@ -11204,6 +11985,7 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlTouchConfigActive", 62 },
   { "k_EStreamControlTriggerControllerDisconnect_OBSOLETE", 49 },
   { "k_EStreamControlTriggerHapticPulse_OBSOLETE", 35 },
+  { "k_EStreamControlVRConnectionReady", 97 },
   { "k_EStreamControlVideoDecoderInfo", 37 },
   { "k_EStreamControlVideoEncoderInfo", 44 },
   { "k_EStreamControlVirtualHereReady", 55 },
@@ -11218,9 +12000,9 @@ const ProtobufCEnumDescriptor estream_control_message__descriptor =
   "EStreamControlMessage",
   "EStreamControlMessage",
   "",
-  91,
+  99,
   estream_control_message__enum_values_by_number,
-  91,
+  99,
   estream_control_message__enum_values_by_name,
   7,
   estream_control_message__value_ranges,
@@ -11390,19 +12172,23 @@ const ProtobufCEnumDescriptor estream_bitrate__descriptor =
   estream_bitrate__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_colorspace__enum_values_by_number[5] =
+static const ProtobufCEnumValue estream_colorspace__enum_values_by_number[7] =
 {
   { "k_EStreamColorspace_Unknown", "k_EStreamColorspace_Unknown", 0 },
   { "k_EStreamColorspace_BT601", "k_EStreamColorspace_BT601", 1 },
   { "k_EStreamColorspace_BT601_Full", "k_EStreamColorspace_BT601_Full", 2 },
   { "k_EStreamColorspace_BT709", "k_EStreamColorspace_BT709", 3 },
   { "k_EStreamColorspace_BT709_Full", "k_EStreamColorspace_BT709_Full", 4 },
+  { "k_EStreamColorspace_BT2020", "k_EStreamColorspace_BT2020", 5 },
+  { "k_EStreamColorspace_BT2020_Full", "k_EStreamColorspace_BT2020_Full", 6 },
 };
 static const ProtobufCIntRange estream_colorspace__value_ranges[] = {
-{0, 0},{0, 5}
+{0, 0},{0, 7}
 };
-static const ProtobufCEnumValueIndex estream_colorspace__enum_values_by_name[5] =
+static const ProtobufCEnumValueIndex estream_colorspace__enum_values_by_name[7] =
 {
+  { "k_EStreamColorspace_BT2020", 5 },
+  { "k_EStreamColorspace_BT2020_Full", 6 },
   { "k_EStreamColorspace_BT601", 1 },
   { "k_EStreamColorspace_BT601_Full", 2 },
   { "k_EStreamColorspace_BT709", 3 },
@@ -11416,9 +12202,9 @@ const ProtobufCEnumDescriptor estream_colorspace__descriptor =
   "EStreamColorspace",
   "EStreamColorspace",
   "",
-  5,
+  7,
   estream_colorspace__enum_values_by_number,
-  5,
+  7,
   estream_colorspace__enum_values_by_name,
   1,
   estream_colorspace__value_ranges,
@@ -11486,19 +12272,21 @@ const ProtobufCEnumDescriptor estream_host_play_audio_preference__descriptor =
   estream_host_play_audio_preference__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estreaming_data_type__enum_values_by_number[3] =
+static const ProtobufCEnumValue estreaming_data_type__enum_values_by_number[4] =
 {
   { "k_EStreamingAudioData", "k_EStreamingAudioData", 0 },
   { "k_EStreamingVideoData", "k_EStreamingVideoData", 1 },
   { "k_EStreamingMicrophoneData", "k_EStreamingMicrophoneData", 2 },
+  { "k_EStreamingNeptuneData", "k_EStreamingNeptuneData", 3 },
 };
 static const ProtobufCIntRange estreaming_data_type__value_ranges[] = {
-{0, 0},{0, 3}
+{0, 0},{0, 4}
 };
-static const ProtobufCEnumValueIndex estreaming_data_type__enum_values_by_name[3] =
+static const ProtobufCEnumValueIndex estreaming_data_type__enum_values_by_name[4] =
 {
   { "k_EStreamingAudioData", 0 },
   { "k_EStreamingMicrophoneData", 2 },
+  { "k_EStreamingNeptuneData", 3 },
   { "k_EStreamingVideoData", 1 },
 };
 const ProtobufCEnumDescriptor estreaming_data_type__descriptor =
@@ -11508,9 +12296,9 @@ const ProtobufCEnumDescriptor estreaming_data_type__descriptor =
   "EStreamingDataType",
   "EStreamingDataType",
   "",
-  3,
+  4,
   estreaming_data_type__enum_values_by_number,
-  3,
+  4,
   estreaming_data_type__enum_values_by_name,
   1,
   estreaming_data_type__value_ranges,

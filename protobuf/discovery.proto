@@ -29,6 +29,13 @@ enum ERemoteClientService {
 	k_ERemoteClientServiceContentServer = 16;
 }
 
+enum EVRLinkCaps {
+	k_EVRLinkCapsUnknown = 0;
+	k_EVRLinkCapsAvailable = 1;
+	k_EVRLinkCapsUnimplemented = 2;
+	k_EVRLinkCapsMissingHardwareEncoding = 3;
+}
+
 enum ERemoteDeviceAuthorizationResult {
 	k_ERemoteDeviceAuthorizationSuccess = 0;
 	k_ERemoteDeviceAuthorizationDenied = 1;
@@ -47,13 +54,14 @@ enum EStreamDeviceFormFactor {
 	k_EStreamDeviceFormFactorTablet = 2;
 	k_EStreamDeviceFormFactorComputer = 3;
 	k_EStreamDeviceFormFactorTV = 4;
+	k_EStreamDeviceFormFactorVRHeadset = 5;
 }
 
 enum EStreamTransport {
 	k_EStreamTransportNone = 0;
 	k_EStreamTransportUDP = 1;
 	k_EStreamTransportUDPRelay = 2;
-	k_EStreamTransportWebRTC = 3;
+	k_EStreamTransportWebRTC_OBSOLETE = 3;
 	k_EStreamTransportSDR = 4;
 	k_EStreamTransportUDP_SNS = 5;
 	k_EStreamTransportUDPRelay_SNS = 6;
@@ -64,6 +72,7 @@ enum EStreamInterface {
 	k_EStreamInterfaceRecentGames = 1;
 	k_EStreamInterfaceBigPicture = 2;
 	k_EStreamInterfaceDesktop = 3;
+	k_EStreamInterfaceSteamVR = 4;
 }
 
 enum ERemoteDeviceStreamingResult {
@@ -82,13 +91,14 @@ enum ERemoteDeviceStreamingResult {
 	k_ERemoteDeviceStreamingTransportUnavailable = 12;
 	k_ERemoteDeviceStreamingInvisible = 13;
 	k_ERemoteDeviceStreamingGameLaunchFailed = 14;
+	k_ERemoteDeviceStreamingSteamVRNotInstalled = 15;
 }
 
 message CMsgRemoteClientBroadcastHeader {
 	optional uint64 client_id = 1;
 	optional .ERemoteClientBroadcastMsg msg_type = 2 [default = k_ERemoteClientBroadcastMsgDiscovery];
 	optional uint64 instance_id = 3;
-	optional uint64 device_id = 4;
+	optional uint64 device_id_OBSOLETE = 4;
 	optional bytes device_token = 5;
 }
 
@@ -121,6 +131,7 @@ message CMsgRemoteClientBroadcastStatus {
 	optional uint32 supported_services = 23;
 	optional bool steam_deck = 24;
 	optional uint64 steam_version = 25;
+	optional .EVRLinkCaps vr_link_caps = 26 [default = k_EVRLinkCapsUnknown];
 }
 
 message CMsgRemoteClientBroadcastDiscovery {

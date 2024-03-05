@@ -300,7 +300,8 @@ static const int32_t chiddevice_info__interface_number__default_value = -1;
 static const int32_t chiddevice_info__ostype__default_value = -1;
 static const uint32_t chiddevice_info__e_controller_type__obsolete__default_value = 0u;
 static const protobuf_c_boolean chiddevice_info__is_xinput_device__obsolete__default_value = 0;
-static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
+static const protobuf_c_boolean chiddevice_info__is_steamvr_device__default_value = 0;
+static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[20] =
 {
   {
     "location",
@@ -530,6 +531,18 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "is_steamvr_device",
+    20,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CHIDDeviceInfo, has_is_steamvr_device),
+    offsetof(CHIDDeviceInfo, is_steamvr_device),
+    NULL,
+    &chiddevice_info__is_steamvr_device__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned chiddevice_info__field_indices_by_name[] = {
   14,   /* field[14] = caps_bits */
@@ -537,6 +550,7 @@ static const unsigned chiddevice_info__field_indices_by_name[] = {
   10,   /* field[10] = interface_number */
   12,   /* field[12] = is_generic_gamepad */
   13,   /* field[13] = is_generic_joystick */
+  19,   /* field[19] = is_steamvr_device */
   17,   /* field[17] = is_xinput_device_OBSOLETE */
   0,   /* field[0] = location */
   6,   /* field[6] = manufacturer_string */
@@ -555,7 +569,7 @@ static const unsigned chiddevice_info__field_indices_by_name[] = {
 static const ProtobufCIntRange chiddevice_info__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 19 }
+  { 0, 20 }
 };
 const ProtobufCMessageDescriptor chiddevice_info__descriptor =
 {
@@ -565,7 +579,7 @@ const ProtobufCMessageDescriptor chiddevice_info__descriptor =
   "CHIDDeviceInfo",
   "",
   sizeof(CHIDDeviceInfo),
-  19,
+  20,
   chiddevice_info__field_descriptors,
   chiddevice_info__field_indices_by_name,
   1,  chiddevice_info__number_ranges,
