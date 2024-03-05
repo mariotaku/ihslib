@@ -97,12 +97,12 @@ uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
 uint8_t *IHS_BufferSuffixPointer(IHS_Buffer *buffer);
 
-void IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data);
+size_t IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data);
 
-void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
+size_t IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen);
 
-void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen);
+size_t IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen);
 
-void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen);
+size_t IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen);
 
 void IHS_BufferTransferOwnership(IHS_Buffer *buffer, IHS_Buffer *to);

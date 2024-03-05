@@ -147,17 +147,19 @@ uint8_t *IHS_BufferSuffixPointer(IHS_Buffer *buffer) {
     return IHS_BufferPointerAt(buffer, buffer->size);
 }
 
-void IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data) {
+size_t IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data) {
     IHS_BufferAppendMem(buffer, IHS_BufferPointer(data), data->size);
+    return data->size;
 }
 
-void IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
+size_t IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
     uint8_t *dst = IHS_BufferPointerForAppend(buffer, dataLen);
     memcpy(dst, data, dataLen);
     buffer->size += dataLen;
+    return dataLen;
 }
 
-void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
+size_t IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
     size_t writeEnd = position + srcLen;
     IHS_BufferEnsureMaxSize(buffer, writeEnd);
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
@@ -165,9 +167,10 @@ void IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src,
     if (buffer->size < writeEnd) {
         buffer->size = writeEnd;
     }
+    return srcLen;
 }
 
-void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen) {
+size_t IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen) {
     size_t fillEnd = position + fillLen;
     IHS_BufferEnsureMaxSize(buffer, fillEnd);
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
@@ -175,6 +178,7 @@ void IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t
     if (buffer->size < fillEnd) {
         buffer->size = fillEnd;
     }
+    return fillLen;
 }
 
 void IHS_BufferReleaseOwnership(IHS_Buffer *buffer) {
