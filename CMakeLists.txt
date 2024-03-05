@@ -61,7 +61,6 @@ if (IHSLIB_SANITIZE_ADDRESS)
     add_compile_definitions(IHSLIB_SANITIZE_ADDRESS)
     add_compile_options(-fsanitize=address)
     add_link_options(-fsanitize=address -static-libasan)
-    link_libraries(asan)
 endif ()
 
 if (IHSLIB_SAMPLES)
