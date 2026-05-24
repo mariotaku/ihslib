@@ -160,6 +160,13 @@ static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *devic
 static uint64_t HIDPollTick(int runCount, void *context) {
     (void) runCount;
     IHS_HIDManager *manager = context;
+    // If input streaming is disabled, skip the device drain entirely. Otherwise the holders
+    // would accumulate raw reports that IHS_SessionHIDSendReport refuses to flush, growing
+    // the per-device dataBuffer without bound. The timer keeps ticking so we resume
+    // immediately when the server flips streamingInput back on.
+    if (!IHS_SessionInputEnabled(manager->session)) {
+        return HID_POLL_INTERVAL_MS;
+    }
     bool anyData = false;
     for (int i = (int) manager->devices.size - 1; i >= 0; --i) {
         IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);

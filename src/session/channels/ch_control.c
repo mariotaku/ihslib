@@ -322,9 +322,27 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
 
 static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message) {
     const CStreamingClientConfig *config = message->config;
-    IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "Set client config. enable_video_hevc=%u",
-                   config->enable_video_hevc);
+    IHS_Session *session = channel->session;
+    // Mirror Steam's BStreamingInput/Audio/Video reading from the negotiated client config.
+    // Each flag is only updated if the server actually included it; absent fields keep the
+    // current value (which started at true at session creation).
+    if (config->has_enable_input_streaming) {
+        session->state.streamingInput = config->enable_input_streaming;
+    }
+    if (config->has_enable_audio_streaming) {
+        session->state.streamingAudio = config->enable_audio_streaming;
+    }
+    if (config->has_enable_video_streaming) {
+        session->state.streamingVideo = config->enable_video_streaming;
+    }
+    IHS_SessionLog(session, IHS_LogLevelDebug, "Control",
+                   "Set client config. input=%u audio=%u video=%u enable_video_hevc=%u",
+                   session->state.streamingInput, session->state.streamingAudio,
+                   session->state.streamingVideo, config->enable_video_hevc);
+}
 
+bool IHS_SessionInputEnabled(IHS_Session *session) {
+    return session->state.streamingInput;
 }
 
 static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message) {

@@ -75,6 +75,12 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     IHS_RetransmissionInit(&session->retransmission, session);
     session->hidManager = IHS_HIDManagerCreate();
 
+    // Default the negotiated-streaming flags to true; OnSetClientConfig will reflect the
+    // server's actual answer once the SetStreamingClientConfig control message arrives.
+    session->state.streamingInput = true;
+    session->state.streamingAudio = true;
+    session->state.streamingVideo = true;
+
     session->numChannels = 3;
 
     session->channels[IHS_SessionChannelIdDiscovery] = IHS_SessionChannelDiscoveryCreate(session);

@@ -133,6 +133,11 @@ void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMe
 }
 
 bool IHS_SessionChannelControlSendHIDMsg(IHS_SessionChannel *channel, const CHIDMessageFromRemote *message) {
+    // Mirror Steam's CStreamClient::SendRemoteHIDMessage (0x1fa1c8) which gates on
+    // IsStreaming() && BStreamingInput(). If the server disabled input streaming via
+    // OnSetClientConfig, drop the message client-side rather than burning bandwidth on
+    // something the server has told us it isn't reading.
+    if (!IHS_SessionInputEnabled(channel->session)) return false;
     CRemoteHIDMsg wrapped = CREMOTE_HIDMSG__INIT;
     size_t messageSize = chidmessage_from_remote__get_packed_size(message);
     wrapped.has_data = true;
@@ -198,6 +203,10 @@ bool IHS_SessionHIDNotifyDeviceChange(IHS_Session *session) {
 }
 
 bool IHS_SessionHIDSendReport(IHS_Session *session) {
+    // Short-circuit before the per-device lock storm if input streaming is disabled.
+    // The polling task still calls device->poll() so device state stays current; only
+    // the wire send is suppressed (matches Steam's BStreamingInput gating behavior).
+    if (!IHS_SessionInputEnabled(session)) return false;
     CHIDMessageFromRemote outMessage = CHIDMESSAGE_FROM_REMOTE__INIT;
     outMessage.command_case = CHIDMESSAGE_FROM_REMOTE__COMMAND_REPORTS;
     CHIDMessageFromRemote__DeviceInputReports reports = CHIDMESSAGE_FROM_REMOTE__DEVICE_INPUT_REPORTS__INIT;

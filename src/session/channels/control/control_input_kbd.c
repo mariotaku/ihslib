@@ -28,6 +28,7 @@
 #include "protobuf/pb_utils.h"
 
 bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputKeyDownMsg message = CINPUT_KEY_DOWN_MSG__INIT;
     message.scancode = scancode;
     // TODO: is inputMark needed?
@@ -36,6 +37,7 @@ bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode) {
 }
 
 bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputKeyUpMsg message = CINPUT_KEY_UP_MSG__INIT;
     message.scancode = scancode;
     // TODO: is inputMark needed?
@@ -47,6 +49,7 @@ bool IHS_SessionSendText(IHS_Session *session, const char *utf8) {
     // Mirrors CStreamClient::SendText (0x1f9d4c): drop empty input, build CInputTextMsg
     // with text_utf8 set, ship on the control channel. No length cap on the wire side
     // (subagent RE confirmed; only practical limit is the control-channel MTU).
+    if (!IHS_SessionInputEnabled(session)) return false;
     if (utf8 == NULL || *utf8 == '\0') {
         return false;
     }

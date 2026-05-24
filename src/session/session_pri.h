@@ -39,6 +39,16 @@ typedef struct IHS_SessionState {
     int mtu;
     uint8_t connectionId;
     uint8_t hostConnectionId;
+    /**
+     * Negotiated stream-enable flags from CSetStreamingClientConfig. Default true at
+     * session creation since the streaming request asked for all three; the server
+     * confirms (or vetoes) via OnSetClientConfig. Mirrors Steam's BStreamingInput /
+     * BStreamingAudio / BStreamingVideo accessors reading from
+     * clientConfig.enable_*_streaming.
+     */
+    bool streamingInput;
+    bool streamingAudio;
+    bool streamingVideo;
 } IHS_SessionState;
 
 struct IHS_Session {
@@ -84,6 +94,12 @@ bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
 bool IHS_SessionQueuePacket(IHS_Session *session, IHS_SessionPacket *packet, bool retransmit);
 
 bool IHS_SessionSendControlMessage(IHS_Session *session, EStreamControlMessage type, const ProtobufCMessage *message);
+
+/**
+ * @return true if the session-state input flag is set. Outbound input/HID send sites should
+ *   early-return false when this is false. Mirrors Steam's BStreamingInput().
+ */
+bool IHS_SessionInputEnabled(IHS_Session *session);
 
 bool IHS_SessionCancelRetransmission(IHS_Session *session, IHS_SessionChannelId channelId, uint16_t packetId,
                                      uint16_t fragmentId);

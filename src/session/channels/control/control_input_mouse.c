@@ -28,6 +28,7 @@
 #include "protobuf/pb_utils.h"
 
 bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, x_normalized, x);
     PROTOBUF_C_SET_VALUE(message, y_normalized, y);
@@ -36,6 +37,7 @@ bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y) {
 }
 
 bool IHS_SessionSendMouseMovement(IHS_Session *session, int dx, int dy) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, dx, dx);
     PROTOBUF_C_SET_VALUE(message, dy, dy);
@@ -44,6 +46,7 @@ bool IHS_SessionSendMouseMovement(IHS_Session *session, int dx, int dy) {
 }
 
 bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseDownMsg message = CINPUT_MOUSE_DOWN_MSG__INIT;
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseDown,
@@ -51,6 +54,7 @@ bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton b
 }
 
 bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseUpMsg message = CINPUT_MOUSE_UP_MSG__INIT;
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseUp,
@@ -58,6 +62,7 @@ bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton but
 }
 
 bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction) {
+    if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseWheelMsg message = CINPUT_MOUSE_WHEEL_MSG__INIT;
     switch (direction) {
         case IHS_MOUSE_WHEEL_UP:
