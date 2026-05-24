@@ -213,9 +213,18 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         IHS_BufferInit(&plain, 0, 0);
         IHS_BufferEnsureMaxSizeExact(&plain, body->size);
         size_t outLen = body->size;
-        IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size, EmptyIV, sizeof(EmptyIV),
-                                         config->sessionKey, config->sessionKeyLen, IHS_BufferPointer(&plain),
-                                         &outLen);
+        int decryptRet = IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size,
+                                                          EmptyIV, sizeof(EmptyIV),
+                                                          config->sessionKey, config->sessionKeyLen,
+                                                          IHS_BufferPointer(&plain), &outLen);
+        if (decryptRet != 0) {
+            IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video",
+                           "Failed to decrypt video frame: %d, request keyframe", decryptRet);
+            IHS_BufferClear(&plain, true);
+            IHS_SessionChannelDataLost(channel);
+            videoCh->states.waitingKeyFrame = IHS_TimerNow();
+            goto unlock;
+        }
         plain.size = outLen;
         AddPartialFrame(videoCh, header->id, &vhead, &plain);
         IHS_BufferClear(&plain, true);
