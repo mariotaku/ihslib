@@ -48,6 +48,7 @@ typedef struct IHS_SessionChannelVideo {
         uint16_t lastFrameId;
         uint16_t frameCounter;
         uint64_t waitingKeyFrame;
+        uint64_t lastStatsTime;
         bool frameStarted;
         bool frameFinished;
     } states;
@@ -166,6 +167,7 @@ static bool DataStart(IHS_SessionChannel *channel) {
     message.info = "Marvell hardware decoding";
     PROTOBUF_C_SET_VALUE(message, threads, 1);
 
+    videoCh->states.lastStatsTime = IHS_TimerNow();
     videoCh->statsTimer = IHS_TimerTaskStart(session->timers, ReportVideoStats, NULL, 1000, videoCh);
 
     return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
@@ -365,12 +367,19 @@ static uint64_t ReportVideoStats(int runCount, void *data) {
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_MutexLock(videoCh->stateMutex);
 
+    // TODO: send CFrameStatsListMsg via k_EStreamControlFrameStatistics once
+    // we can populate per-frame stats (decode/render timings, drops, etc.).
+    // Server uses this for QoS / bitrate adaptation.
     CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
     message.data_type = k_EStreamingVideoData;
     message.latest_frame_id = videoCh->states.lastFrameId;
 
-    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "Video", "%.2f FPS", videoCh->states.frameCounter / 1.0);
+    uint64_t now = IHS_TimerNow();
+    uint64_t elapsedMs = now - videoCh->states.lastStatsTime;
+    double fps = elapsedMs > 0 ? (videoCh->states.frameCounter * 1000.0) / (double) elapsedMs : 0.0;
+    IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "Video", "%.2f FPS", fps);
     videoCh->states.frameCounter = 0;
+    videoCh->states.lastStatsTime = now;
     IHS_MutexUnlock(videoCh->stateMutex);
     return 1000;
 }
