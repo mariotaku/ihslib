@@ -52,7 +52,7 @@ typedef struct IHS_SessionChannelVideo {
         bool frameFinished;
     } states;
     struct {
-        uint16_t reserved1;
+        uint16_t expectedSubFrameStart;
         IHS_VideoPartialFrames partial;
         IHS_Buffer buffer;
         IHS_StreamVideoFrameFlag flags;
@@ -251,8 +251,8 @@ static size_t VideoFrameHeaderParse(IHS_VideoFrameHeader *header, const uint8_t 
     size_t offset = 0;
     offset += IHS_ReadUInt16LE(&data[offset], &header->sequence);
     header->flags = data[offset++];
-    offset += IHS_ReadUInt16LE(&data[offset], &header->reserved1);
-    offset += IHS_ReadUInt16LE(&data[offset], &header->reserved2);
+    offset += IHS_ReadUInt16LE(&data[offset], &header->subFrameStart);
+    offset += IHS_ReadUInt16LE(&data[offset], &header->subFrameEnd);
     return offset;
 }
 
@@ -262,15 +262,15 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
     IHS_VideoPartialFrame *partial = videoCh->frame.partial.head;
     while (partial != NULL && !videoCh->states.frameFinished) {
         IHS_VideoPartialFrame *next = partial->next;
-        if (partial->header.reserved2 != 0) {
-            if (partial->header.reserved1 != videoCh->frame.reserved1) {
+        if (partial->header.subFrameEnd != 0) {
+            if (partial->header.subFrameStart != videoCh->frame.expectedSubFrameStart) {
                 break;
             }
-            if (partial->header.flags & VideoFrameFlagReserved1Increment) {
+            if (partial->header.flags & VideoFrameFlagSubFrameAdvance) {
                 if (partial->header.flags & VideoFrameFlagFrameFinish) {
-                    videoCh->frame.reserved1 = 0;
+                    videoCh->frame.expectedSubFrameStart = 0;
                 } else {
-                    videoCh->frame.reserved1 = partial->header.reserved2 + 1;
+                    videoCh->frame.expectedSubFrameStart = partial->header.subFrameEnd + 1;
                 }
             }
         }
@@ -291,7 +291,7 @@ static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, 
     // Find reset matching cur frame
     IHS_VideoPartialFrame *cur = NULL;
     IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
-        if (frameId == cur->frameId && header->reserved2 < cur->header.reserved1) {
+        if (frameId == cur->frameId && header->subFrameEnd < cur->header.subFrameStart) {
             break;
         }
     }
@@ -310,7 +310,7 @@ static void DiscardPending(IHS_SessionChannelVideo *channel) {
                        "%u partial frames was cleared", clearedCount);
     }
     channel->frame.flags = 0;
-    channel->frame.reserved1 = 0;
+    channel->frame.expectedSubFrameStart = 0;
 }
 
 static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,

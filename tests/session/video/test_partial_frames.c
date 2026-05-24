@@ -30,9 +30,9 @@ int main() {
     IHS_VideoPartialFramesInit(&frames);
     IHS_VideoFrameHeader header1 = {
             .sequence = 883,
-            .flags = VideoFrameFlagReserved1Increment | VideoFrameFlagFrameFinish,
-            .reserved1 = 0,
-            .reserved2 = 0
+            .flags = VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+            .subFrameStart = 0,
+            .subFrameEnd = 0
     };
     IHS_Buffer data1 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data1, 0, 0, 16);
@@ -41,9 +41,9 @@ int main() {
 
     IHS_VideoFrameHeader header2 = {
             .sequence = 884,
-            .flags = VideoFrameFlagReserved1Increment | VideoFrameFlagFrameFinish,
-            .reserved1 = 0,
-            .reserved2 = 0
+            .flags = VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+            .subFrameStart = 0,
+            .subFrameEnd = 0
     };
     IHS_Buffer data2 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data2, 0, 0, 16);
@@ -54,9 +54,9 @@ int main() {
 
     IHS_VideoFrameHeader header3 = {
             .sequence = 885,
-            .flags = VideoFrameFlagReserved1Increment | VideoFrameFlagFrameFinish,
-            .reserved1 = 0,
-            .reserved2 = 0
+            .flags = VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+            .subFrameStart = 0,
+            .subFrameEnd = 0
     };
     IHS_Buffer data3 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data3, 0, 0, 16);
@@ -69,9 +69,9 @@ int main() {
 
     IHS_VideoFrameHeader header4 = {
             .sequence = 886,
-            .flags = VideoFrameFlagReserved1Increment | VideoFrameFlagFrameFinish,
-            .reserved1 = 0,
-            .reserved2 = 0
+            .flags = VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+            .subFrameStart = 0,
+            .subFrameEnd = 0
     };
     IHS_Buffer data4 = IHS_BUFFER_INIT(16, 16);
     IHS_BufferFillMem(&data4, 0, 0, 16);

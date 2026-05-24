@@ -33,14 +33,17 @@
 typedef struct IHS_SessionVideoFrameHeader {
     uint16_t sequence;
     uint8_t flags;
-    uint16_t reserved1;
-    uint16_t reserved2;
+    /** Start slice index of this fragment's range within the encoded frame. */
+    uint16_t subFrameStart;
+    /** End slice index (inclusive) of this fragment's range; 0 means single-fragment / no slice info. */
+    uint16_t subFrameEnd;
 } IHS_VideoFrameHeader;
 
 enum {
     VideoFrameFlagNeedStartSequence = 0x01,
     VideoFrameFlagNeedEscape = 0x02,
-    VideoFrameFlagReserved1Increment = 0x04,
+    /** This fragment closes its slice range: advance the expected next start to subFrameEnd+1. */
+    VideoFrameFlagSubFrameAdvance = 0x04,
     VideoFrameFlagFrameFinish = 0x08,
     VideoFrameFlagKeyFrame = 0x10,
     VideoFrameFlagEncrypted = 0x20,
