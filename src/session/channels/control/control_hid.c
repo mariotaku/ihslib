@@ -309,9 +309,14 @@ static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manage
 
 static void HandleDeviceSendFeatureReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
                                           const CHIDMessageToRemote *message) {
-    (void) channel;
     CHIDMessageToRemote__DeviceSendFeatureReport *cmd = message->device_send_feature_report;
     IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, cmd->device);
+    if (managed == NULL) {
+        IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
+                       "Message %u: SendFeatureReport(id=%u) => (no device)",
+                       message->request_id, cmd->device);
+        return;
+    }
     IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
 }
 
