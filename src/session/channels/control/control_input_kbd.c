@@ -42,3 +42,16 @@ bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode) {
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputKeyUp,
                                          (const ProtobufCMessage *) &message);
 }
+
+bool IHS_SessionSendText(IHS_Session *session, const char *utf8) {
+    // Mirrors CStreamClient::SendText (0x1f9d4c): drop empty input, build CInputTextMsg
+    // with text_utf8 set, ship on the control channel. No length cap on the wire side
+    // (subagent RE confirmed; only practical limit is the control-channel MTU).
+    if (utf8 == NULL || *utf8 == '\0') {
+        return false;
+    }
+    CInputTextMsg message = CINPUT_TEXT_MSG__INIT;
+    message.text_utf8 = (char *) utf8;
+    return IHS_SessionSendControlMessage(session, k_EStreamControlInputText,
+                                         (const ProtobufCMessage *) &message);
+}

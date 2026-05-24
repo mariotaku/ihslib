@@ -106,6 +106,21 @@ bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode);
 
 bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode);
 
+/**
+ * Send a UTF-8 text string to the host as a CInputTextMsg. Used for IME-composed text,
+ * pasted clipboard content, soft-keyboard input, and any other path where the caller has a
+ * committed string rather than per-key scancodes.
+ *
+ * The host normally also receives keyboard scancodes through IHS_SessionSendKeyDown/Up.
+ * To avoid duplicating ASCII keys, Steam's own SDL adapter only forwards multi-byte UTF-8
+ * (text bytes with the high bit set) through this path; the caller is responsible for the
+ * equivalent filtering when both scancodes and text are being sent.
+ *
+ * @param utf8 NUL-terminated UTF-8 string. NULL or empty strings are dropped silently.
+ * @return true if sent
+ */
+bool IHS_SessionSendText(IHS_Session *session, const char *utf8);
+
 bool IHS_SessionSendTouchDown(IHS_Session *session, uint64_t fingerId, float x, float y);
 
 bool IHS_SessionSendTouchUp(IHS_Session *session, uint64_t fingerId, float x, float y);
