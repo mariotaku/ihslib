@@ -148,6 +148,18 @@ struct IHS_HIDDeviceClass {
 
     int (*requestDisconnect)(IHS_HIDDevice *device, int method, const uint8_t *data, size_t dataLen);
 
+    /**
+     * Drain any pending input from the device. Called from the periodic HID poll task on the
+     * timer thread. NULL for backends driven by external events (e.g. the SDL backend, which is
+     * push-based via IHS_HIDHandleSDLEvent).
+     *
+     * Return values mirror Steam's CHIDDeviceReportGenerator::BCollectReports semantics:
+     *   > 0  data was added to the report holder this tick
+     *   = 0  no data available, device is healthy
+     *   < 0  device is dead — the manager will close and remove it
+     */
+    int (*poll)(IHS_HIDDevice *device);
+
 };
 
 struct IHS_HIDProvider {

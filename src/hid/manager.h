@@ -28,6 +28,7 @@
 #include "ihslib/hid.h"
 #include "ihs_arraylist.h"
 #include "ihs_thread.h"
+#include "ihs_timer.h"
 #include "report.h"
 
 typedef struct IHS_HIDDevice IHS_HIDDevice;
@@ -40,6 +41,12 @@ struct IHS_HIDManager {
     IHS_ArrayList providers;
     IHS_ArrayList inputReports;
     uint32_t lastDeviceId;
+    /**
+     * 125 Hz poll task that drains every device whose class implements `poll`, then calls
+     * IHS_SessionHIDSendReport once if anything was added. Created lazily on the first
+     * IHS_HIDManagerAddProvider call; destroyed in IHS_HIDManagerDestroy.
+     */
+    IHS_TimerTask *pollTimer;
 };
 
 struct IHS_HIDManagedDevice {

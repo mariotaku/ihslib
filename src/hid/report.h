@@ -61,6 +61,20 @@ typedef struct IHS_HIDReportHolder {
      * Data length for single report item. Will be used for delta calculation, etc.
      */
     size_t reportLength;
+    /**
+     * Last raw input state actually flushed to the wire. Used for identical-state dedup
+     * (mirrors CHIDDeviceReportGenerator::SendBuffer's memcmp(buf, lastBuffer) drop).
+     * Allocated lazily on the first AddDelta/AddFull call.
+     */
+    uint8_t *lastSent;
+    size_t lastSentLen;
+    /**
+     * Most recent raw state passed to AddDelta/AddFull since the last send. Promoted to
+     * lastSent by ResetMessage after a successful send.
+     */
+    uint8_t *pendingCurrent;
+    size_t pendingCurrentLen;
+    size_t bufferCapacity;
 } IHS_HIDReportHolder;
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);

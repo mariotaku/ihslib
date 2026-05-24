@@ -32,7 +32,11 @@
 #include "protobuf/pb_utils.h"
 #include "session/session_pri.h"
 
+#define HID_POLL_INTERVAL_MS 8u
+
 static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *device);
+
+static uint64_t HIDPollTick(int runCount, void *context);
 
 IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_HIDManager *manager = calloc(1, sizeof(IHS_HIDManager));
@@ -43,6 +47,10 @@ IHS_HIDManager *IHS_HIDManagerCreate() {
 }
 
 void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
+    if (manager->pollTimer != NULL) {
+        IHS_TimerTaskStop(manager->pollTimer);
+        manager->pollTimer = NULL;
+    }
     for (size_t i = 0, j = manager->providers.size; i < j; ++i) {
         IHS_HIDProvider *provider = *((IHS_HIDProvider **) IHS_ArrayListGet(&manager->providers, i));
         assert(provider->manager == manager);
@@ -125,6 +133,12 @@ void IHS_HIDManagerRemoveClosedDevice(IHS_HIDManager *manager, IHS_HIDManagedDev
 void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
     provider->manager = manager;
     IHS_ArrayListAppend(&manager->providers, &provider);
+    if (manager->pollTimer == NULL && manager->session != NULL) {
+        // Lazy-start the periodic poll task on the first provider so sessions that never
+        // use HID pay no wakeup cost.
+        manager->pollTimer = IHS_TimerTaskStart(manager->session->timers, HIDPollTick, NULL,
+                                                HID_POLL_INTERVAL_MS, manager);
+    }
 }
 
 void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *provider) {
@@ -135,4 +149,36 @@ void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *prov
 
 static int CompareDeviceID(const uint32_t *id, const IHS_HIDManagedDevice *device) {
     return (int) (*id - device->id);
+}
+
+// Mirrors CHIDDeviceReportThread::Run (0x20c8d0) → RunHIDDeviceReportThread (0x21d4c8):
+// every tick, poll each device that implements `poll`. If anything returned data, batch
+// into one SendReport call. Devices whose poll returns negative are dead — close + remove.
+//
+// Iteration is in reverse so that closing a device (which removes it from the list and
+// shifts everything down) leaves earlier indices unaffected.
+static uint64_t HIDPollTick(int runCount, void *context) {
+    (void) runCount;
+    IHS_HIDManager *manager = context;
+    bool anyData = false;
+    for (int i = (int) manager->devices.size - 1; i >= 0; --i) {
+        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
+        if (managed->device->cls->poll == NULL) {
+            continue;
+        }
+        IHS_HIDDeviceLock(managed->device);
+        int result = managed->device->cls->poll(managed->device);
+        IHS_HIDDeviceUnlock(managed->device);
+        if (result > 0) {
+            anyData = true;
+        } else if (result < 0) {
+            IHS_SessionLog(manager->session, IHS_LogLevelInfo, "HID",
+                           "Device id=%u poll failed (%d), closing", managed->id, result);
+            IHS_HIDManagedDeviceClose(managed);
+        }
+    }
+    if (anyData) {
+        IHS_SessionHIDSendReport(manager->session);
+    }
+    return HID_POLL_INTERVAL_MS;
 }

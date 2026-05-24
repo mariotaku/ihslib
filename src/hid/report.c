@@ -43,6 +43,11 @@ void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
     IHS_ArrayListInit(&holder->reportPointers, sizeof(CHIDDeviceInputReport *));
     holder->report.reports = holder->reportPointers.data;
     holder->reportLength = 0;
+    holder->lastSent = NULL;
+    holder->lastSentLen = 0;
+    holder->pendingCurrent = NULL;
+    holder->pendingCurrentLen = 0;
+    holder->bufferCapacity = 0;
 }
 
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
@@ -50,6 +55,26 @@ void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
     IHS_ArrayListDeinit(&holder->reportPointers);
     IHS_ArrayListDeinit(&holder->reportItems);
     IHS_BufferClear(&holder->dataBuffer, true);
+    free(holder->lastSent);
+    free(holder->pendingCurrent);
+}
+
+// Capture `current` as the pending state for the next send and decide whether to skip
+// because the bytes are byte-identical to what was last flushed. Allocates the two scratch
+// buffers lazily and grows them on demand. Returns true if the caller should drop.
+static bool DedupAndStash(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
+    if (holder->lastSent != NULL && holder->lastSentLen == len &&
+        memcmp(holder->lastSent, current, len) == 0) {
+        return true;
+    }
+    if (len > holder->bufferCapacity) {
+        holder->lastSent = realloc(holder->lastSent, len);
+        holder->pendingCurrent = realloc(holder->pendingCurrent, len);
+        holder->bufferCapacity = len;
+    }
+    memcpy(holder->pendingCurrent, current, len);
+    holder->pendingCurrentLen = len;
+    return false;
 }
 
 void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t reportLen) {
@@ -57,8 +82,11 @@ void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t repo
 }
 
 void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
-    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
     assert(holder->reportLength >= len);
+    if (DedupAndStash(holder, current, len)) {
+        return;
+    }
+    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
     memcpy(data, current, len);
     holder->dataBuffer.size += len;
     CHIDDeviceInputReport *item = IHS_ArrayListAppend(&holder->reportItems, NULL);
@@ -74,6 +102,9 @@ void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *curr
 
 void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
                                  size_t len) {
+    if (DedupAndStash(holder, current, len)) {
+        return;
+    }
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, holder->reportLength);
     int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
     holder->dataBuffer.size += deltaLen;
@@ -104,6 +135,15 @@ void IHS_HIDReportHolderResetMessage(IHS_HIDReportHolder *holder) {
     IHS_BufferClear(&holder->dataBuffer, false);
     IHS_ArrayListClear(&holder->reportItems);
     IHS_ArrayListClear(&holder->reportPointers);
+    // Promote the most recent pending state to lastSent so the next dedup check
+    // compares against what just went out on the wire.
+    if (holder->pendingCurrentLen > 0) {
+        uint8_t *swap = holder->lastSent;
+        holder->lastSent = holder->pendingCurrent;
+        holder->lastSentLen = holder->pendingCurrentLen;
+        holder->pendingCurrent = swap;
+        holder->pendingCurrentLen = 0;
+    }
 }
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,
