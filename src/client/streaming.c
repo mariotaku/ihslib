@@ -79,10 +79,20 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
             uint8_t encrypted[1024];
             response.response.data = encrypted;
             response.response.len = sizeof(encrypted);
-            // TODO: check return code
-            IHS_CryptoSymmetricEncrypt(request->challenge.data, request->challenge.len,
-                                       client->base.secretKey, sizeof(client->base.secretKey),
-                                       response.response.data, &response.response.len);
+            int encryptRet = IHS_CryptoSymmetricEncrypt(request->challenge.data, request->challenge.len,
+                                                        client->base.secretKey, sizeof(client->base.secretKey),
+                                                        response.response.data, &response.response.len);
+            if (encryptRet != 0) {
+                // Mirrors CServerManager::HandleStreamingProofRequest (0x1e1ad0):
+                // log and drop, let the server retry / time out. Sending the response
+                // anyway would ship uninitialized stack bytes that the server would
+                // reject as a bad HMAC — same observable outcome, but with no client
+                // log trail for a real crypto regression.
+                IHS_ClientLog(client, IHS_LogLevelWarn, "Client",
+                              "Proof challenge encrypt failed for host %s: %d",
+                              state->host.hostname, encryptRet);
+                break;
+            }
 
             IHS_ClientSend(client, state->host.address, k_ERemoteDeviceProofResponse,
                            (ProtobufCMessage *) &response);
@@ -106,11 +116,21 @@ void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *ad
                         ProtobufCBinaryData enc = response->encrypted_session_key;
                         uint8_t key[128];
                         size_t keyLen = sizeof(key);
-                        IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
-                                                   sizeof(client->base.secretKey), key, &keyLen);
-                        IHS_SocketAddress streamingAddress = {state->host.address.ip, response->port};
-                        client->callbacks.streaming->success(client, &state->host, &streamingAddress, key, keyLen,
-                                                             client->callbackContexts.streaming);
+                        int decryptRet = IHS_CryptoSymmetricDecrypt(enc.data, enc.len, client->base.secretKey,
+                                                                    sizeof(client->base.secretKey), key, &keyLen);
+                        if (decryptRet != 0) {
+                            // Same class of bug as the proof-request encrypt path. Without this
+                            // check we'd hand the app an uninitialized 128-byte stack buffer as
+                            // the session key — downstream video/audio decode would fail with a
+                            // cryptic error far from the actual cause.
+                            IHS_ClientLog(client, IHS_LogLevelWarn, "Client",
+                                          "Session key decrypt failed for host %s: %d",
+                                          state->host.hostname, decryptRet);
+                        } else {
+                            IHS_SocketAddress streamingAddress = {state->host.address.ip, response->port};
+                            client->callbacks.streaming->success(client, &state->host, &streamingAddress, key, keyLen,
+                                                                 client->callbackContexts.streaming);
+                        }
                     }
                     break;
                 default:
