@@ -35,6 +35,7 @@
 #include "ihs_enumeration.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 
 static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
 
@@ -317,7 +318,20 @@ static void HandleDeviceSendFeatureReport(IHS_SessionChannel *channel, IHS_HIDMa
                        message->request_id, cmd->device);
         return;
     }
-    IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
+    // Mirrors Steam's case 6 in CStreamPlayer::OnRemoteHIDMessage (0x228a64):
+    // retry up to 50 times with 2 ms between attempts. Protects force-feedback /
+    // LED commands from transient HID write failures (busy device, USB hiccup).
+    int ret = -1;
+    for (int attempt = 0; attempt < 50; attempt++) {
+        ret = IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
+        if (ret >= 0) break;
+        usleep(2000);
+    }
+    if (ret < 0) {
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID",
+                       "Message %u: SendFeatureReport(id=%u) failed after 50 attempts: %d",
+                       message->request_id, cmd->device, ret);
+    }
 }
 
 static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
