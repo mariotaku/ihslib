@@ -95,8 +95,15 @@ static uint64_t ReportVideoStats(int runCount, void *data);
  * @param data Data frame body
  * @param header Data frame header
  */
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, const IHS_VideoFrameHeader *header,
-                            IHS_Buffer *data);
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, uint32_t timestamp,
+                            const IHS_VideoFrameHeader *header, IHS_Buffer *data);
+
+/**
+ * If the oldest pending fragment is older than ~150 ms of stream time, drop the assembly state and
+ * request a keyframe. Mirrors CStreamDecoderVideo::CheckOverflow.
+ * @param channel Channel instance
+ */
+static void CheckPartialOverflow(IHS_SessionChannel *channel);
 
 /**
  * Clear partial video frames and not yet assembled frame data
@@ -228,10 +235,10 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
             goto unlock;
         }
         plain.size = outLen;
-        AddPartialFrame(videoCh, header->id, &vhead, &plain);
+        AddPartialFrame(videoCh, header->id, header->timestamp, &vhead, &plain);
         IHS_BufferClear(&plain, true);
     } else {
-        AddPartialFrame(videoCh, header->id, &vhead, body);
+        AddPartialFrame(videoCh, header->id, header->timestamp, &vhead, body);
     }
 
     if (AssembleFrame(channel)) {
@@ -242,6 +249,7 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         videoCh->states.frameStarted = false;
         videoCh->states.frameCounter++;
     }
+    CheckPartialOverflow(channel);
     unlock:
     IHS_MutexUnlock(videoCh->stateMutex);
 }
@@ -297,8 +305,8 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
     return videoCh->states.frameFinished;
 }
 
-static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, const IHS_VideoFrameHeader *header,
-                            IHS_Buffer *data) {
+static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, uint32_t timestamp,
+                            const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     // Find reset matching cur frame
     IHS_VideoPartialFrame *cur = NULL;
     IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
@@ -306,11 +314,35 @@ static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, 
             break;
         }
     }
+    IHS_VideoPartialFrame *inserted;
     if (cur != NULL) {
-        IHS_VideoPartialFramesInsertBefore(&channel->frame.partial, cur, frameId, header, data);
+        inserted = IHS_VideoPartialFramesInsertBefore(&channel->frame.partial, cur, frameId, header, data);
     } else {
-        IHS_VideoPartialFramesAppend(&channel->frame.partial, frameId, header, data);
+        inserted = IHS_VideoPartialFramesAppend(&channel->frame.partial, frameId, header, data);
     }
+    inserted->timestamp = timestamp;
+}
+
+static void CheckPartialOverflow(IHS_SessionChannel *channel) {
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    if (videoCh->states.waitingKeyFrame > 0) {
+        return;
+    }
+    IHS_VideoPartialFrame *head = videoCh->frame.partial.head;
+    IHS_VideoPartialFrame *tail = videoCh->frame.partial.tail;
+    if (head == NULL || head == tail) {
+        return;
+    }
+    // 150 ms in 1/65536-second units. Span between oldest and newest pending fragment.
+    const uint32_t overflowSpan = (uint32_t) (150 * 65536 / 1000);
+    uint32_t span = tail->timestamp - head->timestamp;
+    if (span <= overflowSpan) {
+        return;
+    }
+    IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video",
+                   "Partial frames stalled for %u ms, request keyframe", span * 1000 / 65536);
+    IHS_SessionChannelDataLost(channel);
+    videoCh->states.waitingKeyFrame = IHS_TimerNow();
 }
 
 static void DiscardPending(IHS_SessionChannelVideo *channel) {

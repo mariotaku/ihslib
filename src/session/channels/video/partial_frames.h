@@ -32,6 +32,8 @@
 
 typedef struct IHS_VideoPartialFrame {
     uint16_t frameId;
+    /** Sender-side packet timestamp in 1/65536-second units (IHS_SessionPacketTimestamp). */
+    uint32_t timestamp;
     IHS_VideoFrameHeader header;
     IHS_Buffer data;
     struct IHS_VideoPartialFrame *prev;
