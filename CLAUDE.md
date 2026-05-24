@@ -15,13 +15,15 @@ Field IDs for scripted updates:
 
 For every task picked off the backlog:
 
-1. **RE the Steam binary** for the relevant function(s) via the ghidra MCP server. Confirm the actual behavior — addresses, calling convention, magic numbers, retry counts, gating predicates, field layouts. Don't assume the title or prior summary is complete.
-2. **Update the project draft item body** with the new findings: addresses, decompiled snippets in fenced blocks, suggested change refined to match what Steam actually does. Use the `updateProjectV2DraftIssue` mutation (`gh api graphql`).
-3. **Implement** against the now-documented behavior.
+1. **RE the Steam binary via a subagent.** Dispatch a `general-purpose` (or `Explore`) subagent over the ghidra MCP tools to trace the relevant function(s). Brief it on what you need: function names, expected behavior, magic numbers, retry counts, gating predicates, packet/field layouts, calling convention. Have the subagent **write its findings directly into the project draft item body** via `gh api graphql` `updateProjectV2DraftIssue` — verdicts as prose, decompiled snippets in fenced code blocks, address citations. The subagent must update the project, not just summarize back to you (that protects the main conversation context from huge decompiler dumps).
+2. **Read the updated project body** to absorb the findings the subagent wrote.
+3. **Implement** against the now-documented behavior. Run small RE follow-ups inline if a detail is missing; if you need a wider trace, dispatch another subagent.
 4. **Commit** with a message that references what Steam does and why this change matches it.
 5. **Mark the project item Done** (or delete it if the project has no Status field set up) once committed.
 
 The cost of skipping step 1-2 is implementing a plausible-sounding-but-wrong version of Steam's behavior. The user's reference binary is the source of truth; the task title is not.
+
+The subagent rule exists because decompiled function dumps are large — 1000+ lines per call. Running them through a subagent that writes the distilled findings to the project keeps your main context clean and gives the next session (or another agent) a permanent, structured record to read.
 
 ## Useful Ghidra entry points
 
