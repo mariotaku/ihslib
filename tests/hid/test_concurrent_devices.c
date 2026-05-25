@@ -123,8 +123,12 @@ static void FindWorker(void *context) {
         atomic_fetch_add(&state->findCalls, 1);
         IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(state->manager, id);
         if (managed != NULL) {
+            // Don't assert !closed — that's the race the deferred-free model intentionally
+            // tolerates: Find released devicesLock before returning, and another thread
+            // may have flipped `closed` between then and now. The slot itself is still
+            // valid memory (that's the guarantee), so reading these two fields is safe;
+            // the id is immutable for the slot's lifetime.
             assert(managed->id == id);
-            assert(!managed->closed);
             atomic_fetch_add(&state->findHits, 1);
         }
     }
