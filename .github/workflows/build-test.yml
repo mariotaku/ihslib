@@ -60,3 +60,50 @@ jobs:
         shell: bash
         working-directory: ${{github.workspace}}/build
         run: ctest
+
+  test-linux-valgrind:
+    name: Valgrind (SDL2 2.0.24)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        shell: bash
+        run: |
+          sudo apt-get -y -qq update
+          sudo apt-get -y -qq install libprotobuf-c-dev libmbedtls-dev libsdl2-dev valgrind \
+            --no-install-recommends --no-install-suggests
+
+      - name: Configure CMake
+        shell: bash
+        # Debug build so Valgrind's stack traces have line numbers.
+        run: |
+          cmake -S ${{github.workspace}} -B ${{github.workspace}}/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DIHSLIB_SDL_TARGETVERSION=2.0.24 \
+            -DIHSLIB_CODEGEN=OFF
+
+      - name: Build
+        shell: bash
+        run: cmake --build ${{github.workspace}}/build
+
+      - name: Run tests under Valgrind
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        # Run every ihstest_* binary through valgrind. --error-exitcode=99 causes any
+        # UAF / uninitialised read / definite leak to fail the whole job. We iterate
+        # explicitly rather than `ctest -T memcheck` because the project uses
+        # enable_testing() (not include(CTest)) and so doesn't generate the
+        # DartConfiguration.tcl that ctest's memcheck mode needs.
+        run: |
+          set -e
+          fail=0
+          for t in $(find . -type f -executable -name 'ihstest_*' | sort); do
+            echo "::group::$(basename $t)"
+            valgrind --error-exitcode=99 --leak-check=full --show-leak-kinds=definite \
+              --track-origins=yes --errors-for-leak-kinds=definite "$t" || fail=$?
+            echo "::endgroup::"
+          done
+          exit $fail
