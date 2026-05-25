@@ -63,6 +63,10 @@ void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStr
     assert(type == k_EStreamControlAuthenticationResponse);
     CAuthenticationResponseMsg *message = cauthentication_response_msg__unpack(NULL, payload->size,
                                                                                IHS_BufferPointer(payload));
+    if (message == NULL) {
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CAuthenticationResponseMsg");
+        return;
+    }
     OnAuthenticationResponse(channel, message);
     cauthentication_response_msg__free_unpacked(message, NULL);
 }

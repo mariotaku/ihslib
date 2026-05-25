@@ -156,19 +156,42 @@ bool IHS_ClientBroadcast(IHS_Client *client, ERemoteClientBroadcastMsg type,
 }
 
 static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address, IHS_Buffer *data) {
+    // Any host on the LAN can send a UDP datagram here. Validate every byte before
+    // dereferencing — the audit found four crash vectors at this entry point.
+    // Minimum well-formed packet: PACKET_MAGIC + 4-byte header_size + 4-byte payload_size.
+    const size_t MIN_DATAGRAM = sizeof(PACKET_MAGIC) + 4 + 4;
+    if (data->size < MIN_DATAGRAM) return;
     if (memcmp(IHS_BufferPointer(data), PACKET_MAGIC, sizeof(PACKET_MAGIC)) != 0) {
         IHS_BaseLog(base, IHS_LogLevelDebug, "Client", "Unrecognized packet!");
         return;
     }
     IHS_BufferOffsetBy(data, sizeof(PACKET_MAGIC));
+
     uint32_t header_size, payload_size;
     IHS_BufferOffsetBy(data, (int) IHS_ReadUInt32LE(IHS_BufferPointer(data), &header_size));
+    // header_size must fit in the remaining buffer along with the 4-byte payload_size prefix.
+    if (header_size > data->size || data->size - header_size < 4) return;
+
     CMsgRemoteClientBroadcastHeader *header = IHS_UNPACK_BUFFER_SIZE(cmsg_remote_client_broadcast_header__unpack, data,
                                                                      header_size);
+    if (header == NULL) {
+        IHS_BaseLog(base, IHS_LogLevelDebug, "Client", "Malformed broadcast header");
+        return;
+    }
     IHS_BufferOffsetBy(data, (int) header_size);
     IHS_BufferOffsetBy(data, (int) IHS_ReadUInt32LE(IHS_BufferPointer(data), &payload_size));
+    if (payload_size > data->size) {
+        cmsg_remote_client_broadcast_header__free_unpacked(header, NULL);
+        return;
+    }
+
     ERemoteClientBroadcastMsg type = header->msg_type;
-    const ProtobufCMessageDescriptor *descriptor = MessageDescriptors[type];
+    // The MessageDescriptors table only covers entries 0 .. k_ERemoteDeviceStreamingProgress.
+    // Any enum value beyond that (or negative) would read OOB and dereference garbage.
+    const ProtobufCMessageDescriptor *descriptor = NULL;
+    if ((int) type >= 0 && (size_t) type < sizeof(MessageDescriptors) / sizeof(MessageDescriptors[0])) {
+        descriptor = MessageDescriptors[type];
+    }
     ProtobufCMessage *message = descriptor ? protobuf_c_message_unpack(descriptor, NULL, payload_size,
                                                                        IHS_BufferPointer(data)) : NULL;
     IHS_Client *client = (IHS_Client *) base;
@@ -196,7 +219,12 @@ static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address,
             break;
     }
     cmsg_remote_client_broadcast_header__free_unpacked(header, NULL);
-    protobuf_c_message_free_unpacked(message, NULL);
+    // protobuf_c_message_free_unpacked must not be called on NULL — it crashes on at
+    // least some protobuf-c versions when the underlying message had no allocations
+    // beyond the descriptor lookup.
+    if (message != NULL) {
+        protobuf_c_message_free_unpacked(message, NULL);
+    }
 }
 
 static void ClientInitialized(IHS_Base *base, void *context) {

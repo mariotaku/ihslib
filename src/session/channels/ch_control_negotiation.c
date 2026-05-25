@@ -50,12 +50,20 @@ void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStream
     switch (type) {
         case k_EStreamControlNegotiationInit: {
             CNegotiationInitMsg *message = IHS_UNPACK_BUFFER(cnegotiation_init_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CNegotiationInitMsg");
+                break;
+            }
             OnNegotiationInit(channel, message, header->packetId);
             cnegotiation_init_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlNegotiationSetConfig: {
             CNegotiationSetConfigMsg *message = IHS_UNPACK_BUFFER(cnegotiation_set_config_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CNegotiationSetConfigMsg");
+                break;
+            }
             OnNegotiationSetConfig(channel, message, header->packetId);
             cnegotiation_set_config_msg__free_unpacked(message, NULL);
             break;

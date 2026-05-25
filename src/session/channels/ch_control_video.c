@@ -41,6 +41,10 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
             if (video) break;
             CStartVideoDataMsg *message = cstart_video_data_msg__unpack(NULL, payload->size,
                                                                         IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CStartVideoDataMsg");
+                break;
+            }
             video = IHS_SessionChannelDataVideoCreate(session, message);
             IHS_SessionChannelAdd(session, video);
             cstart_video_data_msg__free_unpacked(message, NULL);
@@ -55,6 +59,10 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
         case k_EStreamControlVideoEncoderInfo: {
             CVideoEncoderInfoMsg *message = cvideo_encoder_info_msg__unpack(NULL, payload->size,
                                                                             IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CVideoEncoderInfoMsg");
+                break;
+            }
             IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "VideoEncoderInfo(%s)", message->info);
             cvideo_encoder_info_msg__free_unpacked(message, NULL);
             break;
@@ -62,6 +70,10 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
         case k_EStreamControlSetCaptureSize: {
             CSetCaptureSizeMsg *message = cset_capture_size_msg__unpack(NULL, payload->size,
                                                                         IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetCaptureSizeMsg");
+                break;
+            }
             IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetCaptureSize(width=%d, height=%d)",
                            message->width, message->height);
             const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
@@ -74,6 +86,10 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
         case k_EStreamControlSetTargetFramerate: {
             CSetTargetFramerateMsg *message = cset_target_framerate_msg__unpack(NULL, payload->size,
                                                                                 IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetTargetFramerateMsg");
+                break;
+            }
             if (message->has_framerate_numerator && message->has_framerate_denominator) {
                 IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetTargetFramerate(fps=%.02f)",
                                (float) message->framerate_numerator / (float) message->framerate_denominator);

@@ -218,6 +218,10 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
     switch (type) {
         case k_EStreamControlServerHandshake: {
             CServerHandshakeMsg *message = IHS_UNPACK_BUFFER(cserver_handshake_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CServerHandshakeMsg");
+                break;
+            }
             OnServerHandshake(channel, message);
             cserver_handshake_msg__free_unpacked(message, NULL);
             break;
@@ -233,12 +237,20 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
         case k_EStreamControlSetStreamingClientConfig: {
             CSetStreamingClientConfig *message = IHS_UNPACK_BUFFER(cset_streaming_client_config__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetStreamingClientConfig");
+                break;
+            }
             OnSetClientConfig(channel, message);
             cset_streaming_client_config__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetSpectatorMode: {
             CSetSpectatorModeMsg *message = IHS_UNPACK_BUFFER(cset_spectator_mode_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetSpectatorModeMsg");
+                break;
+            }
             OnSetSpectatorMode(channel, message);
             cset_spectator_mode_msg__free_unpacked(message, NULL);
             break;
@@ -258,6 +270,10 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
         case k_EStreamControlSetQoS: {
             CSetQoSMsg *message = IHS_UNPACK_BUFFER(cset_qo_smsg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetQoSMsg");
+                break;
+            }
             OnSetQoS(channel, message);
             cset_qo_smsg__free_unpacked(message, NULL);
             break;
@@ -275,11 +291,19 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         }
         case k_EStreamControlSetKeymap: {
             CSetKeymapMsg *message = IHS_UNPACK_BUFFER(cset_keymap_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetKeymapMsg");
+                break;
+            }
             cset_keymap_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetTitle: {
             CSetTitleMsg *message = IHS_UNPACK_BUFFER(cset_title_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetTitleMsg");
+                break;
+            }
             IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control", "Set title: %s", message->text);
             cset_title_msg__free_unpacked(message, NULL);
             break;
@@ -289,22 +313,40 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             break;
         case k_EStreamControlRemoteHID: {
             CRemoteHIDMsg *message = IHS_UNPACK_BUFFER(cremote_hidmsg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CRemoteHIDMsg");
+                break;
+            }
             if (message->has_data) {
                 CHIDMessageToRemote *hid = chidmessage_to_remote__unpack(NULL, message->data.len, message->data.data);
-                IHS_SessionChannelControlOnHIDMsg(channel, hid);
-                chidmessage_to_remote__free_unpacked(hid, NULL);
+                if (hid != NULL) {
+                    IHS_SessionChannelControlOnHIDMsg(channel, hid);
+                    chidmessage_to_remote__free_unpacked(hid, NULL);
+                } else {
+                    IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control",
+                                   "Malformed CHIDMessageToRemote inside CRemoteHIDMsg");
+                }
             }
             cremote_hidmsg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlControllerConfigMsg: {
             CControllerConfigMsg *message = IHS_UNPACK_BUFFER(ccontroller_config_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CControllerConfigMsg");
+                break;
+            }
             ccontroller_config_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlControllerPersonalizationUpdate: {
             CControllerPersonalizationUpdateMsg *message = IHS_UNPACK_BUFFER(
                     ccontroller_personalization_update_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control",
+                               "Malformed CControllerPersonalizationUpdateMsg");
+                break;
+            }
             ccontroller_personalization_update_msg__free_unpacked(message, NULL);
             break;
         }

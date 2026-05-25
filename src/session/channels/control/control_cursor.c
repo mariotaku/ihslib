@@ -34,6 +34,10 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
         case k_EStreamControlSetCursor: {
             uint64_t cursorId;
             CSetCursorMsg *message = IHS_UNPACK_BUFFER(cset_cursor_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Cursor", "Malformed CSetCursorMsg");
+                break;
+            }
             cursorId = message->cursor_id;
             cset_cursor_msg__free_unpacked(message, NULL);
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
@@ -51,6 +55,10 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
         }
         case k_EStreamControlShowCursor: {
             CShowCursorMsg *message = IHS_UNPACK_BUFFER(cshow_cursor_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Cursor", "Malformed CShowCursorMsg");
+                break;
+            }
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->showCursor) {
                 cb->showCursor(session, message->x_normalized, message->y_normalized, session->callbackContexts.input);
@@ -60,6 +68,10 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
         }
         case k_EStreamControlHideCursor: {
             CHideCursorMsg *message = IHS_UNPACK_BUFFER(chide_cursor_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Cursor", "Malformed CHideCursorMsg");
+                break;
+            }
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->hideCursor) {
                 cb->hideCursor(session, session->callbackContexts.input);
@@ -69,6 +81,10 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
         }
         case k_EStreamControlDeleteCursor: {
             CDeleteCursorMsg *message = IHS_UNPACK_BUFFER(cdelete_cursor_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Cursor", "Malformed CDeleteCursorMsg");
+                break;
+            }
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             if (cb && cb->deleteCursor) {
                 cb->deleteCursor(session, message->cursor_id, session->callbackContexts.input);
@@ -78,6 +94,10 @@ void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamContr
         }
         case k_EStreamControlSetCursorImage: {
             CSetCursorImageMsg *message = IHS_UNPACK_BUFFER(cset_cursor_image_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Cursor", "Malformed CSetCursorImageMsg");
+                break;
+            }
             const IHS_StreamInputCallbacks *cb = session->callbacks.input;
             const IHS_StreamInputCursorImage image = {
                     .cursorId = message->cursor_id,

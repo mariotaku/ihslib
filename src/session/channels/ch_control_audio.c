@@ -44,6 +44,10 @@ void IHS_SessionChannelControlOnAudio(IHS_SessionChannel *channel, EStreamContro
             if (audio) break;
             CStartAudioDataMsg *message = cstart_audio_data_msg__unpack(NULL, payload->size,
                                                                             IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Audio", "Malformed CStartAudioDataMsg");
+                break;
+            }
             audio = IHS_SessionChannelDataAudioCreate(session, message);
             IHS_SessionChannelAdd(session, audio);
             cstart_audio_data_msg__free_unpacked(message, NULL);
