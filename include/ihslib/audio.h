@@ -56,3 +56,24 @@ typedef struct IHS_StreamAudioCallbacks {
 
     void (*stop)(IHS_Session *session, void *context);
 } IHS_StreamAudioCallbacks;
+
+/**
+ * Microphone (client → server) streaming. The library does not capture or encode audio;
+ * it only handles the protocol framing. The user provides:
+ *   - `start`: called when the server requests a microphone stream. The config carries
+ *     the negotiated codec / sample rate / channel count chosen by Steam. Return 0 on
+ *     success; non-zero aborts the channel (no frames will be sent). Open and configure
+ *     the platform capture device here.
+ *   - `stop`: called when the server requests teardown (or the session is closing). Close
+ *     the capture device here. No frames may be passed to IHS_SessionSendMicrophoneData
+ *     after this returns.
+ *
+ * After `start` succeeds the user's capture thread calls IHS_SessionSendMicrophoneData
+ * once per encoded frame. Steam's reference client uses libopus at 480 samples per
+ * channel per frame for Opus, or raw 32-bit float PCM passthrough for codec=Raw.
+ */
+typedef struct IHS_StreamMicrophoneCallbacks {
+    int (*start)(IHS_Session *session, const IHS_StreamAudioConfig *config, void *context);
+
+    void (*stop)(IHS_Session *session, void *context);
+} IHS_StreamMicrophoneCallbacks;

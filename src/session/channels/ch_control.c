@@ -260,6 +260,11 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             IHS_SessionChannelControlOnAudio(channel, type, payload, header);
             break;
         }
+        case k_EStreamControlStartMicrophoneData:
+        case k_EStreamControlStopMicrophoneData: {
+            IHS_SessionChannelControlOnMicrophone(channel, type, payload, header);
+            break;
+        }
         case k_EStreamControlStartVideoData:
         case k_EStreamControlStopVideoData:
         case k_EStreamControlVideoEncoderInfo:

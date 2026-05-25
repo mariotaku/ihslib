@@ -66,6 +66,9 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
 void IHS_SessionChannelControlOnAudio(IHS_SessionChannel *channel, EStreamControlMessage type,
                                       IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 
+void IHS_SessionChannelControlOnMicrophone(IHS_SessionChannel *channel, EStreamControlMessage type,
+                                           IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
+
 void IHS_SessionChannelControlOnCursor(IHS_SessionChannel *channel, EStreamControlMessage type,
                                        IHS_Buffer *payload, const IHS_SessionPacketHeader *header);
 

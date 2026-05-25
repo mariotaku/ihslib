@@ -23,6 +23,7 @@
  *
  */
 #include "session_pri.h"
+#include "channels/ch_data_microphone.h"
 
 void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context) {
     IHS_BaseLock(&session->base);
@@ -50,6 +51,23 @@ void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCal
     session->callbacks.input = callbacks;
     session->callbackContexts.input = context;
     IHS_BaseUnlock(&session->base);
+}
+
+void IHS_SessionSetMicrophoneCallbacks(IHS_Session *session, const IHS_StreamMicrophoneCallbacks *callbacks,
+                                       void *context) {
+    IHS_BaseLock(&session->base);
+    session->callbacks.microphone = callbacks;
+    session->callbackContexts.microphone = context;
+    IHS_BaseUnlock(&session->base);
+}
+
+bool IHS_SessionSendMicrophoneData(IHS_Session *session, const uint8_t *data, size_t len) {
+    // No channel = server hasn't started mic (or already stopped). Caller should drop.
+    // Looking it up each call keeps the function safe to invoke from any thread without
+    // the caller having to track channel lifetime.
+    IHS_SessionChannel *mic = IHS_SessionChannelForType(session, IHS_SessionChannelTypeDataMicrophone);
+    if (mic == NULL) return false;
+    return IHS_SessionChannelDataMicrophoneSend(mic, data, len);
 }
 
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {

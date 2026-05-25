@@ -113,6 +113,28 @@ void IHS_SessionSetVideoCallbacks(IHS_Session *session, const IHS_StreamVideoCal
 
 void IHS_SessionSetInputCallbacks(IHS_Session *session, const IHS_StreamInputCallbacks *callbacks, void *context);
 
+/**
+ * Register microphone (client → server) callbacks. Setting non-NULL callbacks here
+ * advertises the `enable_microphone_streaming` capability to the server during
+ * negotiation; the server may then issue Start/Stop microphone control messages.
+ *
+ * Must be called before IHS_SessionConnect — capability negotiation happens once and
+ * cannot be re-advertised mid-session.
+ */
+void IHS_SessionSetMicrophoneCallbacks(IHS_Session *session, const IHS_StreamMicrophoneCallbacks *callbacks,
+                                       void *context);
+
+/**
+ * Submit one encoded microphone frame for transmission. Call from the capture / encode
+ * thread, once per Opus packet (or once per PCM chunk when codec=Raw). The payload is
+ * wrapped in a data-frame header and queued for unreliable send on the mic data channel.
+ *
+ * Returns false if no microphone channel is currently active (the server hasn't issued
+ * Start, or has issued Stop, or the session isn't connected); the caller can use this
+ * as the cue to drop the frame.
+ */
+bool IHS_SessionSendMicrophoneData(IHS_Session *session, const uint8_t *data, size_t len);
+
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 
 const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session);

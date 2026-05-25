@@ -92,12 +92,14 @@ struct IHS_Session {
         const IHS_StreamAudioCallbacks *audio;
         const IHS_StreamVideoCallbacks *video;
         const IHS_StreamInputCallbacks *input;
+        const IHS_StreamMicrophoneCallbacks *microphone;
     } callbacks;
     struct {
         void *session;
         void *audio;
         void *video;
         void *input;
+        void *microphone;
     } callbackContexts;
 };
 
