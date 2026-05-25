@@ -6,6 +6,10 @@ function(ihs_add_test NAME SOURCES)
     add_test(${NAME} ${TEST_EXE})
     target_include_directories(${TEST_EXE} PRIVATE ${TEST_INCLUDES})
     target_link_libraries(${TEST_EXE} PRIVATE ihslib)
+    # Tests use `assert(call(...) == expected)` heavily, which silently drops the
+    # function call under NDEBUG (Release). Force assertions on for every test
+    # binary regardless of the project build type.
+    target_compile_options(${TEST_EXE} PRIVATE -UNDEBUG)
     set_tests_properties(${NAME} PROPERTIES SKIP_RETURN_CODE 127)
     set(IHSTEST_TARGET "${TEST_EXE}" PARENT_SCOPE)
 endfunction()
