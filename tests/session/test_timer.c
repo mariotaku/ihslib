@@ -60,6 +60,17 @@ int main(int argc, char *argv[]) {
     assert(IHS_TimerTaskGetContext(timer1_task1) == &timer1_ctx1);
     sleep(1);
 
+    // Regression: IHS_TimerTaskStopImmediate previously passed `timer` instead of `task`
+    // to the queue predicate, so the task was never removed and kept firing.
+    task_ctx_t stopImmCtx = {.timer = 99, .id = 99, .counter = 0, .until = 0};
+    IHS_TimerTask *stopImmTask = IHS_TimerTaskStart(timer1, task_run, task_end, 100, &stopImmCtx);
+    usleep(350 * 1000);
+    int beforeStop = stopImmCtx.counter;
+    assert(beforeStop >= 2);
+    IHS_TimerTaskStopImmediate(stopImmTask);
+    usleep(350 * 1000);
+    assert(stopImmCtx.counter == beforeStop);
+
     IHS_TimerDestroy(timer1);
     IHS_TimerDestroy(timer2);
     IHS_TimerQuit();

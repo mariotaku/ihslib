@@ -149,7 +149,7 @@ void IHS_TimerTaskStopImmediate(IHS_TimerTask *task) {
     IHS_Timer *timer = task->timer;
     assert(timer != NULL);
     IHS_MutexLock(timer->mutex);
-    IHS_TimerTask *removed = (IHS_TimerTask *) IHS_QueuePollBy(timer->tasks, ItemIdentical, timer);
+    IHS_TimerTask *removed = (IHS_TimerTask *) IHS_QueuePollBy(timer->tasks, ItemIdentical, task);
     if (removed != NULL) {
         TaskDestroy(removed, timer);
         IHS_QueueItemFree((IHS_QueueItem *) removed);

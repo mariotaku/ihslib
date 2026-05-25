@@ -312,6 +312,10 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
 
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message) {
+    if (message->info == NULL) {
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "ServerHandshake missing info");
+        return;
+    }
     if (message->info->has_mtu) {
         channel->session->state.mtu = message->info->mtu;
     } else {
@@ -322,6 +326,10 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
 
 static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingClientConfig *message) {
     const CStreamingClientConfig *config = message->config;
+    if (config == NULL) {
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "SetStreamingClientConfig missing config");
+        return;
+    }
     IHS_Session *session = channel->session;
     // Mirror Steam's BStreamingInput/Audio/Video reading from the negotiated client config.
     // Each flag is only updated if the server actually included it; absent fields keep the

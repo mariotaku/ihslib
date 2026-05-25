@@ -43,5 +43,21 @@ int main() {
     assert(!IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_MAX, 0));
     assert(IHS_HIDReportSDLSetAxis(&report, SDL_CONTROLLER_AXIS_LEFTX, INT16_MAX));
 
+    // Regression: SetAccel previously wrote into report->gyro[] instead of report->accel[].
+    float accel[3] = {1.0f, 2.0f, 3.0f};
+    float gyro[3] = {-1.0f, -2.0f, -3.0f};
+    assert(IHS_HIDReportSDLSetAccel(&report, accel));
+    // Gyro must remain untouched by SetAccel.
+    assert(report.gyro[0] == 0 && report.gyro[1] == 0 && report.gyro[2] == 0);
+    // Accel must contain the remapped values, not zero.
+    assert(report.accel[0] != 0 && report.accel[1] != 0 && report.accel[2] != 0);
+    int16_t accelBefore[3] = {report.accel[0], report.accel[1], report.accel[2]};
+    // SetGyro must update gyro and leave accel intact.
+    assert(IHS_HIDReportSDLSetGyro(&report, gyro));
+    assert(report.gyro[0] != 0 && report.gyro[1] != 0 && report.gyro[2] != 0);
+    assert(report.accel[0] == accelBefore[0]);
+    assert(report.accel[1] == accelBefore[1]);
+    assert(report.accel[2] == accelBefore[2]);
+
     return 0;
 }

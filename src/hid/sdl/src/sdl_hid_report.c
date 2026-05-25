@@ -68,7 +68,7 @@ bool IHS_HIDReportSDLSetAccel(IHS_HIDStateSDL *report, const float accel[3]) {
         if (report->accel[i] == newValue) {
             continue;
         }
-        report->gyro[i] = newValue;
+        report->accel[i] = newValue;
         changed = true;
     }
     return changed;

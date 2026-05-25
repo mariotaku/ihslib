@@ -58,7 +58,8 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
 
     base->deviceId = config->deviceId;
     memcpy(base->secretKey, config->secretKey, 32);
-    strncpy(base->deviceName, config->deviceName ? config->deviceName : "IHSLib", sizeof(base->deviceName));
+    strncpy(base->deviceName, config->deviceName ? config->deviceName : "IHSLib", sizeof(base->deviceName) - 1);
+    base->deviceName[sizeof(base->deviceName) - 1] = '\0';
 
     uint8_t in[8];
     size_t deviceTokenLen = sizeof(base->deviceToken);
