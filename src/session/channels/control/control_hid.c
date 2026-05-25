@@ -142,6 +142,11 @@ bool IHS_SessionChannelControlSendHIDMsg(IHS_SessionChannel *channel, const CHID
     size_t messageSize = chidmessage_from_remote__get_packed_size(message);
     wrapped.has_data = true;
     wrapped.data.data = malloc(messageSize);
+    if (wrapped.data.data == NULL) {
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID",
+                       "Failed to allocate %zu bytes for HID message", messageSize);
+        return false;
+    }
     wrapped.data.len = messageSize;
     chidmessage_from_remote__pack(message, wrapped.data.data);
     bool ret = IHS_SessionChannelControlSend(channel, k_EStreamControlRemoteHID, (const ProtobufCMessage *) &wrapped,

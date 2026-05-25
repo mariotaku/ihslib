@@ -170,7 +170,9 @@ int IHS_TimerTaskGetRunCount(const IHS_TimerTask *task) {
 uint64_t IHS_TimerNow() {
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);
-    return tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
+    // Cast to uint64_t before multiply: on platforms where time_t is 32-bit,
+    // `tp.tv_sec * 1000` overflows at ~2.4M seconds of monotonic uptime.
+    return (uint64_t) tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
 }
 
 static void TimerThreadWorker() {

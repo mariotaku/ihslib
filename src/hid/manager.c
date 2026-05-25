@@ -63,11 +63,14 @@ void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
 }
 
 void IHS_HIDManagerCloseAll(IHS_HIDManager *manager) {
-    for (size_t i = 0, j = manager->devices.size; i < j; ++i) {
+    // IHS_HIDManagedDeviceClose calls IHS_HIDManagerRemoveClosedDevice which shifts the
+    // backing array. Iterate in reverse so earlier indices stay valid through removals.
+    // Matches the pattern used by HIDPollTick. The trailing IHS_ArrayListClear was a
+    // no-op (the list is empty by now) and ran on stale state under the bug — drop it.
+    for (int i = (int) manager->devices.size - 1; i >= 0; --i) {
         IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
         IHS_HIDManagedDeviceClose(managed);
     }
-    IHS_ArrayListClear(&manager->devices);
 }
 
 IHS_HIDManagedDevice *IHS_HIDManagerOpenDevice(IHS_HIDManager *manager, const char *path) {

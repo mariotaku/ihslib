@@ -83,12 +83,14 @@ EControllerType InferControllerType(const SDL_JoystickGUID *guid);
 
 int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                                      IHS_Buffer *dest, size_t length) {
+    if (reportNumberLen < 1) return -1;
     IHS_HIDDeviceSDL *sdl = (IHS_HIDDeviceSDL *) device;
     switch (reportNumber[0]) {
         case GetFeatureReportGetSerial: {
             IHS_BufferWriteMem(dest, 0, reportNumber, 1);
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 14)
             const char *serial = SDL_GameControllerGetSerial(sdl->controller);
+            if (serial == NULL) serial = "";
             IHS_BufferWriteMem(dest, 1, (const uint8_t *) serial, strlen(serial) + 1);
 #else
             // Write an empty string
@@ -113,7 +115,9 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
             SDL_JoystickGUID guid = SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(sdl->controller));
 
             bool xinput = IsXinputDevice(&guid);
-            EControllerType controllerType;
+            // Initialize so the xinput-true branch doesn't leak uninitialized stack
+            // contents through the wire report (DeviceFeatureReport.controllerType below).
+            EControllerType controllerType = k_ControllerTypeUnknown;
             if (!xinput) {
 #if IHS_HID_SDL_TARGET_ATLEAST(2, 0, 9)
                 playerIndex = SDL_GameControllerGetPlayerIndex(sdl->controller);
