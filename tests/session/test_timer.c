@@ -25,12 +25,16 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdatomic.h>
 #include "ihs_timer.h"
 
 typedef struct task_t {
     int timer;
     int id;
-    int counter;
+    // The counter is read from the main test thread and written from the timer
+    // thread without any external lock; mark it atomic so TSan doesn't (correctly)
+    // flag the access as a data race.
+    atomic_int counter;
     int until;
 } task_ctx_t;
 
@@ -41,8 +45,8 @@ static void task_end(void *context);
 // For the re-entrancy regression test below.
 typedef struct {
     IHS_Timer *timer;
-    int reentrantCounter;
-    int endFired;
+    atomic_int reentrantCounter;
+    atomic_int endFired;
 } reentrant_ctx_t;
 
 static uint64_t reentrant_inner_run(int runCount, void *context);

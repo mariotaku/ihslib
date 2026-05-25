@@ -31,8 +31,12 @@ jobs:
 
       - name: Install Dependencies
         shell: bash
-        # apt-get update was implicitly called, so we don't have to call it here
-        run: sudo apt-get -y -qq install libprotobuf-c-dev libmbedtls-dev libsdl2-dev --no-install-recommends --no-install-suggests
+        # protobuf-c-compiler is needed because CMakeLists.txt does
+        # `find_program(PROTOC_C protoc-c REQUIRED)` at configure time when
+        # IHSLIB_CODEGEN is ON (the default for top-level builds). The previous
+        # workflow tried to suppress it via `-DIHSLIB_CODEGEN=OFF` but the YAML
+        # line-continuation mangled the argument; install the tool instead.
+        run: sudo apt-get -y -qq install libprotobuf-c-dev libmbedtls-dev libsdl2-dev protobuf-c-compiler --no-install-recommends --no-install-suggests
 
       - name: Create Build Environment
         # Some projects don't allow in-source building, so create a separate build directory
@@ -44,11 +48,7 @@ jobs:
         # access regardless of the host operating system
         shell: bash
         working-directory: ${{github.workspace}}/build
-        # Note the current convention is to use the -S and -B options here to specify source
-        # and build directories, but this is only available with CMake 3.13 and higher.
-        # The CMake binaries on the GitHub Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DIHSLIB_SDL_TARGETVERSION=${{ matrix.sdl_target }} \
-          -DIHSLIB_CODEGEN=OFF
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DIHSLIB_SDL_TARGETVERSION=${{ matrix.sdl_target }}
 
 
       - name: Build
@@ -86,7 +86,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get -y -qq update
-          sudo apt-get -y -qq install libprotobuf-c-dev libmbedtls-dev libsdl2-dev \
+          sudo apt-get -y -qq install libprotobuf-c-dev libmbedtls-dev libsdl2-dev protobuf-c-compiler \
             --no-install-recommends --no-install-suggests
 
       - name: Configure CMake
@@ -96,7 +96,6 @@ jobs:
           cmake -S ${{github.workspace}} -B ${{github.workspace}}/build \
             -DCMAKE_BUILD_TYPE=Debug \
             -DIHSLIB_SDL_TARGETVERSION=2.0.24 \
-            -DIHSLIB_CODEGEN=OFF \
             ${{ matrix.cmake_flags }}
 
       - name: Build
