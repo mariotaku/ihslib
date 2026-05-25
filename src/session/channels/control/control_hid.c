@@ -217,7 +217,7 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
     CHIDMessageFromRemote__DeviceInputReports reports = CHIDMESSAGE_FROM_REMOTE__DEVICE_INPUT_REPORTS__INIT;
     outMessage.reports = &reports;
 
-    // Lock all devices to prevent new reports
+    // Lock all devices to prevent new reports while we snapshot.
     for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
         IHS_HIDManagedDevice *device = IHS_ArrayListGet(&session->hidManager->devices, i);
         IHS_MutexLock(device->lock);
@@ -233,20 +233,45 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
         IHS_ArrayListAppend(&session->hidManager->inputReports, &report);
     }
 
-    bool ret = false;
+    // Pack CHIDMessageFromRemote into a flat byte buffer while the holders are still
+    // locked — the per-device report messages have pointers into the holders' internal
+    // dataBuffers. Once packed, the buffer is independent and we can release the locks
+    // before doing the expensive encrypt + send work.
+    uint8_t *packed = NULL;
+    size_t packedLen = 0;
     if (session->hidManager->inputReports.size > 0) {
         reports.n_device_reports = session->hidManager->inputReports.size;
         reports.device_reports = (IHS_HIDDeviceReportMessage **) session->hidManager->inputReports.data;
-
-        IHS_SessionChannel *channel = IHS_SessionChannelForType(session, IHS_SessionChannelTypeControl);
-        ret = IHS_SessionChannelControlSendHIDMsg(channel, &outMessage);
+        packedLen = chidmessage_from_remote__get_packed_size(&outMessage);
+        packed = malloc(packedLen);
+        if (packed != NULL) {
+            chidmessage_from_remote__pack(&outMessage, packed);
+        } else {
+            IHS_SessionLog(session, IHS_LogLevelWarn, "HID",
+                           "Failed to allocate %zu bytes for HID report", packedLen);
+        }
     }
 
-    // Reset reports & unlock all devices
+    // Reset holders and unlock — the packed snapshot is self-contained from here on.
     for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
         IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&session->hidManager->devices, i);
         IHS_HIDReportHolderResetMessage(&managed->reportHolder);
         IHS_MutexUnlock(managed->lock);
+    }
+
+    bool ret = false;
+    if (packed != NULL) {
+        // Wrap the pre-packed CHIDMessageFromRemote in a CRemoteHIDMsg and ship it. The
+        // crypto and send-queue work happens with zero device locks held; SDL events on
+        // those devices can now proceed concurrently with the wire send.
+        CRemoteHIDMsg wrapped = CREMOTE_HIDMSG__INIT;
+        wrapped.has_data = true;
+        wrapped.data.data = packed;
+        wrapped.data.len = packedLen;
+        IHS_SessionChannel *channel = IHS_SessionChannelForType(session, IHS_SessionChannelTypeControl);
+        ret = IHS_SessionChannelControlSend(channel, k_EStreamControlRemoteHID,
+                                            (const ProtobufCMessage *) &wrapped, IHS_PACKET_ID_NEXT);
+        free(packed);
     }
     return ret;
 }
