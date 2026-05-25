@@ -233,6 +233,7 @@ static void SessionInitialized(IHS_Base *base, void *context) {
 
     IHS_BaseLock(&session->base);
     session->state.connectionId = IHS_CryptoRandomUInt32();
+    session->state.connectionState = IHS_SessionConnectionStateConnecting;
     IHS_BaseUnlock(&session->base);
 
     /* crc32c(b'Connect') */

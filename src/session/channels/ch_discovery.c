@@ -107,6 +107,8 @@ static void OnDiscoveryReceived(IHS_SessionChannel *channel, IHS_SessionPacket *
 static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
     IHS_Session *session = channel->session;
     if (session->state.connectionId != packet->header.dstConnectionId) return;
+    // Drop stale / replayed ACKs that arrive after the handshake has progressed.
+    if (session->state.connectionState != IHS_SessionConnectionStateConnecting) return;
     session->state.hostConnectionId = packet->header.srcConnectionId;
     IHS_SessionCancelRetransmission(session, IHS_SessionChannelIdDiscovery, 0, 0);
 

@@ -42,6 +42,11 @@ static void OnConnected(IHS_SessionChannel *channel);
 
 void IHS_SessionChannelControlOnNegotiation(IHS_SessionChannel *channel, EStreamControlMessage type,
                                             IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
+    // Negotiation messages are only valid in the Negotiating phase. Drop replays that
+    // arrive before auth succeeds or after we're Connected.
+    if (channel->session->state.connectionState != IHS_SessionConnectionStateNegotiating) {
+        return;
+    }
     switch (type) {
         case k_EStreamControlNegotiationInit: {
             CNegotiationInitMsg *message = IHS_UNPACK_BUFFER(cnegotiation_init_msg__unpack, payload);
@@ -178,10 +183,10 @@ static void OnNegotiationSetConfig(IHS_SessionChannel *channel, const CNegotiati
 }
 
 static void OnConnected(IHS_SessionChannel *channel) {
-    IHS_SessionChannelControlStartHeartbeat(channel);
     IHS_Session *session = channel->session;
+    session->state.connectionState = IHS_SessionConnectionStateConnected;
+    IHS_SessionChannelControlStartHeartbeat(channel);
     if (session->callbacks.session && session->callbacks.session->connected) {
         session->callbacks.session->connected(session, session->callbackContexts.session);
     }
-
 }

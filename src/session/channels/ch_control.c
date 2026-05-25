@@ -119,6 +119,12 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
 }
 
 void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networkTest) {
+    // Idempotent — a duplicate ConnectACK on the wire can re-trigger this; skip if we're
+    // already past the handshake phase.
+    if (channel->session->state.connectionState >= IHS_SessionConnectionStateHandshaking) {
+        return;
+    }
+    channel->session->state.connectionState = IHS_SessionConnectionStateHandshaking;
     CClientHandshakeMsg message = CCLIENT_HANDSHAKE_MSG__INIT;
     CStreamingClientHandshakeInfo handshakeInfo = CSTREAMING_CLIENT_HANDSHAKE_INFO__INIT;
     if (networkTest) {
@@ -316,10 +322,15 @@ static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshak
         IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "ServerHandshake missing info");
         return;
     }
+    IHS_Session *session = channel->session;
+    // Drop stale ServerHandshakes that arrive after we've moved on to auth/negotiation.
+    if (session->state.connectionState != IHS_SessionConnectionStateHandshaking) {
+        return;
+    }
     if (message->info->has_mtu) {
-        channel->session->state.mtu = message->info->mtu;
+        session->state.mtu = message->info->mtu;
     } else {
-        channel->session->state.mtu = 1500;
+        session->state.mtu = 1500;
     }
     IHS_SessionChannelControlRequestAuthentication(channel);
 }

@@ -35,7 +35,30 @@
 #include "protobuf/remoteplay.pb-c.h"
 #include "ihs_queue.h"
 
+/**
+ * Connection phase. Advances monotonically from Unconnected to Connected; never goes
+ * backwards within a single session lifetime (a re-connect requires a fresh session).
+ * Guards on the message-handling entry points use this to drop stale or replayed
+ * packets that would otherwise re-trigger an earlier phase.
+ *
+ *   Unconnected   - IHS_SessionCreate just returned, no Connect packet sent yet.
+ *   Connecting    - Connect packet sent on the discovery channel, waiting for ACK.
+ *   Handshaking   - ConnectACK received, ClientHandshake sent, waiting for ServerHandshake.
+ *   Authenticating- ServerHandshake received, AuthenticationRequest sent, waiting for response.
+ *   Negotiating   - AuthenticationResponse = Succeeded, waiting for NegotiationInit / sending SetConfig.
+ *   Connected     - NegotiationComplete sent, the stream is live.
+ */
+typedef enum IHS_SessionConnectionState {
+    IHS_SessionConnectionStateUnconnected,
+    IHS_SessionConnectionStateConnecting,
+    IHS_SessionConnectionStateHandshaking,
+    IHS_SessionConnectionStateAuthenticating,
+    IHS_SessionConnectionStateNegotiating,
+    IHS_SessionConnectionStateConnected,
+} IHS_SessionConnectionState;
+
 typedef struct IHS_SessionState {
+    IHS_SessionConnectionState connectionState;
     int mtu;
     uint8_t connectionId;
     uint8_t hostConnectionId;

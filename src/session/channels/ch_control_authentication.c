@@ -34,9 +34,14 @@
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message);
 
 void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel) {
+    IHS_Session *session = channel->session;
+    if (session->state.connectionState >= IHS_SessionConnectionStateAuthenticating) {
+        return;
+    }
+    session->state.connectionState = IHS_SessionConnectionStateAuthenticating;
     CAuthenticationRequestMsg request = CAUTHENTICATION_REQUEST_MSG__INIT;
     PROTOBUF_C_SET_VALUE(request, version, k_EStreamVersionCurrent);
-    PROTOBUF_C_SET_VALUE(request, steamid, channel->session->info.steamId);
+    PROTOBUF_C_SET_VALUE(request, steamid, session->info.steamId);
     request.has_token = true;
     static const unsigned char plain[] = {'S', 't', 'e', 'a', 'm', ' ', 'I', 'n',
                                           '-', 'H', 'o', 'm', 'e', ' ', 'S', 't',
@@ -44,8 +49,8 @@ void IHS_SessionChannelControlRequestAuthentication(IHS_SessionChannel *channel)
     uint8_t token[32];
     request.token.data = token;
     request.token.len = sizeof(token);
-    if (IHS_SessionFrameHMACSHA256(channel->session, plain, sizeof(plain), token, &request.token.len) != 0) {
-        IHS_SessionDisconnect(channel->session);
+    if (IHS_SessionFrameHMACSHA256(session, plain, sizeof(plain), token, &request.token.len) != 0) {
+        IHS_SessionDisconnect(session);
         return;
     }
     IHS_SessionChannelControlSend(channel, k_EStreamControlAuthenticationRequest, (const ProtobufCMessage *) &request,
@@ -63,9 +68,17 @@ void IHS_SessionChannelControlOnAuthentication(IHS_SessionChannel *channel, EStr
 }
 
 static void OnAuthenticationResponse(IHS_SessionChannel *channel, const CAuthenticationResponseMsg *message) {
-    if (!message->has_result || message->result != CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED) {
-        IHS_SessionLog(channel->session, IHS_LogLevelError, "Session", "Failed to authenticate");
+    IHS_Session *session = channel->session;
+    // Ignore duplicate / late auth responses once we've moved on to negotiating or beyond.
+    if (session->state.connectionState != IHS_SessionConnectionStateAuthenticating) {
         return;
     }
-    IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Session", "Authenticated");
+    if (!message->has_result || message->result != CAUTHENTICATION_RESPONSE_MSG__AUTHENTICATION_RESULT__SUCCEEDED) {
+        IHS_SessionLog(session, IHS_LogLevelError, "Session", "Failed to authenticate");
+        return;
+    }
+    // Auth succeeded — the server will follow with NegotiationInit. Advance state so
+    // OnNegotiationInit accepts the message and stale auth responses get dropped.
+    session->state.connectionState = IHS_SessionConnectionStateNegotiating;
+    IHS_SessionLog(session, IHS_LogLevelInfo, "Session", "Authenticated");
 }
