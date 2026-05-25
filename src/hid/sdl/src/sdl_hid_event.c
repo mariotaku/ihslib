@@ -78,8 +78,10 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
 bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
     IHS_HIDManager *manager = session->hidManager;
     bool changed = false;
-    for (size_t i = 0, j = manager->devices.size; i < j; ++i) {
-        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&manager->devices, i);
+    size_t count;
+    IHS_HIDManagedDevice **snapshot = IHS_HIDManagerSnapshotOpenDevices(manager, &count);
+    for (size_t i = 0; i < count; ++i) {
+        IHS_HIDManagedDevice *managed = snapshot[i];
         if (!IHS_HIDDeviceIsSDL(managed->device)) {
             continue;
         }
@@ -93,6 +95,7 @@ bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
         }
         IHS_HIDDeviceUnlock(managed->device);
     }
+    free(snapshot);
     if (changed) {
         IHS_SessionHIDSendReport(session);
     }

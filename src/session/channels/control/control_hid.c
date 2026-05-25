@@ -217,16 +217,22 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
     CHIDMessageFromRemote__DeviceInputReports reports = CHIDMESSAGE_FROM_REMOTE__DEVICE_INPUT_REPORTS__INIT;
     outMessage.reports = &reports;
 
-    // Lock all devices to prevent new reports while we snapshot.
-    for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
-        IHS_HIDManagedDevice *device = IHS_ArrayListGet(&session->hidManager->devices, i);
-        IHS_MutexLock(device->lock);
+    // Snapshot the open device list once under devicesLock. The snapshot pointers stay
+    // valid for the rest of this function: closed slots are kept alive in the manager,
+    // and even devices that flip to closed mid-send still have a live struct (the inner
+    // IHS_HIDDevice may be gone, but we only touch managed->lock and managed->reportHolder
+    // below, both of which are owned by the outer struct).
+    size_t deviceCount;
+    IHS_HIDManagedDevice **deviceSnapshot = IHS_HIDManagerSnapshotOpenDevices(session->hidManager, &deviceCount);
+
+    // Lock all snapshot devices to prevent new reports while we copy.
+    for (size_t i = 0; i < deviceCount; ++i) {
+        IHS_MutexLock(deviceSnapshot[i]->lock);
     }
 
     IHS_ArrayListClear(&session->hidManager->inputReports);
-    for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
-        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&session->hidManager->devices, i);
-        IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&managed->reportHolder);
+    for (size_t i = 0; i < deviceCount; ++i) {
+        IHS_HIDDeviceReportMessage *report = IHS_HIDReportHolderGetMessage(&deviceSnapshot[i]->reportHolder);
         if (report == NULL) {
             continue;
         }
@@ -253,11 +259,11 @@ bool IHS_SessionHIDSendReport(IHS_Session *session) {
     }
 
     // Reset holders and unlock — the packed snapshot is self-contained from here on.
-    for (size_t i = 0, j = session->hidManager->devices.size; i < j; ++i) {
-        IHS_HIDManagedDevice *managed = IHS_ArrayListGet(&session->hidManager->devices, i);
-        IHS_HIDReportHolderResetMessage(&managed->reportHolder);
-        IHS_MutexUnlock(managed->lock);
+    for (size_t i = 0; i < deviceCount; ++i) {
+        IHS_HIDReportHolderResetMessage(&deviceSnapshot[i]->reportHolder);
+        IHS_MutexUnlock(deviceSnapshot[i]->lock);
     }
+    free(deviceSnapshot);
 
     bool ret = false;
     if (packed != NULL) {
