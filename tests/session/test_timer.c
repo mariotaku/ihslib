@@ -38,6 +38,16 @@ static uint64_t task_run(int runCount, void *context);
 
 static void task_end(void *context);
 
+// For the re-entrancy regression test below.
+typedef struct {
+    IHS_Timer *timer;
+    int reentrantCounter;
+    int endFired;
+} reentrant_ctx_t;
+
+static uint64_t reentrant_inner_run(int runCount, void *context);
+static void reentrant_end(void *context);
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -71,6 +81,22 @@ int main(int argc, char *argv[]) {
     usleep(350 * 1000);
     assert(stopImmCtx.counter == beforeStop);
 
+    // Contract guard: IHS_TimerTaskStopImmediate's end callback must be safe to call
+    // back into the timer subsystem. Today the SDL mutex backend is recursive so even
+    // a same-mutex re-entry would succeed, but the refactor (snapshot end+context
+    // under the lock, invoke after unlock) protects against an AB-BA deadlock with
+    // the timer worker thread (which acquires state.lock then timer->mutex). This
+    // test exercises the re-entry path so any regression — including switching to a
+    // non-recursive mutex backend — surfaces here.
+    reentrant_ctx_t reentrantCtx = {.timer = timer1, .reentrantCounter = 0, .endFired = 0};
+    IHS_TimerTask *outer = IHS_TimerTaskStart(timer1, task_run,
+        reentrant_end, 1000000, &reentrantCtx);
+    IHS_TimerTaskStopImmediate(outer);
+    assert(reentrantCtx.endFired == 1);
+    // Let the inner task (started from the end callback) fire at least once.
+    usleep(150 * 1000);
+    assert(reentrantCtx.reentrantCounter >= 1);
+
     IHS_TimerDestroy(timer1);
     IHS_TimerDestroy(timer2);
     IHS_TimerQuit();
@@ -96,4 +122,21 @@ static uint64_t task_run(int runCount, void *context) {
 static void task_end(void *context) {
     (void) context;
     printf("Timer has ended\n");
+}
+
+static uint64_t reentrant_inner_run(int runCount, void *context) {
+    (void) runCount;
+    reentrant_ctx_t *ctx = context;
+    ctx->reentrantCounter++;
+    if (ctx->reentrantCounter >= 3) return 0;
+    return 50;
+}
+
+static void reentrant_end(void *context) {
+    reentrant_ctx_t *ctx = context;
+    ctx->endFired++;
+    // Re-enter the timer subsystem from inside the end callback. Pre-fix this
+    // would deadlock on timer->mutex; post-fix it succeeds because StopImmediate
+    // released the lock before invoking us.
+    IHS_TimerTaskStart(ctx->timer, reentrant_inner_run, NULL, 50, ctx);
 }

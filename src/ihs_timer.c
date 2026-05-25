@@ -148,13 +148,25 @@ void IHS_TimerTaskStopImmediate(IHS_TimerTask *task) {
     assert(task != NULL);
     IHS_Timer *timer = task->timer;
     assert(timer != NULL);
+    // Snapshot the end callback under timer->mutex, then release before invoking it.
+    // SDL mutexes are recursive so the same-thread re-entry on timer->mutex would
+    // succeed — but the timer worker thread acquires state.lock then timer->mutex,
+    // so a callback that touches state.lock (e.g. IHS_TimerDestroy from a user
+    // disconnect handler) would create an AB-BA deadlock against the worker. The
+    // refactor makes the contract explicit: end callbacks always run unlocked.
     IHS_MutexLock(timer->mutex);
     IHS_TimerTask *removed = (IHS_TimerTask *) IHS_QueuePollBy(timer->tasks, ItemIdentical, task);
+    IHS_TimerEndFunction *end = NULL;
+    void *context = NULL;
     if (removed != NULL) {
-        TaskDestroy(removed, timer);
+        end = removed->end;
+        context = removed->context;
         IHS_QueueItemFree((IHS_QueueItem *) removed);
     }
     IHS_MutexUnlock(timer->mutex);
+    if (end != NULL) {
+        end(context);
+    }
 }
 
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task) {
