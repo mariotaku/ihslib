@@ -16,6 +16,8 @@ else ()
 endif ()
 
 option(IHSLIB_SANITIZE_ADDRESS "Link Address Sanitizer" OFF)
+option(IHSLIB_SANITIZE_UNDEFINED "Link Undefined Behavior Sanitizer" OFF)
+option(IHSLIB_SANITIZE_THREAD "Link Thread Sanitizer (mutually exclusive with address)" OFF)
 
 find_package(PkgConfig REQUIRED)
 
@@ -57,10 +59,26 @@ endif ()
 
 add_subdirectory(src/hid)
 
+if (IHSLIB_SANITIZE_ADDRESS AND IHSLIB_SANITIZE_THREAD)
+    message(FATAL_ERROR "IHSLIB_SANITIZE_ADDRESS and IHSLIB_SANITIZE_THREAD are mutually exclusive")
+endif ()
+
 if (IHSLIB_SANITIZE_ADDRESS)
     add_compile_definitions(IHSLIB_SANITIZE_ADDRESS)
-    add_compile_options(-fsanitize=address)
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address -static-libasan)
+endif ()
+
+if (IHSLIB_SANITIZE_THREAD)
+    add_compile_definitions(IHSLIB_SANITIZE_THREAD)
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=thread)
+endif ()
+
+if (IHSLIB_SANITIZE_UNDEFINED)
+    add_compile_definitions(IHSLIB_SANITIZE_UNDEFINED)
+    add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=undefined)
 endif ()
 
 if (IHSLIB_SAMPLES)

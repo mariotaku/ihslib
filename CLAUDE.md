@@ -50,3 +50,28 @@ build/linux-debug/tests/session/video/ihstest_partial_frames
 ```
 
 The clangd diagnostics surfaced by the editor are misconfigured include paths — pre-existing, ignore.
+
+### Sanitizers (preferred for CI and non-WSL local dev)
+
+CMake options:
+- `-DIHSLIB_SANITIZE_ADDRESS=ON` (`-fsanitize=address` + `-static-libasan`)
+- `-DIHSLIB_SANITIZE_UNDEFINED=ON` (`-fsanitize=undefined`)
+- `-DIHSLIB_SANITIZE_THREAD=ON` (`-fsanitize=thread`, mutually exclusive with ASan)
+
+The GitHub workflow runs two matrix jobs (ASan+UBSan, TSan) on every push.
+
+### Valgrind (WSL fallback)
+
+On WSL, ASan's leak detector hits `PTRACE_ATTACH` restrictions and segfaults at exit ~30% of runs, and TSan fails to start at all ("unexpected memory mapping"). Use Valgrind instead — it's a userspace emulator so neither limitation applies:
+
+```sh
+cmake -S . -B build/linux-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/linux-debug
+cd build/linux-debug
+for t in $(find . -name 'ihstest_*' -type f -executable); do
+  valgrind --error-exitcode=99 --leak-check=full --show-leak-kinds=definite \
+    --track-origins=yes --errors-for-leak-kinds=definite "$t"
+done
+```
+
+Valgrind catches the same UAF/leak/uninitialised-read class as ASan; it doesn't catch threading races (use TSan in CI for those).
