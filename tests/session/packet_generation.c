@@ -66,7 +66,30 @@ static void test_frame_initialize() {
     IHS_SessionChannelDestroy(channel);
 }
 
+static void test_short_packet_rejected() {
+    // Regression: IHS_SessionPacketParse used to underflow size_t bodyLen and walk the buffer
+    // when given a runt datagram. It must now return BadHeader for anything shorter than the
+    // fixed-size header.
+    for (size_t size = 0; size < IHS_PACKET_HEADER_SIZE; ++size) {
+        uint8_t bytes[IHS_PACKET_HEADER_SIZE] = {0};
+        IHS_Buffer src = IHS_BUFFER_INIT(IHS_PACKET_HEADER_SIZE, IHS_PACKET_HEADER_SIZE);
+        IHS_BufferAppendMem(&src, bytes, size);
+        IHS_SessionPacket parsed;
+        assert(IHS_SessionPacketParse(&parsed, &src) == IHS_SessionPacketResultBadHeader);
+        IHS_BufferClear(&src, true);
+    }
+    // A header that claims hasCrc but provides no trailing CRC bytes should also be rejected.
+    uint8_t shortCrc[IHS_PACKET_HEADER_SIZE] = {0};
+    shortCrc[0] = 0x80;  // hasCrc=true, type=0
+    IHS_Buffer src = IHS_BUFFER_INIT(IHS_PACKET_HEADER_SIZE, IHS_PACKET_HEADER_SIZE);
+    IHS_BufferAppendMem(&src, shortCrc, IHS_PACKET_HEADER_SIZE);
+    IHS_SessionPacket parsed;
+    assert(IHS_SessionPacketParse(&parsed, &src) == IHS_SessionPacketResultBadHeader);
+    IHS_BufferClear(&src, true);
+}
+
 int main(int argc, char *argv[]) {
     test_frame_initialize();
+    test_short_packet_rejected();
     return 0;
 }

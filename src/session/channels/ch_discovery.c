@@ -110,14 +110,20 @@ static void OnConnectACK(IHS_SessionChannel *channel, const IHS_SessionPacket *p
 }
 
 static void OnUnconnected(IHS_SessionChannel *channel, const IHS_SessionPacket *packet) {
+    // 1 byte type + 4 byte messageSize prefix is the minimum well-formed unconnected payload.
+    // Without this guard, short LAN-attacker packets cause OOB reads through IHS_BufferPointerAt
+    // and the messageSize field can also overflow the body bounds passed to protobuf-c.
+    if (packet->body.size < 5) return;
     size_t offset = 0;
     EStreamDiscoveryMessage type = *IHS_BufferPointer(&packet->body);
     offset += 1;
     uint32_t messageSize;
     offset += IHS_ReadUInt32LE(IHS_BufferPointerAt(&packet->body, offset), &messageSize);
+    if (offset + messageSize > packet->body.size) return;
     if (type == k_EStreamDiscoveryPingRequest) {
         CDiscoveryPingRequest *request = cdiscovery_ping_request__unpack(NULL, messageSize,
                                                                          IHS_BufferPointerAt(&packet->body, offset));
+        if (request == NULL) return;
         OnPingRequest(channel, packet, request);
         cdiscovery_ping_request__free_unpacked(request, NULL);
     }

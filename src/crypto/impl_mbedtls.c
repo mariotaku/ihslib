@@ -85,14 +85,22 @@ int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint
 
 int IHS_CryptoSymmetricDecrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
                                size_t *outLen) {
+    // Need at least one block for the embedded IV plus one block of ciphertext. A short
+    // input would underflow `inLen - 16` to ~SIZE_MAX and walk far past `in`.
+    if (inLen < 2 * IHS_CRYPTO_AES_BLOCK_SIZE) return -1;
     uint8_t iv[16];
-    CryptoAES_ECB(in, key, keyLen, iv, false);
+    int ret = CryptoAES_ECB(in, key, keyLen, iv, false);
+    if (ret != 0) return ret;
     return IHS_CryptoSymmetricDecryptWithIV(&in[16], inLen - 16, iv, 16, key, keyLen, out, outLen);
 }
 
 int IHS_CryptoSymmetricDecryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen) {
     assert(ivLen == 16);
+    // CBC requires a non-empty ciphertext that is a multiple of the block size.
+    // CryptoAES_CBC_PKCS7Pad checks the multiple-of-block constraint but would still
+    // read out[-1] for PKCS7-pad extraction if inLen were 0.
+    if (inLen == 0) return -1;
     return CryptoAES_CBC_PKCS7Pad(in, inLen, iv, key, keyLen, out, outLen, false);
 }
 

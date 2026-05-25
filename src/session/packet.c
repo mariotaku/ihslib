@@ -80,10 +80,14 @@ void IHS_SessionPacketBodyInitialize(IHS_Buffer *body, bool hasCrc) {
 
 IHS_SessionPacketReturn IHS_SessionPacketParse(IHS_SessionPacket *packet, IHS_Buffer *src) {
     memset(packet, 0, sizeof(IHS_SessionPacket));
+    // Reject runt datagrams up front so the body-length arithmetic below cannot
+    // underflow into a multi-GB CRC read or assertion on IHS_BufferOffsetBy.
+    if (src->size < IHS_PACKET_HEADER_SIZE) return IHS_SessionPacketResultBadHeader;
     size_t headLen = IHS_SessionPacketHeaderParse(&packet->header, IHS_BufferPointer(src));
     if (!headLen) return IHS_SessionPacketResultBadHeader;
     size_t bodyLen = src->size - headLen;
     if (packet->header.hasCrc) {
+        if (bodyLen < 4) return IHS_SessionPacketResultBadHeader;
         bodyLen -= 4;
         IHS_ReadUInt32LE(IHS_BufferPointerAt(src, headLen + bodyLen), &packet->crc);
         if (IHS_CRC32C(IHS_BufferPointerAt(src, 0), headLen + bodyLen) != packet->crc) {
