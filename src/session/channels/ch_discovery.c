@@ -78,7 +78,12 @@ void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
 static void OnDiscoveryDeinit(IHS_SessionChannel *channel) {
     DiscoveryChannel *discoveryCh = (DiscoveryChannel *) channel;
     if (discoveryCh->disconnectTimerTask != NULL) {
-        IHS_TimerTaskStop(discoveryCh->disconnectTimerTask);
+        // Use StopImmediate so DisconnectTimerEnd fires synchronously here, while
+        // the channel is still valid. With the deferred Stop, the timer thread would
+        // run the end callback after IHS_SessionDestroy had already freed the channel
+        // — DisconnectTimerEnd writes to discoveryChannel->disconnectTimerTask and
+        // calls OnDisconnect, both on freed memory.
+        IHS_TimerTaskStopImmediate(discoveryCh->disconnectTimerTask);
     }
 }
 
