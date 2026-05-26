@@ -33,6 +33,7 @@
 #include "crypto.h"
 
 #include "session_pri.h"
+#include "frame_stats.h"
 
 #include "session/channels/channel.h"
 #include "session/channels/ch_discovery.h"
@@ -74,6 +75,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->timers = IHS_TimerCreate();
     IHS_RetransmissionInit(&session->retransmission, session);
     session->hidManager = IHS_HIDManagerCreate();
+    session->frameStats = IHS_FrameStatsAggregatorCreate();
 
     // Default the negotiated-streaming flags to true; OnSetClientConfig will reflect the
     // server's actual answer once the SetStreamingClientConfig control message arrives.
@@ -115,6 +117,7 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_HIDManagerDestroy(session->hidManager);
+    IHS_FrameStatsAggregatorDestroy(session->frameStats);
     IHS_TimerDestroy(session->timers);
     IHS_RetransmissionDeinit(&session->retransmission);
     IHS_CondDestroy(session->sendQueueCond);

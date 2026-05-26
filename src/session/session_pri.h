@@ -74,6 +74,8 @@ typedef struct IHS_SessionState {
     bool streamingVideo;
 } IHS_SessionState;
 
+struct IHS_FrameStatsAggregator;
+
 struct IHS_Session {
     IHS_Base base;
     IHS_SessionInfo info;
@@ -87,6 +89,7 @@ struct IHS_Session {
     IHS_Timer *timers;
     IHS_SessionRetransmission retransmission;
     IHS_HIDManager *hidManager;
+    struct IHS_FrameStatsAggregator *frameStats;
     struct {
         const IHS_StreamSessionCallbacks *session;
         const IHS_StreamAudioCallbacks *audio;

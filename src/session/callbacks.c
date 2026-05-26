@@ -23,6 +23,8 @@
  *
  */
 #include "session_pri.h"
+#include "frame_stats.h"
+#include "packet.h"
 #include "channels/ch_data_microphone.h"
 
 void IHS_SessionSetSessionCallbacks(IHS_Session *session, const IHS_StreamSessionCallbacks *callbacks, void *context) {
@@ -72,4 +74,35 @@ bool IHS_SessionSendMicrophoneData(IHS_Session *session, const uint8_t *data, si
 
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction) {
     IHS_BaseSetLogFunction(&session->base, logFunction);
+}
+
+void IHS_SessionReportVideoFrameStage(IHS_Session *session, uint16_t frameId,
+                                      IHS_VideoFrameStage stage, uint32_t timestamp) {
+    if (session->frameStats == NULL) {
+        return;
+    }
+    if (timestamp == 0) {
+        timestamp = IHS_SessionPacketTimestamp();
+    }
+    IHS_FrameStatsRecordStage(session->frameStats, frameId, stage, timestamp);
+}
+
+void IHS_SessionReportVideoFrameComplete(IHS_Session *session, uint16_t frameId,
+                                         IHS_VideoFrameResult result) {
+    if (session->frameStats == NULL) {
+        return;
+    }
+    /* Stamp event 18 (Complete) ourselves before delegating, so the aggregator's
+     * fold step can compute Client end-to-end and inter-frame interval. */
+    IHS_FrameStatsRecordStage(session->frameStats, frameId,
+                              (IHS_VideoFrameStage) 18 /* k_EStreamFrameEventComplete */,
+                              IHS_SessionPacketTimestamp());
+    IHS_FrameStatsRecordComplete(session->frameStats, frameId, result);
+}
+
+void IHS_SessionStatsSetFullReporting(IHS_Session *session, bool enabled) {
+    if (session->frameStats == NULL) {
+        return;
+    }
+    IHS_FrameStatsAggregatorSetFullReporting(session->frameStats, enabled);
 }

@@ -135,6 +135,64 @@ void IHS_SessionSetMicrophoneCallbacks(IHS_Session *session, const IHS_StreamMic
  */
 bool IHS_SessionSendMicrophoneData(IHS_Session *session, const uint8_t *data, size_t len);
 
+/**
+ * One of the four client-owned stages of a video frame's lifecycle that the
+ * application reports back to ihslib via IHS_SessionReportVideoFrameStage.
+ * Values match Steam's EStreamFrameEvent so the wire encoding is a direct
+ * cast — do not renumber.
+ */
+typedef enum IHS_VideoFrameStage {
+    IHS_VideoFrameStageDecodeBegin = 14,
+    IHS_VideoFrameStageDecodeEnd = 15,
+    IHS_VideoFrameStageUploadBegin = 16,
+    IHS_VideoFrameStageUploadEnd = 17,
+} IHS_VideoFrameStage;
+
+/**
+ * Per-frame outcome reported by the application. Values match Steam's
+ * EStreamFrameResult — do not renumber.
+ */
+typedef enum IHS_VideoFrameResult {
+    IHS_VideoFrameResultPending = 0,
+    IHS_VideoFrameResultDisplayed = 1,
+    IHS_VideoFrameResultDroppedNetworkSlow = 2,
+    IHS_VideoFrameResultDroppedNetworkLost = 3,
+    IHS_VideoFrameResultDroppedDecodeSlow = 4,
+    IHS_VideoFrameResultDroppedDecodeCorrupt = 5,
+    IHS_VideoFrameResultDroppedLate = 6,
+    IHS_VideoFrameResultDroppedReset = 7,
+} IHS_VideoFrameResult;
+
+/**
+ * Report a per-frame decode/upload milestone. ihslib accumulates these into a
+ * 1 Hz CFrameStatsListMsg that drives the host's adaptive-bitrate / framerate
+ * loop. `timestamp` is in IHS_SessionPacketTimestamp units (1/65536 second);
+ * pass `0` to use the current session clock.
+ *
+ * Safe to call from any thread.
+ */
+void IHS_SessionReportVideoFrameStage(IHS_Session *session, uint16_t frameId,
+                                      IHS_VideoFrameStage stage, uint32_t timestamp);
+
+/**
+ * Report the final outcome of a video frame (displayed or one of the drop
+ * categories). Must be called exactly once per frame the application
+ * processed, AFTER any IHS_SessionReportVideoFrameStage calls for it. This is
+ * what advances the "last displayed" cursor that the 1 Hz flush walks; if
+ * skipped, the host never gets stats for that frame.
+ *
+ * Safe to call from any thread.
+ */
+void IHS_SessionReportVideoFrameComplete(IHS_Session *session, uint16_t frameId,
+                                         IHS_VideoFrameResult result);
+
+/**
+ * Debug toggle: when true, each flush packet carries per-frame CFrameStats
+ * rows in addition to the aggregated stats. Default false (aggregated only,
+ * matching Steam's normal operating mode). Useful for capturing wire traces.
+ */
+void IHS_SessionStatsSetFullReporting(IHS_Session *session, bool enabled);
+
 void IHS_SessionSetLogFunction(IHS_Session *session, IHS_LogFunction *logFunction);
 
 const IHS_SessionInfo *IHS_SessionGetInfo(const IHS_Session *session);
