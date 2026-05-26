@@ -43,7 +43,7 @@ add_subdirectory(src)
 target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(src/protobuf)
-target_link_libraries(ihslib PRIVATE ihs-protobuf)
+target_link_libraries(ihslib PRIVATE ihs-protobuf m)
 
 add_subdirectory(src/platforms)
 target_include_directories(ihs-platforms PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

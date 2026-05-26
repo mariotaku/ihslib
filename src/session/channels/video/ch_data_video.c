@@ -34,8 +34,10 @@
 #include "crypto.h"
 #include "endianness.h"
 #include "session/session_pri.h"
+#include "session/frame_stats.h"
 #include "session/channels/ch_stats.h"
 #include "protobuf/pb_utils.h"
+#include "session/packet.h"
 
 #include "frame_h264.h"
 #include "frame_hevc.h"
@@ -185,6 +187,20 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
     IHS_VideoFrameHeader vhead;
     IHS_BufferOffsetBy(body, (int) VideoFrameHeaderParse(&vhead, IHS_BufferPointer(body)));
+
+    /* Seed events 5 (FrameEventStart) / 12 (FrameEventSend) / 13 (FrameEventRecv)
+     * for this frame in the stats aggregator. Done outside the videoCh mutex so
+     * the aggregator's own lock orders independently. Mirrors Steam's
+     * RecordFrameReceived (0x001faac4): the partial-frame header carries the
+     * sender's frame timestamp; we treat it as both event 5 and event 12 (we
+     * do not yet maintain a separate sender-send timestamp), and stamp event
+     * 13 with the local recv clock. */
+    if (channel->session->frameStats != NULL) {
+        IHS_FrameStatsRecordReceived(channel->session->frameStats, header->id,
+                                     header->timestamp, header->timestamp,
+                                     IHS_SessionPacketTimestamp(), 0 /* frameSize unknown until assembly */,
+                                     0 /* inputMark — not yet on the wire here */);
+    }
 
     IHS_MutexLock(videoCh->stateMutex);
 
@@ -397,15 +413,11 @@ static uint64_t ReportVideoStats(int runCount, void *data) {
     (void) runCount;
     IHS_SessionChannel *channel = data;
     IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    IHS_Session *session = channel->session;
+
+    /* FPS log lives entirely under videoCh's lock since it touches frameCounter
+     * which is incremented inside the receive critical section. */
     IHS_MutexLock(videoCh->stateMutex);
-
-    // TODO: send CFrameStatsListMsg via k_EStreamControlFrameStatistics once
-    // we can populate per-frame stats (decode/render timings, drops, etc.).
-    // Server uses this for QoS / bitrate adaptation.
-    CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
-    message.data_type = k_EStreamingVideoData;
-    message.latest_frame_id = videoCh->states.lastFrameId;
-
     uint64_t now = IHS_TimerNow();
     uint64_t elapsedMs = now - videoCh->states.lastStatsTime;
     double fps = elapsedMs > 0 ? (videoCh->states.frameCounter * 1000.0) / (double) elapsedMs : 0.0;
@@ -413,5 +425,63 @@ static uint64_t ReportVideoStats(int runCount, void *data) {
     videoCh->states.frameCounter = 0;
     videoCh->states.lastStatsTime = now;
     IHS_MutexUnlock(videoCh->stateMutex);
+
+    /* Drain the per-frame stats aggregator into the accumulator and ship one
+     * CFrameStatsListMsg over the stats channel. Matches Steam's
+     * CStreamClient::SendFrameEvents (0x001fb4f0) — 1 Hz, video only, packet
+     * suppressed when nothing was folded. */
+    if (session->frameStats == NULL) {
+        return 1000;
+    }
+    uint16_t latest = 0;
+    size_t folded = IHS_FrameStatsAggregatorDrain(session->frameStats, &latest);
+    if (folded == 0) {
+        return 1000;
+    }
+    IHS_SessionChannel *stats = IHS_SessionChannelFor(session, IHS_SessionChannelIdStats);
+    if (stats == NULL) {
+        return 1000;
+    }
+
+    CFrameStatsListMsg message = CFRAME_STATS_LIST_MSG__INIT;
+    message.data_type = k_EStreamingVideoData;
+    message.latest_frame_id = latest;
+
+    /* Pull the accumulator snapshot under the aggregator's lock by walking it
+     * directly; the drain already populated it. Build the repeated
+     * accumulated_stats field with one row per non-empty slot. */
+    IHS_FrameStatsAccumulator *accum = &session->frameStats->accumulator;
+    CFrameStatAccumulatedValue accumRows[IHS_FRAME_STATS_ACCUM_SLOTS];
+    CFrameStatAccumulatedValue *accumPtrs[IHS_FRAME_STATS_ACCUM_SLOTS];
+    size_t rowCount = 0;
+    for (int i = 0; i < IHS_FRAME_STATS_ACCUM_SLOTS; i++) {
+        if (accum->slots[i].count == 0) {
+            continue;
+        }
+        CFrameStatAccumulatedValue *row = &accumRows[rowCount];
+        cframe_stat_accumulated_value__init(row);
+        row->stat_type = (EFrameAccumulatedStat) i;
+        row->count = (int32_t) accum->slots[i].count;
+        double average = accum->slots[i].sum / accum->slots[i].count;
+        row->average = (float) average;
+        /* Stddev = sqrt(E[X^2] - E[X]^2). Suppress when ≤ 0 (single sample or
+         * negative-from-FP-roundoff). Matches Steam's set_stddev guard. */
+        if (accum->slots[i].count > 1) {
+            double meanSq = accum->slots[i].sumSquares / accum->slots[i].count;
+            double variance = meanSq - average * average;
+            if (variance > 0) {
+                row->has_stddev = 1;
+                row->stddev = (float) sqrt(variance);
+            }
+        }
+        accumPtrs[rowCount] = row;
+        rowCount++;
+    }
+    message.n_accumulated_stats = rowCount;
+    message.accumulated_stats = accumPtrs;
+
+    IHS_SessionChannelStatsSend(stats, k_EStreamStatsFrameEvents, (const ProtobufCMessage *) &message,
+                                IHS_PACKET_ID_NEXT);
+    IHS_FrameStatsAccumulatorReset(accum);
     return 1000;
 }

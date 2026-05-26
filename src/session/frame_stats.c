@@ -125,18 +125,18 @@ void IHS_FrameStatsRecordStage(IHS_FrameStatsAggregator *agg, uint16_t frameId,
 
 void IHS_FrameStatsRecordComplete(IHS_FrameStatsAggregator *agg, uint16_t frameId,
                                   IHS_VideoFrameResult result) {
-    /* The "now" timestamp used for event 18; the caller doesn't pass one. We
-     * synthesise it via IHS_SessionPacketTimestamp — but the aggregator does
-     * not own a session pointer. The session-level wrapper supplies the
-     * timestamp via the public API; internal callers that bypass the wrapper
-     * (none currently) must call IHS_FrameStatsRecordStage explicitly first. */
     IHS_MutexLock(agg->lock);
     IHS_FrameStatsSlot *slot = acquire_slot(agg, frameId);
     slot->result = result;
     slot->complete = true;
-    /* If the caller already supplied event 18 via RecordStage, keep that ts;
-     * otherwise leave it unset and let the drain treat the slot as missing
-     * event 18 (matches Steam's RecordFrameComplete which always stamps). */
+    /* Only displayed frames advance the cursor — matches Steam's
+     * RecordFrameComplete, where IsDisplayed() (result == 1) gates the
+     * lastDisplayedFrameId write. Dropped frames sit in the ring waiting
+     * for the next displayed frame to draw a boundary, then get folded
+     * in the drain pass as part of the [lastSent, lastDisplayed] range. */
+    if (result == IHS_VideoFrameResultDisplayed) {
+        agg->lastDisplayedFrameId = frameId;
+    }
     IHS_MutexUnlock(agg->lock);
 }
 
