@@ -13,4 +13,6 @@ target_link_libraries(ihstest_video_control PRIVATE ihs-test-session)
 ihs_add_test(control_keyboard test_control_keyboard.c)
 target_link_libraries(ihstest_control_keyboard PRIVATE ihs-test-session)
 
+ihs_add_test(frame_stats test_frame_stats.c)
+
 add_subdirectory(video)
