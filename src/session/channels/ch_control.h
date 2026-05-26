@@ -79,3 +79,15 @@ void IHS_SessionChannelControlStopHeartbeat(IHS_SessionChannel *channel);
 void IHS_SessionChannelControlOnHIDMsg(IHS_SessionChannel *channel, const CHIDMessageToRemote *message);
 
 bool IHS_SessionChannelControlSendHIDMsg(IHS_SessionChannel *channel, const CHIDMessageFromRemote *message);
+
+/**
+ * Top-level dispatcher for an inbound control message. Decodes the
+ * EStreamControlMessage type-tagged payload and routes it to a per-feature
+ * sub-handler (Video / Audio / Cursor / HID / ...) or processes it inline
+ * (SetCapslock / SetKeymap / ...).
+ *
+ * Internal — exposed in the header so tests can drive the dispatcher
+ * directly without constructing a full IHS_SessionPacket round trip.
+ */
+void IHS_SessionChannelControlOnMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type,
+                                                IHS_Buffer *payload, const IHS_SessionPacketHeader *header);

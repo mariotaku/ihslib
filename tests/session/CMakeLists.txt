@@ -10,4 +10,7 @@ target_link_libraries(ihstest_disconnect_destroy PRIVATE ihs-test-session)
 ihs_add_test(video_control test_video_control.c)
 target_link_libraries(ihstest_video_control PRIVATE ihs-test-session)
 
+ihs_add_test(control_keyboard test_control_keyboard.c)
+target_link_libraries(ihstest_control_keyboard PRIVATE ihs-test-session)
+
 add_subdirectory(video)

@@ -48,8 +48,8 @@ static void OnControlDeinit(IHS_SessionChannel *channel);
 
 static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet);
 
-static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, IHS_Buffer *payload,
-                                     const IHS_SessionPacketHeader *header);
+/* Defined non-statically (declared in ch_control.h) so tests can drive the
+ * dispatcher directly without constructing a full IHS_SessionPacket. */
 
 static void OnServerHandshake(IHS_SessionChannel *channel, const CServerHandshakeMsg *message);
 
@@ -181,7 +181,7 @@ static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *pa
             uint64_t expectSequence = control->recvEncryptSequence++, actualSequence;
             switch (IHS_SessionFrameDecrypt(channel->session, &frame.body, &plain, expectSequence, &actualSequence)) {
                 case IHS_SessionPacketResultOK: {
-                    OnControlMessageReceived(channel, type, &plain, &frame.header);
+                    IHS_SessionChannelControlOnMessageReceived(channel, type, &plain, &frame.header);
                     break;
                 }
                 case IHS_SessionFrameDecryptHashMismatch:
@@ -206,15 +206,15 @@ static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *pa
             }
             IHS_BufferClear(&plain, true);
         } else {
-            OnControlMessageReceived(channel, type, &frame.body, &frame.header);
+            IHS_SessionChannelControlOnMessageReceived(channel, type, &frame.body, &frame.header);
         }
     }
 
     IHS_BufferClear(&frame.body, true);
 }
 
-static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type, IHS_Buffer *payload,
-                                     const IHS_SessionPacketHeader *header) {
+void IHS_SessionChannelControlOnMessageReceived(IHS_SessionChannel *channel, EStreamControlMessage type,
+                                                IHS_Buffer *payload, const IHS_SessionPacketHeader *header) {
     switch (type) {
         case k_EStreamControlServerHandshake: {
             CServerHandshakeMsg *message = IHS_UNPACK_BUFFER(cserver_handshake_msg__unpack, payload);
