@@ -7,4 +7,7 @@ ihs_add_test(timer test_timer.c)
 ihs_add_test(disconnect_destroy test_disconnect_destroy.c)
 target_link_libraries(ihstest_disconnect_destroy PRIVATE ihs-test-session)
 
+ihs_add_test(video_control test_video_control.c)
+target_link_libraries(ihstest_video_control PRIVATE ihs-test-session)
+
 add_subdirectory(video)
