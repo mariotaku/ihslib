@@ -90,14 +90,87 @@ void IHS_SessionChannelControlOnVideo(IHS_SessionChannel *channel, EStreamContro
                 IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetTargetFramerateMsg");
                 break;
             }
-            if (message->has_framerate_numerator && message->has_framerate_denominator) {
-                IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetTargetFramerate(fps=%.02f)",
-                               (float) message->framerate_numerator / (float) message->framerate_denominator);
+            /* Steam's CStreamClient::OnSetTargetFramerate (0x001fe270) reads the fraction
+             * and `reasons`, never the legacy `framerate` uint. Match that — if the host
+             * only sent the legacy field, synthesise num/1 so callbacks see a consistent
+             * shape. `reasons` is masked with ~0x20 (SlowGame) before reporting. */
+            uint32_t num, denom;
+            if (message->has_framerate_numerator && message->has_framerate_denominator
+                    && message->framerate_denominator != 0) {
+                num = message->framerate_numerator;
+                denom = message->framerate_denominator;
             } else {
-                IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetTargetFramerate(fps=%u)",
-                               message->framerate);
+                num = message->framerate;
+                denom = 1;
+            }
+            uint32_t reasons = message->has_reasons ? (message->reasons & ~0x20u) : 0;
+            IHS_SessionLog(session, IHS_LogLevelDebug, "Video",
+                           "SetTargetFramerate(fps=%.02f, reasons=0x%x)",
+                           denom ? (float) num / (float) denom : 0.0f, reasons);
+            const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+            if (callbacks && callbacks->setTargetFramerate) {
+                callbacks->setTargetFramerate(session, num, denom, reasons,
+                                              session->callbackContexts.video);
             }
             cset_target_framerate_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetTargetBitrate: {
+            CSetTargetBitrateMsg *message = cset_target_bitrate_msg__unpack(NULL, payload->size,
+                                                                            IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetTargetBitrateMsg");
+                break;
+            }
+            IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetTargetBitrate(bps=%d)", message->bitrate);
+            const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+            if (callbacks && callbacks->setTargetBitrate) {
+                callbacks->setTargetBitrate(session, message->bitrate, session->callbackContexts.video);
+            }
+            cset_target_bitrate_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetQualityOverride: {
+            CSetQualityOverrideMsg *message = cset_quality_override_msg__unpack(NULL, payload->size,
+                                                                                IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetQualityOverrideMsg");
+                break;
+            }
+            int32_t value = message->has_value ? message->value : 0;
+            IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetQualityOverride(value=%d)", value);
+            const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+            if (callbacks && callbacks->setQualityOverride) {
+                callbacks->setQualityOverride(session, value, session->callbackContexts.video);
+            }
+            cset_quality_override_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetBitrateOverride: {
+            CSetBitrateOverrideMsg *message = cset_bitrate_override_msg__unpack(NULL, payload->size,
+                                                                                IHS_BufferPointer(payload));
+            if (message == NULL) {
+                IHS_SessionLog(session, IHS_LogLevelWarn, "Video", "Malformed CSetBitrateOverrideMsg");
+                break;
+            }
+            int32_t value = message->has_value ? message->value : 0;
+            IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "SetBitrateOverride(value=%d)", value);
+            const IHS_StreamVideoCallbacks *callbacks = session->callbacks.video;
+            if (callbacks && callbacks->setBitrateOverride) {
+                callbacks->setBitrateOverride(session, value, session->callbackContexts.video);
+            }
+            cset_bitrate_override_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlEnableHighResCapture:
+        case k_EStreamControlDisableHighResCapture: {
+            /* Empty-payload tokens used by Steam's own client→server pinch-zoom
+             * path (CStreamPlayer::UpdateHighResCapture). Steam's dispatcher has
+             * empty `break;` arms for these on receive — no spec-conformant host
+             * sends them. We accept and ignore so a non-conformant peer can't
+             * crash the session via the default abort. */
+            IHS_SessionLog(session, IHS_LogLevelDebug, "Video", "HighResCapture(%s) — informational, ignored",
+                           type == k_EStreamControlEnableHighResCapture ? "enable" : "disable");
             break;
         }
         default: {

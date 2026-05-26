@@ -61,6 +61,21 @@ typedef enum IHS_StreamVideoSubmitResult {
     IHS_StreamVideoSubmitError = -1,
 } IHS_StreamVideoSubmitResult;
 
+/**
+ * Bitmask matching Steam's EStreamFramerateLimiter — accompanies the framerate
+ * set by setTargetFramerate so the client can surface why the host clamped.
+ * Bit 0x20 (SlowGame) is stripped by Steam before reporting; ihslib does the
+ * same so callers see only externally-meaningful reasons.
+ */
+typedef enum IHS_StreamFramerateLimiter {
+    IHS_StreamFramerateSlowCapture = 0x01,
+    IHS_StreamFramerateSlowConvert = 0x02,
+    IHS_StreamFramerateSlowEncode = 0x04,
+    IHS_StreamFramerateSlowNetwork = 0x08,
+    IHS_StreamFramerateSlowDecode = 0x10,
+    IHS_StreamFramerateBurstThrottle = 0x40,
+} IHS_StreamFramerateLimiter;
+
 typedef struct IHS_StreamVideoCallbacks {
     int (*start)(IHS_Session *session, const IHS_StreamVideoConfig *config, void *context);
 
@@ -69,4 +84,36 @@ typedef struct IHS_StreamVideoCallbacks {
     void (*stop)(IHS_Session *session, void *context);
 
     int (*setCaptureSize)(IHS_Session *session, int width, int height, void *context);
+
+    /**
+     * Host has changed the target framerate. The fraction num/denom is the
+     * post-override effective rate (Steam ships this already-clamped); `reasons`
+     * is an IHS_StreamFramerateLimiter bitmask describing which subsystem(s)
+     * forced the limit. May be NULL.
+     */
+    void (*setTargetFramerate)(IHS_Session *session, uint32_t numerator, uint32_t denominator,
+                               uint32_t reasons, void *context);
+
+    /**
+     * Host has changed the target encode bitrate (bps). This is the
+     * post-override effective rate; the decoder may use it as a buffer-sizing
+     * hint. May be NULL.
+     */
+    void (*setTargetBitrate)(IHS_Session *session, int32_t bitrate, void *context);
+
+    /**
+     * Informational notification that the host has applied a quality preset
+     * override. Steam's own client does NOT clamp its decoder on receipt —
+     * the effective bitrate/framerate arrive separately via the setTarget*
+     * callbacks. Surface this for UI / telemetry only. May be NULL.
+     */
+    void (*setQualityOverride)(IHS_Session *session, int32_t value, void *context);
+
+    /**
+     * Informational notification that the host has applied a bitrate
+     * override. Like setQualityOverride, NOT a hard cap — do not enforce
+     * it on the decoder, since setTargetBitrate will deliver the
+     * post-override rate. `value == 0` means override cleared. May be NULL.
+     */
+    void (*setBitrateOverride)(IHS_Session *session, int32_t value, void *context);
 } IHS_StreamVideoCallbacks;

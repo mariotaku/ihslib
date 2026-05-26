@@ -269,7 +269,12 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
         case k_EStreamControlStopVideoData:
         case k_EStreamControlVideoEncoderInfo:
         case k_EStreamControlSetCaptureSize:
-        case k_EStreamControlSetTargetFramerate: {
+        case k_EStreamControlSetTargetFramerate:
+        case k_EStreamControlSetTargetBitrate:
+        case k_EStreamControlSetQualityOverride:
+        case k_EStreamControlSetBitrateOverride:
+        case k_EStreamControlEnableHighResCapture:
+        case k_EStreamControlDisableHighResCapture: {
             IHS_SessionChannelControlOnVideo(channel, type, payload, header);
             break;
         }
@@ -283,8 +288,6 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cset_qo_smsg__free_unpacked(message, NULL);
             break;
         }
-        case k_EStreamControlSetTargetBitrate:
-            break;
         case k_EStreamControlShowCursor:
         case k_EStreamControlHideCursor:
         case k_EStreamControlSetCursor:
