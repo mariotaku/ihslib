@@ -303,7 +303,53 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
                 IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetKeymapMsg");
                 break;
             }
+            const IHS_StreamInputCallbacks *callbacks = channel->session->callbacks.input;
+            void *context = channel->session->callbackContexts.input;
+            /* Steam treats SetKeymap as an overlay-relabel hint, not a translation
+             * table for keystrokes the client sends back. Convert each protobuf
+             * row into a stable C-struct so the caller doesn't need to depend on
+             * the generated protobuf headers, then hand it to the callback. */
+            if (callbacks && callbacks->setKeymap && message->keymap != NULL) {
+                size_t n = message->keymap->n_entries;
+                IHS_KeymapEntry *entries = n > 0 ? calloc(n, sizeof(IHS_KeymapEntry)) : NULL;
+                if (n == 0 || entries != NULL) {
+                    for (size_t i = 0; i < n; i++) {
+                        CStreamingKeymapEntry *src = message->keymap->entries[i];
+                        IHS_KeymapEntry *dst = &entries[i];
+                        dst->scancode = src->has_scancode ? src->scancode : 0;
+                        dst->normal_keycode = src->has_normal_keycode ? src->normal_keycode : 0;
+                        dst->shift_keycode = src->has_shift_keycode ? src->shift_keycode : 0;
+                        dst->capslock_keycode = src->has_capslock_keycode ? src->capslock_keycode : 0;
+                        dst->shift_capslock_keycode = src->has_shift_capslock_keycode
+                                                    ? src->shift_capslock_keycode : 0;
+                        dst->altgr_keycode = src->has_altgr_keycode ? src->altgr_keycode : 0;
+                        dst->altgr_shift_keycode = src->has_altgr_shift_keycode ? src->altgr_shift_keycode : 0;
+                        dst->altgr_capslock_keycode = src->has_altgr_capslock_keycode
+                                                    ? src->altgr_capslock_keycode : 0;
+                        dst->altgr_shift_capslock_keycode = src->has_altgr_shift_capslock_keycode
+                                                          ? src->altgr_shift_capslock_keycode : 0;
+                    }
+                    callbacks->setKeymap(channel->session, entries, n, context);
+                }
+                free(entries);
+            }
             cset_keymap_msg__free_unpacked(message, NULL);
+            break;
+        }
+        case k_EStreamControlSetCapslock: {
+            CSetCapslockMsg *message = IHS_UNPACK_BUFFER(cset_capslock_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetCapslockMsg");
+                break;
+            }
+            bool pressed = message->has_pressed ? message->pressed : false;
+            IHS_SessionLog(channel->session, IHS_LogLevelDebug, "Control", "SetCapsLock(%s)",
+                           pressed ? "on" : "off");
+            const IHS_StreamInputCallbacks *callbacks = channel->session->callbacks.input;
+            if (callbacks && callbacks->setCapsLock) {
+                callbacks->setCapsLock(channel->session, pressed, channel->session->callbackContexts.input);
+            }
+            cset_capslock_msg__free_unpacked(message, NULL);
             break;
         }
         case k_EStreamControlSetTitle: {

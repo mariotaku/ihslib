@@ -73,6 +73,29 @@ typedef struct IHS_HIDPeripheralInfo {
     bool xinput;
 } IHS_HIDPeripheralInfo;
 
+/**
+ * One row of the host-pushed keymap. `scancode` is a USB HID usage; the eight
+ * `*_keycode` fields are UCS-4 codepoints (signed in the wire format, matching
+ * Steam's CStreamingKeymapEntry). A keycode of `0` means "no mapping in this
+ * modifier state".
+ *
+ * Steam uses this table only to relabel the on-screen overlay keyboard's
+ * keycaps; it does NOT use it to translate scancodes the client subsequently
+ * sends back. Callers receiving this can treat it the same way (e.g., update a
+ * soft-keyboard UI) or ignore it.
+ */
+typedef struct IHS_KeymapEntry {
+    int32_t scancode;
+    int32_t normal_keycode;
+    int32_t shift_keycode;
+    int32_t capslock_keycode;
+    int32_t shift_capslock_keycode;
+    int32_t altgr_keycode;
+    int32_t altgr_shift_keycode;
+    int32_t altgr_capslock_keycode;
+    int32_t altgr_shift_capslock_keycode;
+} IHS_KeymapEntry;
+
 typedef struct IHS_StreamInputCallbacks {
     /**
      *
@@ -90,6 +113,26 @@ typedef struct IHS_StreamInputCallbacks {
     void (*showCursor)(IHS_Session *session, float x, float y, void *context);
 
     void (*hideCursor)(IHS_Session *session, void *context);
+
+    /**
+     * Host has toggled the Caps Lock state. Steam's own client only updates
+     * the overlay keyboard's visual; it does NOT push the state to the local
+     * OS / SDL mod state. Mirror that semantic unless your app's UX needs
+     * something different. May be NULL.
+     */
+    void (*setCapsLock)(IHS_Session *session, bool pressed, void *context);
+
+    /**
+     * Host has pushed a new keymap table — one row per scancode the host
+     * cares about, with up to 9 modifier-state codepoints per row. Entries
+     * is an array of `count` rows owned by ihslib for the duration of the
+     * callback; copy what you need before returning. May be NULL.
+     *
+     * Steam uses this only to relabel its overlay keyboard; ihslib does not
+     * apply it to scancodes the client subsequently sends with
+     * IHS_SessionSendKeyDown/Up.
+     */
+    void (*setKeymap)(IHS_Session *session, const IHS_KeymapEntry *entries, size_t count, void *context);
 } IHS_StreamInputCallbacks;
 
 bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y);
