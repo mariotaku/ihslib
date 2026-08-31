@@ -40,6 +40,8 @@ IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames
                                                           IHS_Buffer *data) {
     assert (frames != NULL);
     assert (before != NULL);
+    // head and tail must be set or cleared together; a half-broken list would silently drop nodes below.
+    assert ((frames->head == NULL) == (frames->tail == NULL));
     IHS_VideoPartialFrame *inserted = NewNode(frameId, header, data);
 
     IHS_VideoPartialFrame *prev = before->prev;
@@ -60,6 +62,7 @@ IHS_VideoPartialFrame *IHS_VideoPartialFramesInsertBefore(IHS_VideoPartialFrames
 IHS_VideoPartialFrame *IHS_VideoPartialFramesAppend(IHS_VideoPartialFrames *frames, uint16_t frameId,
                                                     const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
     assert (frames != NULL);
+    assert ((frames->head == NULL) == (frames->tail == NULL));
     IHS_VideoPartialFrame *inserted = NewNode(frameId, header, data);
 
     IHS_VideoPartialFrame *oldHead = frames->head, *oldTail = frames->tail;
