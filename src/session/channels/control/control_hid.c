@@ -359,11 +359,13 @@ static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manage
     if (result > 0) {
         // Attach on a positive count and take the length from the return value, not from the
         // buffer's size — CStreamPlayer::OnRemoteHIDMessage @ 0x228a64 case 5 does
-        // `if (0 < result) set_data(buf, result)`. Clamped to what we asked for, so a provider
-        // over-reporting cannot make us ship memory past the buffer.
+        // `if (0 < result) set_data(buf, result)`. Bounded by the bytes the device actually wrote:
+        // for a provider that honours the contract the two are equal, and for one that over-reports
+        // this is what stops us shipping uninitialised buffer to the host. The reference trusts the
+        // count outright and would send whatever was on its stack.
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        response.data.len = (size_t) result > cmd->length ? cmd->length : (size_t) result;
+        response.data.len = (size_t) result > str.size ? str.size : (size_t) result;
     }
     IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: Read(id=%u) => ret=%d, %u byte(s)",
                    message->request_id, cmd->device, response.result, response.data.len);
@@ -426,11 +428,10 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
     PROTOBUF_C_SET_VALUE(response, result, result);
     if (result > 0) {
         // Same rule as Read: case 7 of the reference gates on `0 < result` and uses it as the
-        // length. Clamped to the buffer's writable size for the same reason.
+        // length, bounded here by what was actually written.
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        size_t maxSize = IHS_BufferMaxSize(&str);
-        response.data.len = (size_t) result > maxSize ? maxSize : (size_t) result;
+        response.data.len = (size_t) result > str.size ? str.size : (size_t) result;
     }
     SendRequestResponse(channel, &response);
     IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",
