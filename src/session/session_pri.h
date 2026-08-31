@@ -87,6 +87,15 @@ struct IHS_Session {
     IHS_Timer *timers;
     IHS_SessionRetransmission retransmission;
     IHS_HIDManager *hidManager;
+    /**
+     * Most recent activity reported by the host. Written from the control channel thread and read
+     * by IHS_SessionGetActivity from any thread, both under the base lock. `valid` stays false
+     * until the host reports one.
+     */
+    struct {
+        IHS_SessionActivityInfo info;
+        bool valid;
+    } activity;
     struct {
         const IHS_StreamSessionCallbacks *session;
         const IHS_StreamAudioCallbacks *audio;
@@ -106,6 +115,12 @@ struct IHS_Session {
 #define IHS_SessionLog(session, level, tag, ...) IHS_BaseLog((IHS_Base*) (session), (level), (tag), __VA_ARGS__)
 
 void IHS_SessionInterrupt(IHS_Session *session);
+
+/**
+ * Record the activity reported by the host and notify the application. Internal: called from the
+ * control channel on CSetActivityMsg.
+ */
+void IHS_SessionSetActivity(IHS_Session *session, const IHS_SessionActivityInfo *info);
 
 bool IHS_SessionSendPacket(IHS_Session *session, IHS_SessionPacket *packet);
 

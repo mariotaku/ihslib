@@ -5,5 +5,6 @@ target_sources(ihslib PRIVATE
         window.c
         frame_crypto.c
         callbacks.c
+        activity.c
         retransmission.c)
 add_subdirectory(channels)

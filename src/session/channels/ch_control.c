@@ -313,8 +313,32 @@ static void OnControlMessageReceived(IHS_SessionChannel *channel, EStreamControl
             cset_title_msg__free_unpacked(message, NULL);
             break;
         }
+        case k_EStreamControlSetActivity: {
+            CSetActivityMsg *message = IHS_UNPACK_BUFFER(cset_activity_msg__unpack, payload);
+            if (message == NULL) {
+                IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Control", "Malformed CSetActivityMsg");
+                break;
+            }
+            IHS_SessionActivityInfo info = {
+                    // The field is optional; the wire default when absent is Idle.
+                    .activity = (IHS_SessionActivity) (message->has_activity ? message->activity
+                                                                            : k_EStreamActivityIdle),
+                    .appId = message->has_appid ? message->appid : 0,
+                    .gameId = message->has_gameid ? message->gameid : 0,
+            };
+            if (message->game_name != NULL) {
+                // Truncate rather than reject: a name too long to store is no reason to lose the
+                // app id, which is the field callers actually act on.
+                strncpy(info.gameName, message->game_name, sizeof(info.gameName) - 1);
+            }
+            IHS_SessionLog(channel->session, IHS_LogLevelInfo, "Control",
+                           "Set activity: %u, appid=%u, game=%s", info.activity, info.appId,
+                           info.gameName);
+            cset_activity_msg__free_unpacked(message, NULL);
+            IHS_SessionSetActivity(channel->session, &info);
+            break;
+        }
         case k_EStreamControlSetIcon:
-        case k_EStreamControlSetActivity:
             break;
         case k_EStreamControlRemoteHID: {
             CRemoteHIDMsg *message = IHS_UNPACK_BUFFER(cremote_hidmsg__unpack, payload);

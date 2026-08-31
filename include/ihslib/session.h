@@ -30,6 +30,7 @@
 #include "video.h"
 #include "input.h"
 #include "hid.h"
+#include "activity.h"
 
 typedef struct IHS_Session IHS_Session;
 
@@ -62,6 +63,19 @@ typedef struct IHS_StreamSessionCallbacks {
      * @param context Callback context
      */
     void (*finalized)(IHS_Session *session, void *context);
+
+    /**
+     * The host reported a change in what it is streaming — a game launched or exited, or it
+     * switched to the desktop. Called from the control channel thread, so keep it short.
+     *
+     * `info` is only valid for the duration of the call; copy anything worth keeping. The same
+     * value stays retrievable afterwards via IHS_SessionGetActivity.
+     *
+     * @param session Session pointer
+     * @param info The new activity
+     * @param context Callback context
+     */
+    void (*activity)(IHS_Session *session, const IHS_SessionActivityInfo *info, void *context);
 } IHS_StreamSessionCallbacks;
 
 /*
