@@ -25,6 +25,39 @@ The cost of skipping step 1-2 is implementing a plausible-sounding-but-wrong ver
 
 The subagent rule exists because decompiled function dumps are large — 1000+ lines per call. Running them through a subagent that writes the distilled findings to the project keeps your main context clean and gives the next session (or another agent) a permanent, structured record to read.
 
+## Reaching Ghidra
+
+The GhidraMCP plugin serves a plain HTTP API on **port 8089** (`.mcp.json` pointed at 8091 for a
+while — that was wrong and connected to nothing). Check it with:
+
+```sh
+curl -s http://127.0.0.1:8089/check_connection
+curl -s http://127.0.0.1:8089/list_open_programs
+```
+
+If the plugin is up but reports no program loaded, open it — it does not auto-open:
+
+```sh
+curl -s -G http://127.0.0.1:8089/open_program \
+  --data-urlencode "path=/streaming_client" --data-urlencode "auto_analyze=false"
+```
+
+The Ghidra project is `steamlink`; it also holds `shell`, `streaming_client_920`, `shell_920`,
+`streaming_client.pi`, `libSLVideo.so.1` and `libstreaming_client_hooks.so`.
+
+**If the `mcp__ghidra__*` tools are missing from the session** (they only register at startup, and
+only if the port was reachable then), do not give up on the RE — drive the same API with `curl`:
+
+```sh
+curl -s -m 90 -G http://127.0.0.1:8089/decompile_function \
+  --data-urlencode "address=0x20c8d0" --data-urlencode "program=streaming_client"
+```
+
+`GET /mcp/schema` lists all 222 endpoints (190 KB — filter it, don't dump it). Responses are plain
+text for some endpoints and JSON for others. Always pass `program=streaming_client`, and use a long
+`-m` for decompiles. A subagent can use curl exactly the same way, so the
+"dispatch a subagent for RE" rule below still applies when the MCP tools are unavailable.
+
 ## Useful Ghidra entry points
 
 The reference program in Ghidra is named `streaming_client`. A few high-value classes / address ranges seen so far:
