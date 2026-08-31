@@ -49,7 +49,6 @@ typedef struct IHS_SessionChannelVideo {
         uint16_t frameCounter;
         uint64_t waitingKeyFrame;
         uint64_t lastStatsTime;
-        bool frameStarted;
         bool frameFinished;
     } states;
     struct {
@@ -246,7 +245,10 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         IHS_BufferClear(&videoCh->frame.buffer, false);
         videoCh->frame.flags = 0;
         videoCh->states.frameFinished = false;
-        videoCh->states.frameStarted = false;
+        // Defensive: the happy path resets this inside AssembleFrame when the last fragment carries
+        // SubFrameAdvance|FrameFinish. A frame that finishes without that combo would otherwise leave
+        // a stale counter and stall the next frame until a keyframe arrives.
+        videoCh->frame.expectedSubFrameStart = 0;
         videoCh->states.frameCounter++;
     }
     CheckPartialOverflow(channel);
