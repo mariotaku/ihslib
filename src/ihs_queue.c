@@ -35,6 +35,10 @@ typedef struct QueueNode {
 struct IHS_Queue {
     size_t itemSize;
     QueueNode *head;
+    /**
+     * Last node of the list, so appending is O(1). NULL if and only if head is NULL.
+     */
+    QueueNode *tail;
 };
 
 static IHS_QueueItem *ItemFromNode(QueueNode *node);
@@ -67,15 +71,13 @@ void IHS_QueueAppend(IHS_Queue *queue, IHS_QueueItem *item) {
     assert(item != NULL);
     QueueNode *node = NodeFromItem(item);
     assert(node->next == NULL);
-    QueueNode *cur = queue->head;
-    if (cur == NULL) {
+    assert((queue->head == NULL) == (queue->tail == NULL));
+    if (queue->tail == NULL) {
         queue->head = node;
     } else {
-        while (cur->next != NULL) {
-            cur = cur->next;
-        }
-        cur->next = node;
+        queue->tail->next = node;
     }
+    queue->tail = node;
 }
 
 IHS_QueueItem *IHS_QueuePoll(IHS_Queue *queue) {
@@ -86,6 +88,9 @@ IHS_QueueItem *IHS_QueuePoll(IHS_Queue *queue) {
     }
     QueueNode *next = head->next;
     queue->head = next;
+    if (next == NULL) {
+        queue->tail = NULL;
+    }
 
     head->next = NULL;
     return ItemFromNode(head);
@@ -104,6 +109,10 @@ IHS_QueueItem *IHS_QueuePollBy(IHS_Queue *queue, IHS_QueuePredicateFunction *pre
             } else {
                 queue->head = next;
             }
+            if (next == NULL) {
+                queue->tail = prev;
+            }
+            cur->next = NULL;
             return item;
         }
         prev = cur;
@@ -127,6 +136,9 @@ size_t IHS_QueuePollEach(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate
                 prev->next = next;
             } else {
                 queue->head = next;
+            }
+            if (next == NULL) {
+                queue->tail = prev;
             }
             destroy(item, destroyContext);
             free(cur);
