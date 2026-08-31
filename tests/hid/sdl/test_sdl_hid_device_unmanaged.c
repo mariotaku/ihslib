@@ -129,11 +129,33 @@ int main(int argc, char *argv[]) {
     IHS_Buffer buffer = IHS_BUFFER_INIT(256, 256);
 
     const static uint8_t getDeviceReport[21] = {0x04};
-    IHS_HIDDeviceGetFeatureReport(device, getDeviceReport, 21, &buffer, 65);
+    // getFeatureReport returns a byte count, not 0-on-success: the host takes the return value as
+    // the length of the data attached to the response, so a successful fetch must be positive.
+    int featureLen = IHS_HIDDeviceGetFeatureReport(device, getDeviceReport, 21, &buffer, 65);
+    assert(featureLen > 0);
+    assert((size_t) featureLen == buffer.size);
+    // Report id echoed back, then the 20-byte DeviceFeatureReport payload.
+    assert(featureLen == 21);
+    assert(IHS_BufferPointerAt(&buffer, 0)[0] == 0x04);
 
     const uint8_t *report = IHS_BufferPointerAt(&buffer, 1);
     assert(report[0] == true);
     assert(report[1] == false);
+
+    // An unknown report id still echoes the id and reports the bytes it produced.
+    IHS_Buffer unknownBuf = IHS_BUFFER_INIT(64, 64);
+    const static uint8_t unknownReport[21] = {0x7f};
+    int unknownLen = IHS_HIDDeviceGetFeatureReport(device, unknownReport, 21, &unknownBuf, 64);
+    assert(unknownLen == 2);
+    assert(IHS_BufferPointerAt(&unknownBuf, 0)[0] == 0x7f);
+    IHS_BufferClear(&unknownBuf, true);
+
+    // read returns the byte count and leaves the buffer's size in step with it.
+    IHS_Buffer readBuf = IHS_BUFFER_INIT(64, 64);
+    int readLen = IHS_HIDDeviceRead(device, &readBuf, 30, 10);
+    assert(readLen == 30);
+    assert(readBuf.size == 30);
+    IHS_BufferClear(&readBuf, true);
 
     IHS_HIDDeviceRead(device, &buffer, 30, 10);
     const uint8_t sendFeatureReport[21] = {0};

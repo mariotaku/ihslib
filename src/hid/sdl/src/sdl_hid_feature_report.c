@@ -189,12 +189,16 @@ int IHS_HIDDeviceSDLGetFeatureReport(IHS_HIDDevice *device, const uint8_t *repor
             break;
         }
         default: {
-            // Write an empty array
+            // Echo the report id back like every other branch, then an empty payload. Without the
+            // first write, byte 0 was never initialised and went out to the host as-is.
+            IHS_BufferWriteMem(dest, 0, reportNumber, 1);
             IHS_BufferFillMem(dest, 1, 0, 1);
-            return 0;
+            break;
         }
     }
-    return 0;
+    // Every branch above writes through IHS_BufferWriteMem/FillMem, which keep `size` in step, so
+    // this is the byte count the contract asks for.
+    return (int) dest->size;
 }
 
 bool IsXinputDevice(const SDL_JoystickGUID *guid) {

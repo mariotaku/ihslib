@@ -37,6 +37,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/**
+ * Ceiling on a host-requested read / feature-report length. The reference puts the buffer on the
+ * stack with no explicit limit, so this exists purely so a nonsensical length fails the request
+ * instead of attempting the allocation. Matches the report holder's own buffer ceiling.
+ */
+#define HID_MAX_TRANSFER_LENGTH 8192
+
 static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
 
 static void HandleDeviceClose(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
@@ -337,20 +344,31 @@ static void HandleDeviceRead(IHS_SessionChannel *channel, IHS_HIDManager *manage
                        message->request_id, cmd->device);
         return;
     }
-    IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
+    if (cmd->length > HID_MAX_TRANSFER_LENGTH) {
+        SendRequestCodeResponse(channel, message->request_id, -1);
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID", "Message %u: Read(id=%u) => length %u too large",
+                       message->request_id, cmd->device, cmd->length);
+        return;
+    }
+    IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, HID_MAX_TRANSFER_LENGTH);
     int result = IHS_HIDDeviceRead(managed->device, &str, cmd->length, cmd->timeout_ms);
 
     CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
     PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
     PROTOBUF_C_SET_VALUE(response, result, result);
-    if (result == 0) {
+    if (result > 0) {
+        // Attach on a positive count and take the length from the return value, not from the
+        // buffer's size — CStreamPlayer::OnRemoteHIDMessage @ 0x228a64 case 5 does
+        // `if (0 < result) set_data(buf, result)`. Clamped to what we asked for, so a provider
+        // over-reporting cannot make us ship memory past the buffer.
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        response.data.len = str.size;
+        response.data.len = (size_t) result > cmd->length ? cmd->length : (size_t) result;
     }
     IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID", "Message %u: Read(id=%u) => ret=%d, %u byte(s)",
                    message->request_id, cmd->device, response.result, response.data.len);
     SendRequestResponse(channel, &response);
+    IHS_BufferClear(&str, true);
 }
 
 static void HandleDeviceSendFeatureReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
@@ -392,17 +410,27 @@ static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDMan
         return;
     }
 
-    IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, 255);
+    if (cmd->length > HID_MAX_TRANSFER_LENGTH) {
+        SendRequestCodeResponse(channel, message->request_id, -1);
+        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID",
+                       "Message %u: GetFeatureReport(id=%u) => length %u too large",
+                       message->request_id, cmd->device, cmd->length);
+        return;
+    }
+    IHS_Buffer str = IHS_BUFFER_INIT(cmd->length, HID_MAX_TRANSFER_LENGTH);
     int result = IHS_HIDDeviceGetFeatureReport(managed->device, cmd->report_number.data, cmd->report_number.len,
                                                &str, cmd->length);
 
     CHIDMessageFromRemote__RequestResponse response = CHIDMESSAGE_FROM_REMOTE__REQUEST_RESPONSE__INIT;
     PROTOBUF_C_SET_VALUE(response, request_id, message->request_id);
     PROTOBUF_C_SET_VALUE(response, result, result);
-    if (result == 0) {
+    if (result > 0) {
+        // Same rule as Read: case 7 of the reference gates on `0 < result` and uses it as the
+        // length. Clamped to the buffer's writable size for the same reason.
         response.has_data = true;
         response.data.data = IHS_BufferPointer(&str);
-        response.data.len = str.size;
+        size_t maxSize = IHS_BufferMaxSize(&str);
+        response.data.len = (size_t) result > maxSize ? maxSize : (size_t) result;
     }
     SendRequestResponse(channel, &response);
     IHS_SessionLog(channel->session, IHS_LogLevelVerbose, "HID",

@@ -111,10 +111,38 @@ struct IHS_HIDDeviceClass {
 
     int (*write)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
+    /**
+     * Read at most \p length bytes from the device into \p dest.
+     *
+     * @attention Returns the **number of bytes read**, 0 when nothing was available, negative on
+     * error — hidraw's convention, and what the host expects: it takes the return value as the
+     * length of the data it is handed. An implementation must write exactly that many bytes into
+     * \p dest starting at its current size, and keep \p dest's size in step.
+     *
+     * @param device Device instance
+     * @param dest Buffer to append into
+     * @param length Maximum number of bytes to read
+     * @param timeoutMs How long to block waiting for data
+     * @return Bytes read, or negative on error
+     */
     int (*read)(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
 
     int (*sendFeatureReport)(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
+    /**
+     * Fetch a feature report identified by \p reportNumber.
+     *
+     * @attention Same convention as `read`: returns the **number of bytes** written into \p dest,
+     * negative on error. Returning 0 tells the host there was nothing to report, so a successful
+     * fetch must return a positive count.
+     *
+     * @param device Device instance
+     * @param reportNumber Report id requested by the host
+     * @param reportNumberLen Length of \p reportNumber
+     * @param dest Buffer to write into
+     * @param length Maximum number of bytes to produce
+     * @return Bytes written, or negative on error
+     */
     int (*getFeatureReport)(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                             IHS_Buffer *dest, size_t length);
 

@@ -38,15 +38,17 @@ void IHS_HIDManagedDeviceClose(IHS_HIDManagedDevice *managed);
 
 int IHS_HIDDeviceWrite(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
+/**
+ * @see IHS_HIDDeviceClass::read
+ * @return Number of bytes read into \p dest, 0 if none were available, or negative on error
+ */
 int IHS_HIDDeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, uint32_t timeoutMs);
 
 int IHS_HIDDeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen);
 
 /**
- *
- * @param device HID device
- * @param out Buffer to write value to
- * @return 0 If succeed, -1 if anything wrong happened
+ * @see IHS_HIDDeviceClass::getFeatureReport
+ * @return Number of bytes written to \p dest, or negative on error
  */
 int IHS_HIDDeviceGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNumber, size_t reportNumberLen,
                                   IHS_Buffer *dest, size_t length);

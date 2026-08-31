@@ -211,6 +211,7 @@ static int DeviceRead(IHS_HIDDevice *device, IHS_Buffer *dest, size_t length, ui
     (void) timeoutMs;
     uint8_t *pointer = IHS_BufferPointerForAppend(dest, length);
     memset(pointer, 0, length);
+    dest->size += length;
     return (int) length;
 }
 
