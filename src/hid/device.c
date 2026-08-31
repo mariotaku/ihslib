@@ -83,10 +83,20 @@ int IHS_HIDDeviceGetSerialNumberString(IHS_HIDDevice *device, IHS_Buffer *out) {
 }
 
 int IHS_HIDDeviceStartInputReports(IHS_HIDDevice *device, size_t length) {
+    assert(device->managed != NULL);
+    // The host has no baseline to apply deltas against until it has seen one complete state, so a
+    // freshly started report stream must open with a full report.
+    IHS_HIDReportHolderRequestFullReport(&device->managed->reportHolder);
     return device->cls->startInputReports(device, length);
 }
 
 int IHS_HIDDeviceRequestFullReport(IHS_HIDDevice *device) {
+    assert(device->managed != NULL);
+    // Latch the request rather than relying on the provider to append one right now: Steam's
+    // RequestFullReport @ 0x20c840 only sets the flag, and it stays set until a full report is
+    // genuinely emitted. Appending eagerly lets the identical-state dedup swallow the report and
+    // leaves the host waiting forever.
+    IHS_HIDReportHolderRequestFullReport(&device->managed->reportHolder);
     return device->cls->requestFullReport(device);
 }
 

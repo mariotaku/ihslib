@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "ihs_buffer.h"
 #include "ihs_arraylist.h"
@@ -75,6 +76,13 @@ typedef struct IHS_HIDReportHolder {
     uint8_t *pendingCurrent;
     size_t pendingCurrentLen;
     size_t bufferCapacity;
+    /**
+     * Set when the host asked for a full report, cleared only once one is actually appended.
+     * While set, the identical-state dedup must not drop and delta encoding must not be used —
+     * mirrors CHIDDeviceReportGenerator's fullReportUnsent latch (RequestFullReport @ 0x20c840,
+     * cleared in the set_full_report branch of SendBuffer @ 0x2454ec).
+     */
+    bool fullReportPending;
 } IHS_HIDReportHolder;
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);
@@ -82,6 +90,12 @@ void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId);
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder);
 
 void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t reportLen);
+
+/**
+ * Latch a full-report request. The next appended report will be a full one, and the identical-state
+ * dedup will not swallow it.
+ */
+void IHS_HIDReportHolderRequestFullReport(IHS_HIDReportHolder *holder);
 
 void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len);
 

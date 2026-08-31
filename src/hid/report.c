@@ -27,6 +27,7 @@
 
 #include <memory.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "crc32.h"
 
@@ -34,6 +35,15 @@
 
 static int ComputeDelta(const uint8_t *previous, const uint8_t *current, size_t inputLen, size_t reportLen,
                         uint8_t *delta);
+
+static void AppendFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len);
+
+/**
+ * Mask length of a delta report: one bit per byte of the report, rounded up.
+ */
+static inline size_t DeltaMaskSize(size_t reportLen) {
+    return (reportLen + 7) >> 3;
+}
 
 void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
     chidmessage_from_remote__device_input_reports__device_input_report__init(&holder->report);
@@ -48,6 +58,7 @@ void IHS_HIDReportHolderInit(IHS_HIDReportHolder *holder, uint32_t deviceId) {
     holder->pendingCurrent = NULL;
     holder->pendingCurrentLen = 0;
     holder->bufferCapacity = 0;
+    holder->fullReportPending = false;
 }
 
 void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
@@ -63,7 +74,9 @@ void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
 // because the bytes are byte-identical to what was last flushed. Allocates the two scratch
 // buffers lazily and grows them on demand. Returns true if the caller should drop.
 static bool DedupAndStash(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
-    if (holder->lastSent != NULL && holder->lastSentLen == len &&
+    // A pending full-report request outranks the dedup: the host explicitly asked for the current
+    // state, so silence is not an acceptable answer even when nothing changed since the last send.
+    if (!holder->fullReportPending && holder->lastSent != NULL && holder->lastSentLen == len &&
         memcmp(holder->lastSent, current, len) == 0) {
         return true;
     }
@@ -81,11 +94,19 @@ void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t repo
     holder->reportLength = reportLen;
 }
 
+void IHS_HIDReportHolderRequestFullReport(IHS_HIDReportHolder *holder) {
+    holder->fullReportPending = true;
+}
+
 void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
     assert(holder->reportLength >= len);
     if (DedupAndStash(holder, current, len)) {
         return;
     }
+    AppendFull(holder, current, len);
+}
+
+static void AppendFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
     uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, len);
     memcpy(data, current, len);
     holder->dataBuffer.size += len;
@@ -98,6 +119,8 @@ void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *curr
 
     IHS_ArrayListAppend(&holder->reportPointers, &item);
     holder->report.n_reports = holder->reportItems.size;
+    // The request is served only once a full report is genuinely on its way out.
+    holder->fullReportPending = false;
 }
 
 void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
@@ -105,8 +128,28 @@ void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *pre
     if (DedupAndStash(holder, current, len)) {
         return;
     }
-    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, holder->reportLength);
+    // A latched full-report request cannot be answered with a delta. Steam keeps the flag set until
+    // a full report actually goes out rather than treating one delta as having served it.
+    // A length change also rules out a delta: the bitmask is indexed by byte position, so it only
+    // means anything if both states are the same length. EncodeDelta @ 0x2457ec returns false in
+    // that case and the caller falls back to a full report.
+    // Test lastSentLen, not lastSent: the dedup allocates the buffer up front, so a non-NULL
+    // lastSent does not yet mean a state was ever flushed. lastSentLen stays 0 until one is.
+    if (holder->fullReportPending || len > holder->reportLength ||
+        (holder->lastSentLen != 0 && holder->lastSentLen != len)) {
+        AppendFull(holder, current, len);
+        return;
+    }
+    // Worst case a delta is the mask plus every byte of the report changed, which is longer than
+    // the report itself — reserve for that, not for reportLength.
+    uint8_t *data = IHS_BufferPointerForAppend(&holder->dataBuffer, DeltaMaskSize(holder->reportLength) + len);
     int deltaLen = ComputeDelta(previous, current, len, holder->reportLength, data);
+    // Steam takes the delta only when it actually saves space (SendBuffer @ 0x2454ec); the +8
+    // accounts for the CRC and size fields a delta report carries but a full one does not.
+    if ((size_t) deltaLen + 8 >= len) {
+        AppendFull(holder, current, len);
+        return;
+    }
     holder->dataBuffer.size += deltaLen;
     // Send the data and CRC
     uint32_t crc = IHS_CRC32(current, len);
