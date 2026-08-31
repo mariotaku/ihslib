@@ -185,6 +185,8 @@ static int CryptoAES_CBC_PKCS7Pad(const uint8_t *in, size_t inLen, const uint8_t
         }
         mbedtls_aes_setkey_dec(&aes, key, keyLen * 8);
         for (size_t i = 0; i < inLen; i += IHS_CRYPTO_AES_BLOCK_SIZE) {
+            // Copying into `block` first is what makes `out == in` safe: mbedtls chains the IV from the
+            // ciphertext block it is handed, so it must not be the buffer we are overwriting.
             memcpy(block, in + i, IHS_CRYPTO_AES_BLOCK_SIZE);
             ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, IHS_CRYPTO_AES_BLOCK_SIZE, blockIv, block, &out[i]);
             if (ret != 0) {

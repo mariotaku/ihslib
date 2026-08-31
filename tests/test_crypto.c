@@ -71,8 +71,27 @@ static void test_decrypt_with_iv_rejects_runt_inputs(void) {
     assert(IHS_CryptoSymmetricDecryptWithIV(buf, 7, iv, 16, key, 16, out, &outLen) != 0);
 }
 
+static void test_decrypt_in_place(void) {
+    // The video data channel decrypts each fragment in place (out == in) to keep the 60 fps
+    // hot path allocation-free, matching CStreamDecoderVideo. Confirm aliasing is supported.
+    const uint8_t plain[] = "in-place decryption must produce the same plaintext as a separate output buffer";
+    size_t plainLen = sizeof(plain) - 1;
+    uint8_t buf[256];
+    size_t cipherLen = sizeof(buf);
+    assert(IHS_CryptoSymmetricEncryptWithIV(plain, plainLen, iv, 16, key, 16, false,
+                                            buf, &cipherLen) == 0);
+    // Multi-block ciphertext, otherwise the aliasing hazard (IV chaining off an overwritten
+    // block) would not be exercised at all.
+    assert(cipherLen > 16);
+    size_t outLen = cipherLen;
+    assert(IHS_CryptoSymmetricDecryptWithIV(buf, cipherLen, iv, 16, key, 16, buf, &outLen) == 0);
+    assert(outLen == plainLen);
+    assert(memcmp(plain, buf, plainLen) == 0);
+}
+
 int main(void) {
     test_round_trip();
+    test_decrypt_in_place();
     test_decrypt_rejects_runt_inputs();
     test_decrypt_with_iv_rejects_runt_inputs();
     printf("crypto tests OK\n");

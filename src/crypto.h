@@ -40,6 +40,11 @@ int IHS_CryptoSymmetricEncryptWithIV(const uint8_t *in, size_t inLen, const uint
 int IHS_CryptoSymmetricDecrypt(const uint8_t *in, size_t inLen, const uint8_t *key, size_t keyLen, uint8_t *out,
                                size_t *outLen);
 
+/**
+ * Decrypt AES-CBC ciphertext with an explicit IV.
+ * @attention \p out may alias \p in for in-place decryption. Implementations must copy each ciphertext
+ * block before writing the plaintext block over it.
+ */
 int IHS_CryptoSymmetricDecryptWithIV(const uint8_t *in, size_t inLen, const uint8_t *iv, size_t ivLen,
                                      const uint8_t *key, size_t keyLen, uint8_t *out, size_t *outLen);
 

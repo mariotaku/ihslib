@@ -217,28 +217,24 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
     }
     if (vhead.flags & VideoFrameFlagEncrypted) {
         const IHS_SessionInfo *config = &channel->session->info;
-        IHS_Buffer plain;
-        IHS_BufferInit(&plain, 0, 0);
-        IHS_BufferEnsureMaxSizeExact(&plain, body->size);
+        // Decrypt in place, like CStreamDecoderVideo does: the plaintext is never longer than the
+        // ciphertext, and the partial frame takes ownership of `body` either way. Decrypting into a
+        // scratch buffer would mean an alloc/free pair per packet on the 60 fps hot path.
         size_t outLen = body->size;
         int decryptRet = IHS_CryptoSymmetricDecryptWithIV(IHS_BufferPointer(body), body->size,
                                                           EmptyIV, sizeof(EmptyIV),
                                                           config->sessionKey, config->sessionKeyLen,
-                                                          IHS_BufferPointer(&plain), &outLen);
+                                                          IHS_BufferPointer(body), &outLen);
         if (decryptRet != 0) {
             IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video",
                            "Failed to decrypt video frame: %d, request keyframe", decryptRet);
-            IHS_BufferClear(&plain, true);
             IHS_SessionChannelDataLost(channel);
             videoCh->states.waitingKeyFrame = IHS_TimerNow();
             goto unlock;
         }
-        plain.size = outLen;
-        AddPartialFrame(videoCh, header->id, header->timestamp, &vhead, &plain);
-        IHS_BufferClear(&plain, true);
-    } else {
-        AddPartialFrame(videoCh, header->id, header->timestamp, &vhead, body);
+        body->size = outLen;
     }
+    AddPartialFrame(videoCh, header->id, header->timestamp, &vhead, body);
 
     if (AssembleFrame(channel)) {
         SubmitFrame(channel, &videoCh->frame.buffer, videoCh->frame.flags);
