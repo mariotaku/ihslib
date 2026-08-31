@@ -49,28 +49,20 @@ bool IHS_HIDHandleSDLEvent(IHS_Session *session, const SDL_Event *event) {
             IHS_SessionHIDNotifyDeviceChange(session);
             return changed;
         }
+        // The handlers below only stash into the device's report holder. Flushing is left to the
+        // manager's 8 ms poll tick, so a burst of events becomes one message instead of one each —
+        // this is what Steam's CHIDDeviceReportThread does. It matters most for
+        // SDL_CONTROLLERSENSORUPDATE, which fires at the sensor rate (250-1000 Hz on a DualSense or
+        // Switch Pro) and would otherwise put an order of magnitude more control messages on the
+        // wire than the reference client. The cost is up to 8 ms of added input latency, which is
+        // the same trade the reference makes.
         case SDL_CONTROLLERBUTTONDOWN:
-        case SDL_CONTROLLERBUTTONUP: {
-            bool changed = HandleCButtonEvent(session->hidManager, &event->cbutton);
-            if (changed) {
-                IHS_SessionHIDSendReport(session);
-            }
-            return changed;
-        }
-        case SDL_CONTROLLERAXISMOTION: {
-            bool changed = HandleCAxisEvent(session->hidManager, &event->caxis);
-            if (changed) {
-                IHS_SessionHIDSendReport(session);
-            }
-            return changed;
-        }
-        case SDL_CONTROLLERSENSORUPDATE: {
-            bool changed = HandleSensorEvent(session->hidManager, &event->csensor);
-            if (changed) {
-                IHS_SessionHIDSendReport(session);
-            }
-            return changed;
-        }
+        case SDL_CONTROLLERBUTTONUP:
+            return HandleCButtonEvent(session->hidManager, &event->cbutton);
+        case SDL_CONTROLLERAXISMOTION:
+            return HandleCAxisEvent(session->hidManager, &event->caxis);
+        case SDL_CONTROLLERSENSORUPDATE:
+            return HandleSensorEvent(session->hidManager, &event->csensor);
     }
     return false;
 }
@@ -97,6 +89,9 @@ bool IHS_HIDResetSDLGameControllers(IHS_Session *session) {
     }
     free(snapshot);
     if (changed) {
+        // Deliberately immediate rather than deferred to the tick: this is the one-shot "all inputs
+        // released" that runs when the app loses the controllers, and it must not be left sitting
+        // in a holder if the poll timer is about to stop.
         IHS_SessionHIDSendReport(session);
     }
     return true;

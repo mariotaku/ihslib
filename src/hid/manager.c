@@ -42,6 +42,7 @@ IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDManagedDevice *));
     IHS_ArrayListInit(&manager->inputReports, sizeof(IHS_HIDDeviceReportMessage *));
     manager->devicesLock = IHS_MutexCreate();
+    atomic_init(&manager->reportsPending, false);
     return manager;
 }
 
@@ -211,6 +212,10 @@ void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *prov
 // Snapshot the device list under devicesLock and iterate the snapshot, so concurrent
 // Open/Close on the SDL event thread or session worker can't race with the poll walk
 // and so the slow poll callback runs without devicesLock held.
+void IHS_HIDManagerMarkReportsPending(IHS_HIDManager *manager) {
+    atomic_store(&manager->reportsPending, true);
+}
+
 static uint64_t HIDPollTick(int runCount, void *context) {
     (void) runCount;
     IHS_HIDManager *manager = context;
@@ -239,7 +244,11 @@ static uint64_t HIDPollTick(int runCount, void *context) {
         }
     }
     free(snapshot);
-    if (anyData) {
+    // Exchange after the drain so reports appended by poll() above are covered too. This tick is
+    // the sole sender: input events only stash into the holders and set this flag, so however many
+    // events arrived in the last 8 ms, they leave as one message — the shape Steam's
+    // UpdateHIDDeviceReports @ 0x21db28 produces.
+    if (atomic_exchange(&manager->reportsPending, false) || anyData) {
         IHS_SessionHIDSendReport(manager->session);
     }
     return HID_POLL_INTERVAL_MS;

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <stdatomic.h>
+
 #include "ihslib/hid.h"
 #include "ihs_arraylist.h"
 #include "ihs_thread.h"
@@ -37,6 +39,12 @@ typedef struct IHS_HIDManagedDevice IHS_HIDManagedDevice;
 
 struct IHS_HIDManager {
     IHS_Session *session;
+    /**
+     * Set when any device holder has a report waiting, cleared by the poll tick when it sends.
+     * Written from whichever thread feeds input (the SDL event thread, for the SDL provider) and
+     * read from the timer thread, with no lock in common — hence atomic.
+     */
+    atomic_bool reportsPending;
     /**
      * Stores `IHS_HIDManagedDevice *` (not the struct). Each slot owns one managed device
      * for the lifetime of the manager: once a device is closed its slot's `closed` flag
@@ -51,8 +59,10 @@ struct IHS_HIDManager {
     uint32_t lastDeviceId;
     /**
      * 125 Hz poll task that drains every device whose class implements `poll`, then calls
-     * IHS_SessionHIDSendReport once if anything was added. Created lazily on the first
-     * IHS_HIDManagerAddProvider call; destroyed in IHS_HIDManagerDestroy.
+     * IHS_SessionHIDSendReport once if anything was added or `reportsPending` is set. This is the
+     * only place reports are flushed, so a burst of input events collapses into one message per
+     * tick. Created lazily on the first IHS_HIDManagerAddProvider call; destroyed in
+     * IHS_HIDManagerDestroy.
      */
     IHS_TimerTask *pollTimer;
 };
@@ -78,6 +88,11 @@ struct IHS_HIDManagedDevice {
  * @return 0 if matched
  */
 typedef int(*IHS_HIDDeviceComparator)(const void *value, const IHS_HIDDevice **device);
+
+/**
+ * Flag that a report is waiting to be flushed by the next poll tick.
+ */
+void IHS_HIDManagerMarkReportsPending(IHS_HIDManager *manager);
 
 IHS_HIDManager *IHS_HIDManagerCreate();
 

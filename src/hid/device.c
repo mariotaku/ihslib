@@ -26,6 +26,14 @@
 #include "device.h"
 #include "manager.h"
 
+// The holder drops reports that duplicate the last flushed state, so only wake the poll tick when
+// something actually landed.
+static void MarkPendingIfAny(IHS_HIDDevice *device) {
+    if (IHS_HIDReportHolderGetMessage(&device->managed->reportHolder) != NULL) {
+        IHS_HIDManagerMarkReportsPending(device->managed->manager);
+    }
+}
+
 IHS_HIDDevice *IHS_HIDDeviceCreate(const IHS_HIDDeviceClass *cls) {
     IHS_HIDDevice *device = cls->alloc(cls);
     assert(device->cls == cls);
@@ -106,10 +114,12 @@ int IHS_HIDDeviceRequestDisconnect(IHS_HIDDevice *device, int method, const uint
 
 void IHS_HIDDeviceReportAddFull(IHS_HIDDevice *device, const uint8_t *current, size_t len) {
     IHS_HIDReportHolderAddFull(&device->managed->reportHolder, current, len);
+    MarkPendingIfAny(device);
 }
 
 void IHS_HIDDeviceReportAddDelta(IHS_HIDDevice *device, const uint8_t *previous, const uint8_t *current, size_t len) {
     IHS_HIDReportHolderAddDelta(&device->managed->reportHolder, previous, current, len);
+    MarkPendingIfAny(device);
 }
 
 void IHS_HIDDeviceLock(IHS_HIDDevice *device) {

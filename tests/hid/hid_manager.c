@@ -23,6 +23,7 @@
  *
  */
 #include <assert.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -80,6 +81,39 @@ static const IHS_HIDDeviceClass DeviceClass = {
 };
 
 
+// Input events no longer send directly — they stash a report and flag the manager, and the 8 ms
+// poll tick is the only thing that flushes. Check the flag tracks what actually landed in a holder.
+static void TestReportsPendingFlag(IHS_HIDManager *manager, IHS_HIDManagedDevice *managed) {
+    IHS_HIDDevice *device = managed->device;
+    uint8_t state[48] = {0};
+    state[27] = 0x01;
+
+    IHS_HIDReportHolderSetReportLength(&managed->reportHolder, 48);
+    assert(!atomic_load(&manager->reportsPending));
+
+    // A report lands -> the tick has something to do.
+    IHS_HIDDeviceReportAddFull(device, state, sizeof(state));
+    assert(atomic_load(&manager->reportsPending));
+
+    // Simulate the tick flushing.
+    atomic_store(&manager->reportsPending, false);
+    IHS_HIDReportHolderResetMessage(&managed->reportHolder);
+
+    // The identical state is dropped by the dedup, so there is nothing to wake the tick for.
+    IHS_HIDDeviceReportAddFull(device, state, sizeof(state));
+    assert(!atomic_load(&manager->reportsPending));
+
+    // A real change does wake it.
+    uint8_t changed[48] = {0};
+    memcpy(changed, state, sizeof(state));
+    changed[16] = 0x40;
+    IHS_HIDDeviceReportAddDelta(device, state, changed, sizeof(changed));
+    assert(atomic_load(&manager->reportsPending));
+
+    atomic_store(&manager->reportsPending, false);
+    IHS_HIDReportHolderResetMessage(&managed->reportHolder);
+}
+
 int main() {
     IHS_Init();
     IHS_Session *session = IHS_TestSessionCreate();
@@ -114,6 +148,8 @@ int main() {
     IHS_Buffer buffer = IHS_BUFFER_INIT(256, 256);
     IHS_HIDDeviceRead(device, &buffer, 64, 5);
     IHS_HIDDeviceWrite(device, IHS_BufferPointer(&buffer), 64);
+
+    TestReportsPendingFlag(manager, managed);
 
     IHS_HIDManagedDeviceClose(managed);
 
