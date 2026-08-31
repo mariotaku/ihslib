@@ -71,7 +71,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->sendQueueMutex = IHS_MutexCreate();
     session->sendQueueCond = IHS_CondCreate();
     session->sendQueue = IHS_QueueCreate(sizeof(QueuedPacket));
-    session->timers = IHS_TimerCreate();
+    session->base.timers = IHS_TimerCreate();
     IHS_RetransmissionInit(&session->retransmission, session);
     session->hidManager = IHS_HIDManagerCreate();
 
@@ -115,7 +115,7 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_HIDManagerDestroy(session->hidManager);
-    IHS_TimerDestroy(session->timers);
+    IHS_TimerDestroy(session->base.timers);
     IHS_RetransmissionDeinit(&session->retransmission);
     IHS_CondDestroy(session->sendQueueCond);
     IHS_MutexDestroy(session->sendQueueMutex);

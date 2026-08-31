@@ -70,6 +70,11 @@ struct IHS_Base {
     IHS_Thread *worker;
     IHS_Mutex *lock;
     bool interrupted;
+    /**
+     * Timers belonging to this base. Serviced by the worker between receives — there is no timer
+     * thread — so every task callback runs on the worker thread.
+     */
+    IHS_Timer *timers;
 };
 
 #define IHS_UNUSED(x) (void) (x)

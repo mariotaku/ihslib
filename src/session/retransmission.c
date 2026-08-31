@@ -75,7 +75,7 @@ bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_Sess
     pending->retransmission = retransmission;
     pending->packet.header.retransmitCount++;
     IHS_BufferTransferOwnership(&packet->body, &pending->packet.body);
-    pending->task = IHS_TimerTaskStart(retransmission->session->timers, RetransmissionTimerRun, RetransmissionTimerEnd,
+    pending->task = IHS_TimerTaskStart(retransmission->session->base.timers, RetransmissionTimerRun, RetransmissionTimerEnd,
                                        RETRANSMISSION_INTERVAL, pending);
     IHS_MutexLock(retransmission->lock);
     IHS_QueueAppend(retransmission->queue, pending);

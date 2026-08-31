@@ -194,7 +194,7 @@ void IHS_HIDManagerAddProvider(IHS_HIDManager *manager, IHS_HIDProvider *provide
     if (manager->pollTimer == NULL && manager->session != NULL) {
         // Lazy-start the periodic poll task on the first provider so sessions that never
         // use HID pay no wakeup cost.
-        manager->pollTimer = IHS_TimerTaskStart(manager->session->timers, HIDPollTick, NULL,
+        manager->pollTimer = IHS_TimerTaskStart(manager->session->base.timers, HIDPollTick, NULL,
                                                 HID_POLL_INTERVAL_MS, manager);
     }
 }

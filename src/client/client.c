@@ -70,7 +70,7 @@ IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config) {
     memset(client, 0, sizeof(IHS_Client));
     IHS_BaseInit(&client->base, config, ClientRecvCallback, true);
     IHS_BaseSetRunCallbacks(&client->base, &ClientRunCallbacks, NULL);
-    client->timers = IHS_TimerCreate();
+    client->base.timers = IHS_TimerCreate();
 
     client->privCallbacks.discovery = IHS_ClientDiscoveryCallback;
     client->privCallbacks.authorization = IHS_ClientAuthorizationCallback;
@@ -93,7 +93,7 @@ void IHS_ClientThreadedJoin(IHS_Client *client) {
 }
 
 void IHS_ClientDestroy(IHS_Client *client) {
-    IHS_TimerDestroy(client->timers);
+    IHS_TimerDestroy(client->base.timers);
     IHS_ClientLog(client, IHS_LogLevelInfo, "Client", "Destroying client, bye!");
     IHS_BaseDestroy(&client->base);
     free(client);
@@ -228,8 +228,11 @@ static void ClientRecvCallback(IHS_Base *base, const IHS_SocketAddress *address,
 }
 
 static void ClientInitialized(IHS_Base *base, void *context) {
+    (void) base;
     (void) context;
-    IHS_UDPSocketSetBlocking(base->socket, true);
-    IHS_UDPSocketSetRecvTimeout(base->socket, 10000 /* 10ms */);
+    // The 10 ms SO_RCVTIMEO that used to live here existed only so the worker could re-check its
+    // interrupt flag, which cost 100 wakeups a second while the client sat idle. The worker now
+    // waits in poll() on the socket and a wakeup pipe, so it blocks until there is genuinely
+    // something to do and IHS_BaseInterruptWorker wakes it directly.
 }
 

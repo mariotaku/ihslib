@@ -34,11 +34,17 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 
 #include <assert.h>
 
 struct IHS_UDPSocket {
     int fd;
+    /**
+     * Self-pipe, so a blocked receive can be woken without waiting for a datagram. Portable across
+     * POSIX, unlike eventfd.
+     */
+    int wakeup[2];
     IHS_Mutex *mutex;
 };
 
@@ -50,6 +56,15 @@ IHS_UDPSocket *IHS_UDPSocketOpen(bool broadcast) {
     IHS_UDPSocket *s = calloc(1, sizeof(IHS_UDPSocket));
     s->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     assert(s->fd >= 0);
+    if (pipe(s->wakeup) != 0) {
+        s->wakeup[0] = -1;
+        s->wakeup[1] = -1;
+    } else {
+        // Non-blocking both ways: a wake must never block the caller, and draining must never block
+        // the receiver when another thread got there first.
+        fcntl(s->wakeup[0], F_SETFL, O_NONBLOCK);
+        fcntl(s->wakeup[1], F_SETFL, O_NONBLOCK);
+    }
     s->mutex = IHS_MutexCreate();
     assert(s->mutex != NULL);
     if (broadcast) {
@@ -60,12 +75,46 @@ IHS_UDPSocket *IHS_UDPSocketOpen(bool broadcast) {
 }
 
 void IHS_UDPSocketClose(IHS_UDPSocket *s) {
+    if (s->wakeup[0] >= 0) {
+        close(s->wakeup[0]);
+        close(s->wakeup[1]);
+        s->wakeup[0] = -1;
+        s->wakeup[1] = -1;
+    }
     IHS_MutexDestroy(s->mutex);
     close(s->fd);
     free(s);
 }
 
-int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
+int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet, int timeoutMs) {
+    struct pollfd fds[2];
+    nfds_t nfds = 1;
+    fds[0].fd = s->fd;
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+    if (s->wakeup[0] >= 0) {
+        fds[1].fd = s->wakeup[0];
+        fds[1].events = POLLIN;
+        fds[1].revents = 0;
+        nfds = 2;
+    }
+    int ready = poll(fds, nfds, timeoutMs);
+    if (ready < 0) {
+        // A signal is not an error to the caller; it just means nothing arrived yet.
+        return errno == EINTR ? 0 : -1;
+    }
+    if (ready == 0) {
+        return 0;
+    }
+    if (nfds > 1 && (fds[1].revents & POLLIN)) {
+        // Drain every pending wake; several may have been coalesced.
+        uint8_t discard[64];
+        while (read(s->wakeup[0], discard, sizeof(discard)) > 0);
+    }
+    if (!(fds[0].revents & POLLIN)) {
+        return 0;
+    }
+
     struct sockaddr_storage sender;
     socklen_t senderlen = sizeof(sender);
     ssize_t len;
@@ -82,6 +131,16 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet) {
     return 1;
 }
 
+bool IHS_UDPSocketUnblock(IHS_UDPSocket *s) {
+    if (s->wakeup[1] < 0) {
+        return false;
+    }
+    const uint8_t one = 1;
+    // EAGAIN means the pipe is already full of pending wakes, which is just as good.
+    ssize_t written = write(s->wakeup[1], &one, 1);
+    return written == 1 || errno == EAGAIN || errno == EWOULDBLOCK;
+}
+
 bool IHS_UDPSocketSend(IHS_UDPSocket *s, const IHS_UDPPacket *packet) {
     struct sockaddr_storage addr;
     size_t addr_len = AddressToSys(&packet->address, &addr);
@@ -90,17 +149,6 @@ bool IHS_UDPSocketSend(IHS_UDPSocket *s, const IHS_UDPPacket *packet) {
                       (struct sockaddr *) &addr, addr_len) > 0;
     IHS_MutexUnlock(s->mutex);
     return ret;
-}
-
-bool IHS_UDPSocketSetBlocking(IHS_UDPSocket *s, bool blocking) {
-    return fcntl(s->fd, F_SETFL, blocking ? 0 : O_NONBLOCK) == 0;
-}
-
-bool IHS_UDPSocketSetRecvTimeout(IHS_UDPSocket *s, uint32_t timeoutUs) {
-    struct timeval tv;
-    tv.tv_sec = (int32_t) (timeoutUs / 1000000);
-    tv.tv_usec = (int32_t) (timeoutUs % 1000000);
-    return setsockopt(s->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == 0;
 }
 
 static void AddressFromSys(IHS_SocketAddress *ihs, const struct sockaddr_storage *sys) {

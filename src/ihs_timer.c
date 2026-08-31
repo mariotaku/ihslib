@@ -26,7 +26,6 @@
 #include <stdbool.h>
 #include <time.h>
 #include <assert.h>
-#include <unistd.h>
 
 #include "ihs_timer.h"
 #include "ihs_thread.h"
@@ -35,6 +34,8 @@
 struct IHS_Timer {
     IHS_Queue *tasks;
     IHS_Mutex *mutex;
+    IHS_TimerWakeupFunction *wakeup;
+    void *wakeupContext;
 };
 
 struct IHS_TimerTask {
@@ -49,10 +50,7 @@ struct IHS_TimerTask {
 static struct {
     IHS_Queue *timers;
     IHS_Mutex *lock;
-    IHS_Thread *thread;
-} state = {NULL, NULL, NULL};
-
-static void TimerThreadWorker();
+} state = {NULL, NULL};
 
 static bool ItemIdentical(IHS_QueueItem *item, void *context);
 
@@ -73,6 +71,8 @@ static bool TaskExecute(IHS_TimerTask *task, IHS_Timer *timer);
 
 static void TaskDestroy(IHS_TimerTask *task, IHS_Timer *timer);
 
+static void TaskEarliest(IHS_TimerTask *task, uint64_t *earliest);
+
 void IHS_TimerInit() {
     state.lock = IHS_MutexCreate();
     state.timers = IHS_QueueCreate(sizeof(IHS_Timer));
@@ -90,10 +90,9 @@ IHS_Timer *IHS_TimerCreate() {
     IHS_Timer *timer = (IHS_Timer *) IHS_QueueItemObtain(state.timers);
     timer->tasks = IHS_QueueCreate(sizeof(IHS_TimerTask));
     timer->mutex = IHS_MutexCreate();
+    timer->wakeup = NULL;
+    timer->wakeupContext = NULL;
     IHS_QueueAppend(state.timers, (IHS_QueueItem *) timer);
-    if (state.thread == NULL) {
-        state.thread = IHS_ThreadCreate(TimerThreadWorker, "IHS.Timer", NULL);
-    }
     IHS_MutexUnlock(state.lock);
     return (IHS_Timer *) timer;
 }
@@ -105,14 +104,6 @@ void IHS_TimerDestroy(IHS_Timer *timer) {
     assert(matched == timer);
     TimerDestroy(matched, NULL);
     IHS_QueueItemFree((IHS_QueueItem *) matched);
-    // All timer are removed
-    if (IHS_QueueIsEmpty(state.timers)) {
-        IHS_MutexUnlock(state.lock);
-        IHS_ThreadJoin(state.thread);
-
-        IHS_MutexLock(state.lock);
-        state.thread = NULL;
-    }
     IHS_MutexUnlock(state.lock);
 }
 
@@ -131,7 +122,13 @@ IHS_TimerTask *IHS_TimerTaskStart(IHS_Timer *timer, IHS_TimerRunFunction *run, I
     task->context = context;
     task->nextExecution = IHS_TimerNow() + timeout;
     IHS_QueueAppend(timer->tasks, (IHS_QueueItem *) task);
+    IHS_TimerWakeupFunction *wakeup = timer->wakeup;
+    void *wakeupContext = timer->wakeupContext;
     IHS_MutexUnlock(timer->mutex);
+    // Outside the lock: the owner may be about to take it to recompute its deadline.
+    if (wakeup != NULL) {
+        wakeup(wakeupContext);
+    }
     return task;
 }
 
@@ -187,15 +184,28 @@ uint64_t IHS_TimerNow() {
     return (uint64_t) tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
 }
 
-static void TimerThreadWorker() {
-    size_t iterated;
-    do {
-        IHS_MutexLock(state.lock);
-        iterated = IHS_QueuePollEach(state.timers, (IHS_QueuePredicateFunction *) TimerExecute, NULL,
-                                     (IHS_QueueConsumerFunction *) TimerDestroy, NULL);
-        IHS_MutexUnlock(state.lock);
-        usleep(1000);
-    } while (iterated > 0);
+void IHS_TimerSetWakeup(IHS_Timer *timer, IHS_TimerWakeupFunction *wakeup, void *context) {
+    assert(timer != NULL);
+    IHS_MutexLock(timer->mutex);
+    timer->wakeup = wakeup;
+    timer->wakeupContext = context;
+    IHS_MutexUnlock(timer->mutex);
+}
+
+uint64_t IHS_TimerNextDeadline(IHS_Timer *timer) {
+    assert(timer != NULL);
+    uint64_t earliest = 0;
+    IHS_MutexLock(timer->mutex);
+    if (timer->tasks != NULL) {
+        IHS_QueueForEach(timer->tasks, (IHS_QueueConsumerFunction *) TaskEarliest, &earliest);
+    }
+    IHS_MutexUnlock(timer->mutex);
+    return earliest;
+}
+
+void IHS_TimerRunPending(IHS_Timer *timer) {
+    assert(timer != NULL);
+    TimerExecute(timer, NULL);
 }
 
 static bool ItemIdentical(IHS_QueueItem *item, void *context) {
@@ -230,6 +240,17 @@ static void TimerDestroy(IHS_Timer *timer, void *context) {
 /*
  * Task functions
  */
+
+static void TaskEarliest(IHS_TimerTask *task, uint64_t *earliest) {
+    // nextExecution == 0 marks a task asked to stop; it gets reaped by the next
+    // IHS_TimerRunPending rather than waited for.
+    if (task->nextExecution == 0) {
+        return;
+    }
+    if (*earliest == 0 || task->nextExecution < *earliest) {
+        *earliest = task->nextExecution;
+    }
+}
 
 static bool TaskExecute(IHS_TimerTask *task, IHS_Timer *timer) {
     (void) timer;

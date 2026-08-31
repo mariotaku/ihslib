@@ -87,6 +87,14 @@ IHS_QueueItem *IHS_QueuePollBy(IHS_Queue *queue, IHS_QueuePredicateFunction *pre
 size_t IHS_QueuePollEach(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate, void *predicateContext,
                          IHS_QueueConsumerFunction *destroy, void *destroyContext);
 
+/**
+ * Call \p fn for every item in order, removing nothing.
+ * @param queue Queue instance
+ * @param fn Called once per item
+ * @param context Passed through to \p fn
+ */
+void IHS_QueueForEach(IHS_Queue *queue, IHS_QueueConsumerFunction *fn, void *context);
+
 bool IHS_QueueIsEmpty(const IHS_Queue *queue);
 
 IHS_QueueItem *IHS_QueueItemObtain(IHS_Queue *queue);

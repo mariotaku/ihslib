@@ -54,7 +54,7 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     state->lastMsgType = k_ERemoteClientBroadcastMsgDiscovery;
     state->lastMsgTime = IHS_TimerNow();
     IHS_BaseLock(&client->base);
-    client->taskHandles.streaming = IHS_TimerTaskStart(client->timers, StreamingRequestTimer, StreamingRequestCleanup,
+    client->taskHandles.streaming = IHS_TimerTaskStart(client->base.timers, StreamingRequestTimer, StreamingRequestCleanup,
                                                        0, state);
     IHS_BaseUnlock(&client->base);
     return true;

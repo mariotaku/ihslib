@@ -52,6 +52,34 @@ typedef struct {
 static uint64_t reentrant_inner_run(int runCount, void *context);
 static void reentrant_end(void *context);
 
+/**
+ * Timers no longer have a thread of their own — whoever owns one drives it. This is a miniature of
+ * what IHS_Base's worker does: sleep until the soonest deadline, then run whatever came due. It
+ * exercises IHS_TimerNextDeadline as a side effect.
+ */
+static void pump(IHS_Timer **timers, size_t count, uint64_t durationMs) {
+    uint64_t end = IHS_TimerNow() + durationMs;
+    for (;;) {
+        uint64_t now = IHS_TimerNow();
+        if (now >= end) {
+            break;
+        }
+        uint64_t wake = end;
+        for (size_t i = 0; i < count; i++) {
+            uint64_t deadline = IHS_TimerNextDeadline(timers[i]);
+            if (deadline != 0 && deadline < wake) {
+                wake = deadline;
+            }
+        }
+        if (wake > now) {
+            usleep((useconds_t) (wake - now) * 1000);
+        }
+        for (size_t i = 0; i < count; i++) {
+            IHS_TimerRunPending(timers[i]);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -69,20 +97,21 @@ int main(int argc, char *argv[]) {
     task_ctx_t timer2_ctx2 = {.timer = 2, .id = 2, .counter = 0, 7};
     IHS_TimerTaskStart(timer2, task_run, NULL, 0, &timer2_ctx2);
 
-    sleep(1);
+    IHS_Timer *timers[] = {timer1, timer2};
+    pump(timers, 2, 1000);
     IHS_TimerTaskStop(timer1_task1);
     assert(IHS_TimerTaskGetContext(timer1_task1) == &timer1_ctx1);
-    sleep(1);
+    pump(timers, 2, 1000);
 
     // Regression: IHS_TimerTaskStopImmediate previously passed `timer` instead of `task`
     // to the queue predicate, so the task was never removed and kept firing.
     task_ctx_t stopImmCtx = {.timer = 99, .id = 99, .counter = 0, .until = 0};
     IHS_TimerTask *stopImmTask = IHS_TimerTaskStart(timer1, task_run, task_end, 100, &stopImmCtx);
-    usleep(350 * 1000);
+    pump(timers, 2, 350);
     int beforeStop = stopImmCtx.counter;
     assert(beforeStop >= 2);
     IHS_TimerTaskStopImmediate(stopImmTask);
-    usleep(350 * 1000);
+    pump(timers, 2, 350);
     assert(stopImmCtx.counter == beforeStop);
 
     // Contract guard: IHS_TimerTaskStopImmediate's end callback must be safe to call
@@ -98,8 +127,28 @@ int main(int argc, char *argv[]) {
     IHS_TimerTaskStopImmediate(outer);
     assert(reentrantCtx.endFired == 1);
     // Let the inner task (started from the end callback) fire at least once.
-    usleep(150 * 1000);
+    pump(timers, 2, 150);
     assert(reentrantCtx.reentrantCounter >= 1);
+
+    // Deadline reporting is what lets an owner block exactly as long as it should.
+    IHS_Timer *timer3 = IHS_TimerCreate();
+    assert(IHS_TimerNextDeadline(timer3) == 0 && "no tasks means wait indefinitely");
+    task_ctx_t farCtx = {.timer = 3, .id = 1, .counter = 0, .until = 1};
+    IHS_TimerTask *far = IHS_TimerTaskStart(timer3, task_run, NULL, 100000, &farCtx);
+    uint64_t farDeadline = IHS_TimerNextDeadline(timer3);
+    assert(farDeadline > IHS_TimerNow());
+    task_ctx_t nearCtx = {.timer = 3, .id = 2, .counter = 0, .until = 1};
+    IHS_TimerTaskStart(timer3, task_run, NULL, 50, &nearCtx);
+    uint64_t nearDeadline = IHS_TimerNextDeadline(timer3);
+    assert(nearDeadline < farDeadline && "the soonest task sets the deadline");
+    // A task asked to stop is reaped, not waited for.
+    IHS_TimerTaskStop(far);
+    assert(IHS_TimerNextDeadline(timer3) == nearDeadline);
+    IHS_Timer *justTimer3[] = {timer3};
+    pump(justTimer3, 1, 200);
+    assert(nearCtx.counter == 1);
+    assert(IHS_TimerNextDeadline(timer3) == 0 && "everything finished, so wait indefinitely again");
+    IHS_TimerDestroy(timer3);
 
     IHS_TimerDestroy(timer1);
     IHS_TimerDestroy(timer2);

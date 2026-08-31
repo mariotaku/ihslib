@@ -39,7 +39,8 @@ void IHS_TimerInit();
 void IHS_TimerQuit();
 
 /**
- * Create tasks instance. Start timer thread if not started
+ * Create a tasks instance. Timers are driven by their owner (see IHS_TimerRunPending), not by a
+ * thread of their own.
  * @return Timers instance
  */
 IHS_Timer *IHS_TimerCreate();
@@ -64,6 +65,27 @@ void IHS_TimerTaskStop(IHS_TimerTask *task);
  * @param task Timer task to stop
  */
 void IHS_TimerTaskStopImmediate(IHS_TimerTask *task);
+
+/**
+ * Called when a task is scheduled, so an owner blocked waiting on the previous deadline can be woken
+ * to recompute it. Optional; without one, a task scheduled sooner than the current wait simply runs
+ * when that wait expires.
+ */
+typedef void (IHS_TimerWakeupFunction)(void *context);
+
+void IHS_TimerSetWakeup(IHS_Timer *timer, IHS_TimerWakeupFunction *wakeup, void *context);
+
+/**
+ * Absolute deadline (in IHS_TimerNow() units) of the task due soonest.
+ * @return 0 if no task is pending, meaning the owner may wait indefinitely
+ */
+uint64_t IHS_TimerNextDeadline(IHS_Timer *timer);
+
+/**
+ * Run every task whose deadline has passed, and reap the ones that asked to stop. Call from whatever
+ * thread owns the timer — there is no timer thread; the owner drives it.
+ */
+void IHS_TimerRunPending(IHS_Timer *timer);
 
 void *IHS_TimerTaskGetContext(IHS_TimerTask *task);
 

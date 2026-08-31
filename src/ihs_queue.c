@@ -152,6 +152,14 @@ size_t IHS_QueuePollEach(IHS_Queue *queue, IHS_QueuePredicateFunction *predicate
 }
 
 
+void IHS_QueueForEach(IHS_Queue *queue, IHS_QueueConsumerFunction *fn, void *context) {
+    assert(queue != NULL);
+    assert(fn != NULL);
+    for (QueueNode *cur = queue->head; cur != NULL; cur = cur->next) {
+        fn(ItemFromNode(cur), context);
+    }
+}
+
 bool IHS_QueueIsEmpty(const IHS_Queue *queue) {
     assert(queue != NULL);
     return queue->head == NULL;

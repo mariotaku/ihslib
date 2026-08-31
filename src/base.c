@@ -134,6 +134,12 @@ void IHS_BaseInterruptWorker(IHS_Base *base) {
         return;
     }
     base->interrupted = true;
+    IHS_UDPSocket *socket = base->socket;
+    if (socket != NULL) {
+        // Setting the flag is not enough: the worker is parked in poll() and would otherwise sit
+        // there until the peer happened to send something.
+        IHS_UDPSocketUnblock(socket);
+    }
     IHS_BaseUnlock(base);
 }
 
@@ -174,6 +180,33 @@ void IHS_BaseUnlock(IHS_Base *base) {
     IHS_MutexUnlock(base->lock);
 }
 
+/**
+ * Milliseconds the worker may block for: until the soonest task is due, or indefinitely when there
+ * is none. Clamped at 0 so an overdue task runs on the next pass rather than being skipped.
+ */
+static int BaseNextTimeout(IHS_Base *base) {
+    uint64_t deadline = IHS_TimerNextDeadline(base->timers);
+    if (deadline == 0) {
+        return -1;
+    }
+    uint64_t now = IHS_TimerNow();
+    if (deadline <= now) {
+        return 0;
+    }
+    uint64_t remaining = deadline - now;
+    // Keep it in int range; a wait this long is indistinguishable from waiting forever.
+    return remaining > INT32_MAX ? INT32_MAX : (int) remaining;
+}
+
+static void BaseWakeup(IHS_Base *base) {
+    IHS_BaseLock(base);
+    IHS_UDPSocket *socket = base->socket;
+    if (socket != NULL) {
+        IHS_UDPSocketUnblock(socket);
+    }
+    IHS_BaseUnlock(base);
+}
+
 static void BaseWorker(IHS_Base *base) {
     assert(base != NULL);
     IHS_UDPSocket *socket = IHS_UDPSocketOpen(base->broadcast);
@@ -183,18 +216,25 @@ static void BaseWorker(IHS_Base *base) {
     if (base->callbacks.run && base->callbacks.run->initialized) {
         base->callbacks.run->initialized(base, base->callbackContexts.run);
     }
+    // Scheduling a task has to wake this loop, otherwise a task due sooner than the deadline we are
+    // currently blocked on would not run until that one expires.
+    IHS_TimerSetWakeup(base->timers, (IHS_TimerWakeupFunction *) BaseWakeup, base);
     IHS_UDPPacket recv;
     IHS_BufferInit(&recv.buffer, 2048, 2048);
     while (!base->interrupted) {
-        int ret;
-        if ((ret = IHS_UDPSocketReceive(socket, &recv)) < 0) {
+        // Block until a datagram arrives, a task falls due, or someone wakes us. No polling
+        // interval: with no pending task this waits indefinitely and costs nothing.
+        int ret = IHS_UDPSocketReceive(socket, &recv, BaseNextTimeout(base));
+        if (ret < 0) {
             break;
         }
         if (ret) {
             base->callbacks.received(base, &recv.address, &recv.buffer);
         }
         IHS_BufferClear(&recv.buffer, false);
+        IHS_TimerRunPending(base->timers);
     }
+    IHS_TimerSetWakeup(base->timers, NULL, NULL);
     IHS_BufferClear(&recv.buffer, true);
     if (base->callbacks.run && base->callbacks.run->finalized) {
         base->callbacks.run->finalized(base, base->callbackContexts.run);

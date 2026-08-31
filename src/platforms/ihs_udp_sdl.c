@@ -76,9 +76,11 @@ void IHS_UDPSocketClose(IHS_UDPSocket *socket) {
     SDL_free(socket);
 }
 
-int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
+int IHS_UDPSocketReceive(IHS_UDPSocket *socket, IHS_UDPPacket *packet, int timeoutMs) {
     int ret;
-    if ((ret = SDLNet_CheckSockets(socket->sockets, -1)) <= 0) {
+    // SDLNet takes an unsigned timeout, where ~0u is its "wait forever".
+    Uint32 timeout = timeoutMs < 0 ? (Uint32) ~0u : (Uint32) timeoutMs;
+    if ((ret = SDLNet_CheckSockets(socket->sockets, timeout)) <= 0) {
         return ret;
     }
     if (SDLNet_SocketReady(socket->unblock)) {
@@ -105,7 +107,7 @@ int IHS_UDPSocketSend(IHS_UDPSocket *socket, IHS_UDPPacket *packet) {
     return SDLNet_UDP_Send(socket->socket, -1, &sdlPacket);
 }
 
-int IHS_UDPSocketUnblock(IHS_UDPSocket *socket) {
+bool IHS_UDPSocketUnblock(IHS_UDPSocket *socket) {
     SDL_assert_always(socket != NULL);
     UDPpacket sdlPacket;
     SDL_memset(&sdlPacket, 0, sizeof(UDPpacket));
@@ -114,7 +116,7 @@ int IHS_UDPSocketUnblock(IHS_UDPSocket *socket) {
     static Uint8 empty[1] = {0};
     sdlPacket.data = empty;
     sdlPacket.len = 1;
-    return SDLNet_UDP_Send(socket->unblock, -1, &sdlPacket);
+    return SDLNet_UDP_Send(socket->unblock, -1, &sdlPacket) == 1;
 }
 
 static void AddressFromSDL(IHS_SocketAddress *ihs, const IPaddress *sdl) {

@@ -39,7 +39,22 @@ IHS_UDPSocket *IHS_UDPSocketOpen(bool broadcast);
 
 void IHS_UDPSocketClose(IHS_UDPSocket *socket);
 
-int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet);
+/**
+ * Wait for a datagram, a wakeup, or the timeout — whichever comes first.
+ *
+ * @param s Socket instance
+ * @param packet Filled in when the return value is 1
+ * @param timeoutMs Milliseconds to wait; 0 to poll, negative to wait indefinitely
+ * @return 1 if \p packet was filled, 0 on timeout or on an IHS_UDPSocketUnblock wakeup, negative on
+ * a socket error
+ */
+int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet, int timeoutMs);
+
+/**
+ * Wake a thread blocked in IHS_UDPSocketReceive. Safe to call from any thread, and safe to call when
+ * nobody is waiting — the next receive then returns 0 immediately.
+ */
+bool IHS_UDPSocketUnblock(IHS_UDPSocket *s);
 
 /**
  *
@@ -49,6 +64,3 @@ int IHS_UDPSocketReceive(IHS_UDPSocket *s, IHS_UDPPacket *packet);
  */
 bool IHS_UDPSocketSend(IHS_UDPSocket *s, const IHS_UDPPacket *packet);
 
-bool IHS_UDPSocketSetBlocking(IHS_UDPSocket *s, bool blocking);
-
-bool IHS_UDPSocketSetRecvTimeout(IHS_UDPSocket *s, uint32_t timeoutUs);

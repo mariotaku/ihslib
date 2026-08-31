@@ -71,7 +71,7 @@ IHS_SessionChannel *IHS_SessionChannelDiscoveryCreate(IHS_Session *session) {
 
 void IHS_SessionChannelDiscoveryDisconnect(IHS_SessionChannel *channel) {
     DiscoveryChannel *discoveryCh = (DiscoveryChannel *) channel;
-    discoveryCh->disconnectTimerTask = IHS_TimerTaskStart(channel->session->timers, DisconnectTimerRun,
+    discoveryCh->disconnectTimerTask = IHS_TimerTaskStart(channel->session->base.timers, DisconnectTimerRun,
                                                           DisconnectTimerEnd, 0, channel);
 }
 

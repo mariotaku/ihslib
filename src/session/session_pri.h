@@ -84,7 +84,6 @@ struct IHS_Session {
     IHS_Cond *sendQueueCond;
     IHS_Mutex *sendQueueMutex;
     IHS_Queue *sendQueue;
-    IHS_Timer *timers;
     IHS_SessionRetransmission retransmission;
     IHS_HIDManager *hidManager;
     /**

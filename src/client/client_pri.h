@@ -37,7 +37,6 @@ typedef void (IHS_MessageCallback)(IHS_Client *client, const IHS_SocketAddress *
 
 struct IHS_Client {
     IHS_Base base;
-    IHS_Timer *timers;
     IHS_TimerTask *discoveryTimer;
     uint32_t discoveryInterval;
     uint32_t discoverySeq;

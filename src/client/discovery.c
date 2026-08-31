@@ -41,7 +41,7 @@ bool IHS_ClientStartDiscovery(IHS_Client *client, uint32_t interval) {
         return false;
     }
     client->discoveryInterval = interval;
-    client->discoveryTimer = IHS_TimerTaskStart(client->timers, (IHS_TimerRunFunction *) DiscoveryTimerRun,
+    client->discoveryTimer = IHS_TimerTaskStart(client->base.timers, (IHS_TimerRunFunction *) DiscoveryTimerRun,
                                                 (IHS_TimerEndFunction *) DiscoveryTimerEnd, 0, client);
     IHS_BaseUnlock(&client->base);
     return true;

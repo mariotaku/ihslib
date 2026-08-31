@@ -174,7 +174,7 @@ static bool DataStart(IHS_SessionChannel *channel) {
     PROTOBUF_C_SET_VALUE(message, threads, 1);
 
     videoCh->states.lastStatsTime = IHS_TimerNow();
-    videoCh->statsTimer = IHS_TimerTaskStart(session->timers, ReportVideoStats, NULL, 1000, videoCh);
+    videoCh->statsTimer = IHS_TimerTaskStart(session->base.timers, ReportVideoStats, NULL, 1000, videoCh);
 
     return IHS_SessionSendControlMessage(session, k_EStreamControlVideoDecoderInfo,
                                          (const ProtobufCMessage *) &message);
