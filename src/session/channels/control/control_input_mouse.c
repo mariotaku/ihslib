@@ -27,6 +27,10 @@
 #include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
+uint32_t IHS_InputTimestampNow(void) {
+    return IHS_SessionPacketTimestamp();
+}
+
 bool IHS_SessionSendMouseMotion(IHS_Session *session, uint32_t timestamp, float x, float y, int dx, int dy) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;

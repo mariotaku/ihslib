@@ -168,8 +168,8 @@ static void TestWireShape(void) {
     assert(message->input_mark == 4);
     cinput_mouse_motion_msg__free_unpacked(message, NULL);
 
-    // Input marks are still issued while streamingInput is off? No — the gate comes first, so
-    // nothing is queued and the counter does not advance.
+    // The streamingInput gate runs before the mark is taken, so a send the server has disabled
+    // neither queues a packet nor burns a mark.
     session->state.streamingInput = false;
     assert(!IHS_SessionSendMouseMotionRelative(session, 4245, 1, 1));
     assert(IHS_QueueIsEmpty(session->sendQueue));
@@ -178,6 +178,10 @@ static void TestWireShape(void) {
     message = TakeMouseMotion(session);
     assert(message->input_mark == 5);
     cinput_mouse_motion_msg__free_unpacked(message, NULL);
+
+    // The public clock helper must actually be callable and moving.
+    uint32_t t0 = IHS_InputTimestampNow();
+    assert(t0 != 0);
 
     IHS_SessionDestroy(session);
 }
