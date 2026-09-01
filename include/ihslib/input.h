@@ -92,9 +92,56 @@ typedef struct IHS_StreamInputCallbacks {
     void (*hideCursor)(IHS_Session *session, void *context);
 } IHS_StreamInputCallbacks;
 
-bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y);
+/**
+ * Round-trip measurement for one input event, recovered by matching the input mark the host echoes
+ * back in a video frame header. All durations are in 1/65536-second units, the same domain as
+ * IHS_SessionPacketTimestamp().
+ */
+typedef struct IHS_SessionInputLatency {
+    /** The mark this measurement belongs to. */
+    uint32_t inputMark;
+    /** From the timestamp the caller supplied to the moment the message was handed to the wire. */
+    uint32_t queuedToSent;
+    /** From the caller's timestamp to the arrival of the first frame reflecting the input. */
+    uint32_t roundTrip;
+    /**
+     * When the host received the input, in the *host's* clock. Not comparable against the two
+     * fields above, which are measured locally; useful only relative to other host timestamps.
+     */
+    uint32_t hostRecvTimestamp;
+} IHS_SessionInputLatency;
 
-bool IHS_SessionSendMouseMovement(IHS_Session *session, int dx, int dy);
+/**
+ * Send pointer motion carrying both an absolute position and the relative delta, as Steam's
+ * CStreamClient::SendMouseMotion @ 0x1f910c does. This is the shape a host expects whenever the
+ * client knows where the pointer is; use IHS_SessionSendMouseMotionRelative only when it does not.
+ *
+ * @param timestamp When the input occurred, in IHS_SessionPacketTimestamp() units. Pass
+ *                  IHS_SessionPacketTimestamp() if the caller has no event time of its own.
+ * @param x Horizontal position as a fraction of the host's capture rectangle — 0.0 at the left
+ *          edge, 1.0 at the right, origin top-left. Multiply by the size most recently reported to
+ *          IHS_StreamVideoCallbacks::setCaptureSize to convert to host pixels. Values slightly
+ *          outside [0,1] are permitted, as when the pointer sits over letterbox bars.
+ * @param y Vertical position, same convention, increasing downward.
+ * @param dx Horizontal movement since the previous motion message, in device units.
+ * @param dy Vertical movement since the previous motion message, in device units.
+ */
+bool IHS_SessionSendMouseMotion(IHS_Session *session, uint32_t timestamp, float x, float y, int dx, int dy);
+
+/**
+ * Send pointer motion as a delta only, leaving x_normalized/y_normalized absent from the message.
+ * Mirrors the reference's second CStreamClient::SendMouseMotion overload @ 0x1f92f0, which it uses
+ * while the pointer is captured in relative mode and no meaningful absolute position exists.
+ *
+ * @param timestamp When the input occurred, in IHS_SessionPacketTimestamp() units.
+ */
+bool IHS_SessionSendMouseMotionRelative(IHS_Session *session, uint32_t timestamp, int dx, int dy);
+
+/**
+ * Most recent input latency measurement, or false if no frame has yet echoed back a mark this
+ * session issued. Safe to call from any thread.
+ */
+bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *out);
 
 bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button);
 

@@ -27,27 +27,40 @@
 #include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
-bool IHS_SessionSendMousePosition(IHS_Session *session, float x, float y) {
+bool IHS_SessionSendMouseMotion(IHS_Session *session, uint32_t timestamp, float x, float y, int dx, int dy) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark, IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     PROTOBUF_C_SET_VALUE(message, x_normalized, x);
     PROTOBUF_C_SET_VALUE(message, y_normalized, y);
-    return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseMotion,
-                                         (const ProtobufCMessage *) &message);
-}
-
-bool IHS_SessionSendMouseMovement(IHS_Session *session, int dx, int dy) {
-    if (!IHS_SessionInputEnabled(session)) return false;
-    CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, dx, dx);
     PROTOBUF_C_SET_VALUE(message, dy, dy);
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseMotion,
                                          (const ProtobufCMessage *) &message);
 }
 
+bool IHS_SessionSendMouseMotionRelative(IHS_Session *session, uint32_t timestamp, int dx, int dy) {
+    if (!IHS_SessionInputEnabled(session)) return false;
+    CInputMouseMotionMsg message = CINPUT_MOUSE_MOTION_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark, IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
+    // x_normalized / y_normalized are deliberately left absent rather than zeroed: the second
+    // SendMouseMotion overload @ 0x1f92f0 never touches them, so the host can tell "no absolute
+    // position is known" from "the pointer is at the top-left corner".
+    PROTOBUF_C_SET_VALUE(message, dx, dx);
+    PROTOBUF_C_SET_VALUE(message, dy, dy);
+    return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseMotion,
+                                         (const ProtobufCMessage *) &message);
+}
+
+bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *out) {
+    return IHS_SessionInputMarksGetLatest(&session->inputMarks, out);
+}
+
 bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseDownMsg message = CINPUT_MOUSE_DOWN_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseDown,
                                          (const ProtobufCMessage *) &message);
@@ -56,6 +69,8 @@ bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton b
 bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseUpMsg message = CINPUT_MOUSE_UP_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseUp,
                                          (const ProtobufCMessage *) &message);
@@ -64,6 +79,8 @@ bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton but
 bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputMouseWheelMsg message = CINPUT_MOUSE_WHEEL_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     switch (direction) {
         case IHS_MOUSE_WHEEL_UP:
             message.direction = k_EStreamMouseWheelUp;

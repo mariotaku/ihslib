@@ -10,6 +10,9 @@ target_link_libraries(ihstest_disconnect_destroy PRIVATE ihs-test-session)
 ihs_add_test(activity test_activity.c)
 target_link_libraries(ihstest_activity PRIVATE ihs-test-session)
 
+ihs_add_test(input_mark test_input_mark.c)
+target_link_libraries(ihstest_input_mark PRIVATE ihs-test-session)
+
 ihs_add_test(control_hid test_control_hid.c)
 target_link_libraries(ihstest_control_hid PRIVATE ihs-test-session)
 

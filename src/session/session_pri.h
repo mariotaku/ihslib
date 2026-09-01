@@ -29,6 +29,7 @@
 #include "base.h"
 #include "packet.h"
 #include "retransmission.h"
+#include "input_mark.h"
 
 #include "channels/channel.h"
 
@@ -86,6 +87,12 @@ struct IHS_Session {
     IHS_Queue *sendQueue;
     IHS_SessionRetransmission retransmission;
     IHS_HIDManager *hidManager;
+    /**
+     * Rolling input mark counter plus the ring the host's echoed marks are matched against.
+     * Written from whatever thread sends input and read from the video channel thread, so it
+     * carries its own lock rather than borrowing the base lock off the 60 fps path.
+     */
+    IHS_SessionInputMarks inputMarks;
     /**
      * Most recent activity reported by the host. Written from the control channel thread and read
      * by IHS_SessionGetActivity from any thread, both under the base lock. `valid` stays false

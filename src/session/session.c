@@ -74,6 +74,7 @@ IHS_Session *IHS_SessionCreate(const IHS_ClientConfig *clientConfig, const IHS_S
     session->base.timers = IHS_TimerCreate();
     IHS_RetransmissionInit(&session->retransmission, session);
     session->hidManager = IHS_HIDManagerCreate();
+    IHS_SessionInputMarksInit(&session->inputMarks);
 
     // Default the negotiated-streaming flags to true; OnSetClientConfig will reflect the
     // server's actual answer once the SetStreamingClientConfig control message arrives.
@@ -115,6 +116,7 @@ void IHS_SessionDestroy(IHS_Session *session) {
         IHS_SessionChannelDestroy(session->channels[i]);
     }
     IHS_HIDManagerDestroy(session->hidManager);
+    IHS_SessionInputMarksDeinit(&session->inputMarks);
     IHS_TimerDestroy(session->base.timers);
     IHS_RetransmissionDeinit(&session->retransmission);
     IHS_CondDestroy(session->sendQueueCond);

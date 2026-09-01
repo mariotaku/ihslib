@@ -30,8 +30,9 @@
 bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputKeyDownMsg message = CINPUT_KEY_DOWN_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     message.scancode = scancode;
-    // TODO: is inputMark needed?
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputKeyDown,
                                          (const ProtobufCMessage *) &message);
 }
@@ -39,8 +40,9 @@ bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode) {
 bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputKeyUpMsg message = CINPUT_KEY_UP_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     message.scancode = scancode;
-    // TODO: is inputMark needed?
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputKeyUp,
                                          (const ProtobufCMessage *) &message);
 }
@@ -54,6 +56,8 @@ bool IHS_SessionSendText(IHS_Session *session, const char *utf8) {
         return false;
     }
     CInputTextMsg message = CINPUT_TEXT_MSG__INIT;
+    PROTOBUF_C_SET_VALUE(message, input_mark,
+                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
     message.text_utf8 = (char *) utf8;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputText,
                                          (const ProtobufCMessage *) &message);
