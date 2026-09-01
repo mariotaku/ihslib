@@ -537,11 +537,11 @@ static void HandleDeviceStartInputReports(IHS_SessionChannel *channel, IHS_HIDMa
     }
 
     IHS_HIDReportHolderSetReportLength(&managed->reportHolder, cmd->length);
-    if (IHS_HIDDeviceStartInputReports(managed->device, cmd->length) == 0) {
-        // Here we assume this managed has generated one full report, and send it right away.
-        // This design may require change later...
-        IHS_SessionHIDSendReport(channel->session);
-    }
+    // No response, and no send: case 11 of CStreamPlayer::OnRemoteHIDMessage @ 0x228a64 only starts
+    // the stream. IHS_HIDDeviceStartInputReports latches a full-report request and the provider
+    // appends the opening state, which marks the manager pending; the poll tick flushes it within
+    // one interval, batched with anything else that lands meanwhile.
+    IHS_HIDDeviceStartInputReports(managed->device, cmd->length);
 }
 
 static void HandleDeviceRequestFullReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
@@ -556,11 +556,10 @@ static void HandleDeviceRequestFullReport(IHS_SessionChannel *channel, IHS_HIDMa
         return;
     }
 
-    if (IHS_HIDDeviceRequestFullReport(managed->device) == 0) {
-        // Here we assume this device has generated one full report, and send it right away.
-        // This design may require change later...
-        IHS_SessionHIDSendReport(channel->session);
-    }
+    // Same as case 11: the reference's case 12 only calls CHIDDeviceReportGenerator::RequestFullReport
+    // @ 0x20c840 to set the latch. The latch outranks the identical-state dedup, so the report goes
+    // out on the next tick even when nothing has changed since the last send.
+    IHS_HIDDeviceRequestFullReport(managed->device);
 }
 
 static void HandleDeviceDisconnect(IHS_SessionChannel *channel, IHS_HIDManager *manager,

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "session/session_pri.h"
 #include "session/frame.h"
@@ -49,10 +50,14 @@ typedef struct IHS_QueueItem {
 
 #define READ_FILL 0xA7
 #define FEATURE_FILL 0x5C
+#define REPORT_LEN 48
 
 static size_t readBytesToProduce = 0;
 static int readReturnOverride = 0;
 static size_t featureBytesToProduce = 0;
+
+/** Stands in for the provider's view of the controller, as IHS_HIDDeviceSDL::states.current does. */
+static uint8_t deviceState[REPORT_LEN];
 
 /* ------------------------------------------------------------------ fake device */
 
@@ -107,6 +112,19 @@ static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, s
     return -1;
 }
 
+/* Mirrors DeviceStartInputReports / DeviceRequestFullReport in sdl_hid_device.c: stash the current
+ * state into the holder and return. Neither sends anything itself. */
+static int DeviceStartInputReports(IHS_HIDDevice *device, size_t length) {
+    (void) length;
+    IHS_HIDDeviceReportAddFull(device, deviceState, REPORT_LEN);
+    return 0;
+}
+
+static int DeviceRequestFullReport(IHS_HIDDevice *device) {
+    IHS_HIDDeviceReportAddFull(device, deviceState, REPORT_LEN);
+    return 0;
+}
+
 static int DeviceString(IHS_HIDDevice *device, IHS_Buffer *dest) {
     (void) device;
     IHS_BufferWriteMem(dest, 0, (const uint8_t *) "", 1);
@@ -124,6 +142,8 @@ static const IHS_HIDDeviceClass DeviceClass = {
         .getVendorString = DeviceString,
         .getProductString = DeviceString,
         .getSerialNumberString = DeviceString,
+        .startInputReports = DeviceStartInputReports,
+        .requestFullReport = DeviceRequestFullReport,
 };
 
 /* ------------------------------------------------------------------ fake provider */
@@ -168,7 +188,7 @@ static uint64_t expectedSequence = 0;
  * Take the single packet the control channel queued and unwrap it all the way back to the
  * RequestResponse: packet body is [control message type][encrypted CRemoteHIDMsg].
  */
-static CHIDMessageFromRemote__RequestResponse *TakeResponse(IHS_Session *session, CHIDMessageFromRemote **outOwner) {
+static CHIDMessageFromRemote *TakeFromRemote(IHS_Session *session) {
     IHS_QueueItem *item = IHS_QueuePoll(session->sendQueue);
     assert(item != NULL);
     QueuedPacket *queued = (QueuedPacket *) item;
@@ -192,13 +212,18 @@ static CHIDMessageFromRemote__RequestResponse *TakeResponse(IHS_Session *session
     assert(wrapped->has_data);
     CHIDMessageFromRemote *fromRemote = chidmessage_from_remote__unpack(NULL, wrapped->data.len, wrapped->data.data);
     assert(fromRemote != NULL);
-    assert(fromRemote->command_case == CHIDMESSAGE_FROM_REMOTE__COMMAND_RESPONSE);
 
     cremote_hidmsg__free_unpacked(wrapped, NULL);
     IHS_BufferClear(&plain, true);
     IHS_SessionPacketClear(&queued->packet, true);
     IHS_QueueItemFree(item);
 
+    return fromRemote;
+}
+
+static CHIDMessageFromRemote__RequestResponse *TakeResponse(IHS_Session *session, CHIDMessageFromRemote **outOwner) {
+    CHIDMessageFromRemote *fromRemote = TakeFromRemote(session);
+    assert(fromRemote->command_case == CHIDMESSAGE_FROM_REMOTE__COMMAND_RESPONSE);
     *outOwner = fromRemote;
     return fromRemote->response;
 }
@@ -234,6 +259,52 @@ static void SendGetFeatureReport(IHS_SessionChannel *channel, uint32_t deviceId,
     message.command_case = CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_GET_FEATURE_REPORT;
     message.device_get_feature_report = &get;
     IHS_SessionChannelControlOnHIDMsg(channel, &message);
+}
+
+static void SendStartInputReports(IHS_SessionChannel *channel, uint32_t deviceId, uint32_t requestId,
+                                  uint32_t length) {
+    CHIDMessageToRemote__DeviceStartInputReports start = CHIDMESSAGE_TO_REMOTE__DEVICE_START_INPUT_REPORTS__INIT;
+    PROTOBUF_C_SET_VALUE(start, device, deviceId);
+    PROTOBUF_C_SET_VALUE(start, length, length);
+    CHIDMessageToRemote message = CHIDMESSAGE_TO_REMOTE__INIT;
+    PROTOBUF_C_SET_VALUE(message, request_id, requestId);
+    message.command_case = CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_START_INPUT_REPORTS;
+    message.device_start_input_reports = &start;
+    IHS_SessionChannelControlOnHIDMsg(channel, &message);
+}
+
+static void SendRequestFullReport(IHS_SessionChannel *channel, uint32_t deviceId, uint32_t requestId) {
+    CHIDMessageToRemote__DeviceRequestFullReport full = CHIDMESSAGE_TO_REMOTE__DEVICE_REQUEST_FULL_REPORT__INIT;
+    PROTOBUF_C_SET_VALUE(full, device, deviceId);
+    CHIDMessageToRemote message = CHIDMESSAGE_TO_REMOTE__INIT;
+    PROTOBUF_C_SET_VALUE(message, request_id, requestId);
+    message.command_case = CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_REQUEST_FULL_REPORT;
+    message.device_request_full_report = &full;
+    IHS_SessionChannelControlOnHIDMsg(channel, &message);
+}
+
+/**
+ * Run the session's timers until the HID poll task has had its turn. There is no timer thread, so
+ * the test drives it exactly as IHS_Base's worker does — sleep to the deadline, then run what is due.
+ */
+static void PumpPollTick(IHS_Session *session) {
+    IHS_Timer *timers = session->base.timers;
+    uint64_t deadline = IHS_TimerNextDeadline(timers);
+    assert(deadline != 0);
+    uint64_t now = IHS_TimerNow();
+    if (deadline > now) {
+        usleep((useconds_t) (deadline - now) * 1000);
+    }
+    IHS_TimerRunPending(timers);
+}
+
+/** Unwrap one queued packet as a batch of device input reports. */
+static CHIDMessageFromRemote__DeviceInputReports *TakeReports(IHS_Session *session,
+                                                              CHIDMessageFromRemote **outOwner) {
+    CHIDMessageFromRemote *fromRemote = TakeFromRemote(session);
+    assert(fromRemote->command_case == CHIDMESSAGE_FROM_REMOTE__COMMAND_REPORTS);
+    *outOwner = fromRemote;
+    return fromRemote->reports;
 }
 
 int main(void) {
@@ -341,6 +412,55 @@ int main(void) {
     assert(response->result == -1);
     assert(!response->has_data);
     chidmessage_from_remote__free_unpacked(owner, NULL);
+    AssertQueueEmpty(session);
+
+    // ---------------------------------------------------------------- cases 11 and 12
+    //
+    // Neither sends anything from the handler. Case 11 of CStreamPlayer::OnRemoteHIDMessage starts
+    // the stream and case 12 sets the full-report latch; both leave the report to the poll tick, so
+    // however many arrive inside one interval they leave as a single message.
+
+    memset(deviceState, 0x11, sizeof(deviceState));
+    SendStartInputReports(control, deviceId, 31, REPORT_LEN);
+    // Nothing on the wire yet: no response for case 11, and no report either.
+    AssertQueueEmpty(session);
+
+    PumpPollTick(session);
+    CHIDMessageFromRemote__DeviceInputReports *reports;
+    reports = TakeReports(session, &owner);
+    assert(reports->n_device_reports == 1);
+    assert(reports->device_reports[0]->device == deviceId);
+    assert(reports->device_reports[0]->n_reports == 1);
+    assert(reports->device_reports[0]->reports[0]->has_full_report);
+    assert(reports->device_reports[0]->reports[0]->full_report.len == REPORT_LEN);
+    assert(reports->device_reports[0]->reports[0]->full_report.data[0] == 0x11);
+    chidmessage_from_remote__free_unpacked(owner, NULL);
+    AssertQueueEmpty(session);
+
+    // Two full-report requests inside one interval, with the state unchanged between them. Both
+    // must survive the identical-state dedup — the latch outranks it — and both must ride out in
+    // the same message rather than one send each.
+    SendRequestFullReport(control, deviceId, 32);
+    AssertQueueEmpty(session);
+    SendRequestFullReport(control, deviceId, 33);
+    AssertQueueEmpty(session);
+
+    PumpPollTick(session);
+    reports = TakeReports(session, &owner);
+    assert(reports->n_device_reports == 1);
+    assert(reports->device_reports[0]->n_reports == 2);
+    for (size_t i = 0; i < reports->device_reports[0]->n_reports; i++) {
+        assert(reports->device_reports[0]->reports[i]->has_full_report);
+        assert(reports->device_reports[0]->reports[i]->full_report.len == REPORT_LEN);
+    }
+    chidmessage_from_remote__free_unpacked(owner, NULL);
+    // One message for the pair, and nothing left over.
+    AssertQueueEmpty(session);
+
+    // An unknown device is ignored outright: no report, and still no response.
+    SendRequestFullReport(control, deviceId + 4242, 34);
+    AssertQueueEmpty(session);
+    PumpPollTick(session);
     AssertQueueEmpty(session);
 
     IHS_HIDManagedDeviceClose(managed);
