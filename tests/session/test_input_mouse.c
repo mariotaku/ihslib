@@ -16,8 +16,9 @@
 
 /**
  * Mouse motion coalescing: many queued events collapse into one message, and a click never overtakes
- * the motion that positioned the pointer. Messages are taken back off the session's send queue and
- * decrypted, so what is checked is what would have gone on the wire.
+ * the motion that positioned the pointer. Plus the latency test sender, which shares this file's
+ * harness. Messages are taken back off the session's send queue and decrypted, so what is checked is
+ * what would have gone on the wire.
  */
 
 #include <assert.h>
@@ -165,6 +166,32 @@ static void TestClickFlushesFirst(IHS_Session *session) {
     assert(IHS_QueueIsEmpty(session->sendQueue));
 }
 
+static void TestLatencyTest(IHS_Session *session) {
+    // Gated on streaming alone, so it still works with input disabled — SendLatencyTest @ 0x1f8a64
+    // checks IsStreaming and not BStreamingInput, unlike every other sender here.
+    session->state.streamingInput = false;
+    uint16_t mark = IHS_SessionSendLatencyTest(session, IHS_InputTimestampNow(), 0x12, 0x34, 0x56, 0xFF);
+    assert(mark != 0);
+    session->state.streamingInput = true;
+
+    IHS_Buffer plain = IHS_BUFFER_INIT(1024, 8192);
+    assert(TakeControlMessage(session, &plain) == k_EStreamControlInputLatencyTest);
+    CInputLatencyTestMsg *message = cinput_latency_test_msg__unpack(NULL, plain.size, IHS_BufferPointer(&plain));
+    assert(message != NULL);
+    // The caller gets back the mark that identifies the frame the patch will appear in.
+    assert(message->input_mark == mark);
+    // 0xAARRGGBB.
+    assert(message->has_color && message->color == 0xFF123456u);
+    cinput_latency_test_msg__free_unpacked(message, NULL);
+    IHS_BufferClear(&plain, true);
+
+    // Nothing goes out before the session is live, and no mark is burned.
+    session->state.connectionState = IHS_SessionConnectionStateConnecting;
+    assert(IHS_SessionSendLatencyTest(session, IHS_InputTimestampNow(), 0, 0, 0, 0) == 0);
+    assert(IHS_QueueIsEmpty(session->sendQueue));
+    session->state.connectionState = IHS_SessionConnectionStateConnected;
+}
+
 int main() {
     IHS_Init();
     IHS_Session *session = IHS_TestSessionCreate();
@@ -177,6 +204,7 @@ int main() {
     TestQueuedMotionCollapsesIntoOne(session);
     TestDeltasClearButPositionSticks(session);
     TestClickFlushesFirst(session);
+    TestLatencyTest(session);
 
     IHS_SessionDestroy(session);
     IHS_Quit();

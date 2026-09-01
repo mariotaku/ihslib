@@ -3,4 +3,5 @@ target_sources(ihslib PRIVATE
         control_hid.c
         control_input_kbd.c
         control_input_mouse.c
+        control_input_latency.c
         control_input_touch.c)

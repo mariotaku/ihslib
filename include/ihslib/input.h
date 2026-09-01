@@ -196,6 +196,32 @@ bool IHS_SessionFlushMouseMotion(IHS_Session *session);
 bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *out);
 
 /**
+ * Ask the host to paint a solid colour patch into the next composited frame, and return the input
+ * mark identifying that frame. Mirrors CStreamClient::SendLatencyTest @ 0x1f8a64.
+ *
+ * This is the *sending* half of an end-to-end latency measurement, and it is the only half that
+ * belongs in a streaming library: the host draws the colour, and ihslib never looks at pixels. An
+ * application that wants the full measurement keeps the returned mark, samples its own composited
+ * output (or watches the panel with hardware, as the reference does — its only caller is an Oculus
+ * DK1 Latency Tester, a photosensor taped to the screen), and times the appearance itself.
+ *
+ * A mark-based approximation needs none of that: after this call, poll IHS_SessionGetInputLatency
+ * until its inputMark equals the value returned here, and roundTrip covers this call to the arrival
+ * of the first frame reflecting it.
+ *
+ * Unlike every other sender here this is gated only on the session streaming, not on the host
+ * having enabled input — latency measurement stays meaningful with input disabled.
+ *
+ * @param timestamp When the test was triggered, in IHS_InputTimestampNow() units.
+ * @param r Red, @param g green, @param b blue, @param a alpha of the patch, packed onto the wire as
+ *          0xAARRGGBB. The reference sends an opaque colour to start a test and 0,0,0,0 to clear
+ *          the patch when one ends.
+ * @return The input mark, or 0 if the session is not streaming. A successful call never returns 0.
+ */
+uint16_t IHS_SessionSendLatencyTest(IHS_Session *session, uint32_t timestamp,
+                                    uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
+/**
  * @param timestamp When the input occurred, in IHS_InputTimestampNow() units. Pass
  *                  IHS_InputTimestampNow() if the caller has no event time of its own; passing the
  *                  time the event was actually dequeued is what makes
