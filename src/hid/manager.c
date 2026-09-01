@@ -34,13 +34,34 @@
 
 #define HID_POLL_INTERVAL_MS 8u
 
+/** OnRemoteHIDMessage @ 0x228a64 case 6: ThreadSleep(2) between attempts, 50 attempts in total. */
+#define FEATURE_REPORT_RETRY_INTERVAL_MS 2u
+#define FEATURE_REPORT_MAX_ATTEMPTS 50
+
+/** One feature report the device refused, kept until it takes it or the attempts run out. */
+typedef struct IHS_HIDFeatureReport {
+    uint32_t deviceId;
+    uint8_t *data;
+    size_t dataLen;
+    int attempts;
+} IHS_HIDFeatureReport;
+
 static uint64_t HIDPollTick(int runCount, void *context);
+
+static uint64_t FeatureReportRetryTick(int runCount, void *context);
+
+/**
+ * @return The device's return value, or 0 if the device is gone — a closed device is not a failure
+ *         worth retrying, so it ends the retry the same way success does.
+ */
+static int TrySendFeatureReport(IHS_HIDManager *manager, uint32_t deviceId, const uint8_t *data, size_t dataLen);
 
 IHS_HIDManager *IHS_HIDManagerCreate() {
     IHS_HIDManager *manager = calloc(1, sizeof(IHS_HIDManager));
     IHS_ArrayListInit(&manager->providers, sizeof(IHS_HIDProvider *));
     IHS_ArrayListInit(&manager->devices, sizeof(IHS_HIDManagedDevice *));
     IHS_ArrayListInit(&manager->inputReports, sizeof(IHS_HIDDeviceReportMessage *));
+    IHS_ArrayListInit(&manager->featureReports, sizeof(IHS_HIDFeatureReport));
     manager->devicesLock = IHS_MutexCreate();
     atomic_init(&manager->reportsPending, false);
     return manager;
@@ -50,6 +71,13 @@ void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
     if (manager->pollTimer != NULL) {
         IHS_TimerTaskStop(manager->pollTimer);
         manager->pollTimer = NULL;
+    }
+    if (manager->featureRetryTimer != NULL) {
+        IHS_TimerTaskStop(manager->featureRetryTimer);
+        manager->featureRetryTimer = NULL;
+    }
+    for (size_t i = 0, j = manager->featureReports.size; i < j; ++i) {
+        free(((IHS_HIDFeatureReport *) IHS_ArrayListGet(&manager->featureReports, i))->data);
     }
     // Defensively close anything still open. Discovery deinit normally runs CloseAll, but
     // tests / abnormal teardown paths may skip that; the second CloseAll is a no-op once
@@ -72,6 +100,7 @@ void IHS_HIDManagerDestroy(IHS_HIDManager *manager) {
     IHS_ArrayListDeinit(&manager->devices);
     IHS_ArrayListDeinit(&manager->providers);
     IHS_ArrayListDeinit(&manager->inputReports);
+    IHS_ArrayListDeinit(&manager->featureReports);
     IHS_MutexDestroy(manager->devicesLock);
     free(manager);
 }
@@ -214,6 +243,68 @@ void IHS_HIDManagerRemoveProvider(IHS_HIDManager *manager, IHS_HIDProvider *prov
 // and so the slow poll callback runs without devicesLock held.
 void IHS_HIDManagerMarkReportsPending(IHS_HIDManager *manager) {
     atomic_store(&manager->reportsPending, true);
+}
+
+void IHS_HIDManagerSendFeatureReport(IHS_HIDManager *manager, uint32_t deviceId, const uint8_t *data,
+                                     size_t dataLen) {
+    // The reference sleeps *after* a failed attempt, never before the first one, so the common case
+    // where the device takes the report costs nothing.
+    if (TrySendFeatureReport(manager, deviceId, data, dataLen) >= 0) {
+        return;
+    }
+    IHS_HIDFeatureReport pending = {
+            .deviceId = deviceId,
+            .data = malloc(dataLen),
+            .dataLen = dataLen,
+            .attempts = 1,
+    };
+    if (pending.data == NULL) {
+        return;
+    }
+    memcpy(pending.data, data, dataLen);
+    IHS_ArrayListAppend(&manager->featureReports, &pending);
+    if (manager->featureRetryTimer == NULL) {
+        manager->featureRetryTimer = IHS_TimerTaskStart(manager->session->base.timers, FeatureReportRetryTick, NULL,
+                                                        FEATURE_REPORT_RETRY_INTERVAL_MS, manager);
+    }
+}
+
+static int TrySendFeatureReport(IHS_HIDManager *manager, uint32_t deviceId, const uint8_t *data, size_t dataLen) {
+    IHS_HIDManagedDevice *managed = IHS_HIDManagerFindDeviceByID(manager, deviceId);
+    if (managed == NULL) {
+        return 0;
+    }
+    IHS_HIDDeviceLock(managed->device);
+    int result = IHS_HIDDeviceSendFeatureReport(managed->device, data, dataLen);
+    IHS_HIDDeviceUnlock(managed->device);
+    return result;
+}
+
+static uint64_t FeatureReportRetryTick(int runCount, void *context) {
+    (void) runCount;
+    IHS_HIDManager *manager = context;
+    for (size_t i = 0; i < manager->featureReports.size;) {
+        IHS_HIDFeatureReport *pending = IHS_ArrayListGet(&manager->featureReports, i);
+        int result = TrySendFeatureReport(manager, pending->deviceId, pending->data, pending->dataLen);
+        pending->attempts += 1;
+        if (result < 0 && pending->attempts < FEATURE_REPORT_MAX_ATTEMPTS) {
+            i += 1;
+            continue;
+        }
+        if (result < 0) {
+            IHS_SessionLog(manager->session, IHS_LogLevelWarn, "HID",
+                           "SendFeatureReport(id=%u) failed after %d attempts: %d", pending->deviceId,
+                           pending->attempts, result);
+        }
+        free(pending->data);
+        IHS_ArrayListRemove(&manager->featureReports, i);
+    }
+    if (manager->featureReports.size == 0) {
+        // Returning 0 ends the task; clear the handle first so the next failure starts a new one.
+        manager->featureRetryTimer = NULL;
+        return 0;
+    }
+    return FEATURE_REPORT_RETRY_INTERVAL_MS;
 }
 
 static uint64_t HIDPollTick(int runCount, void *context) {

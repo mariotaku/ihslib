@@ -68,6 +68,13 @@ typedef enum IHS_HIDDeviceCaps {
 } IHS_HIDDeviceCaps;
 #pragma clang diagnostic pop
 
+/**
+ * The bits UpdateHIDDeviceInfo @ 0x21d58c ORs into whatever the enumerator reported (`orr r3,#0x3f0`
+ * @ 0x21da94), for every device it announces. A provider does not need to report them.
+ */
+#define IHS_HID_CAPS_ALWAYS (IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS | \
+                             IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE)
+
 typedef struct IHS_HIDDeviceInfo {
     /** Platform-specific device path */
     const char *path;
@@ -78,6 +85,14 @@ typedef struct IHS_HIDDeviceInfo {
     /** Device Product ID */
     uint16_t product_id;
     uint16_t product_version;
+    /**
+     * What this device can actually do, as a mask of IHS_HIDDeviceCaps. IHS_HID_CAPS_ALWAYS is
+     * added on top before the device is announced, so a provider only reports what it knows; 0 is
+     * valid and means "nothing beyond the always-set bits", which is what the reference sends for a
+     * plain joystick (CHIDDeviceListSDL @ 0x1551bc leaves the base at 0 unless SDL recognises the
+     * device as a game controller).
+     */
+    uint32_t caps;
 } IHS_HIDDeviceInfo;
 
 typedef struct IHS_HIDDeviceClass IHS_HIDDeviceClass;

@@ -105,11 +105,21 @@ static int DeviceGetFeatureReport(IHS_HIDDevice *device, const uint8_t *reportNu
     return (int) produce;
 }
 
+/** How many more times the device will refuse a feature report before accepting one. */
+static int featureReportFailuresLeft = 0;
+static int featureReportAttempts = 0;
+static uint8_t featureReportSeen[8];
+
 static int DeviceSendFeatureReport(IHS_HIDDevice *device, const uint8_t *data, size_t dataLen) {
     (void) device;
-    (void) data;
-    (void) dataLen;
-    return -1;
+    featureReportAttempts++;
+    if (featureReportFailuresLeft > 0) {
+        featureReportFailuresLeft--;
+        return -1;
+    }
+    size_t copy = dataLen < sizeof(featureReportSeen) ? dataLen : sizeof(featureReportSeen);
+    memcpy(featureReportSeen, data, copy);
+    return (int) dataLen;
 }
 
 /* Mirrors DeviceStartInputReports / DeviceRequestFullReport in sdl_hid_device.c: stash the current
@@ -233,6 +243,20 @@ static void AssertQueueEmpty(IHS_Session *session) {
 }
 
 /* ------------------------------------------------------------------ cases */
+
+static void SendFeatureReport(IHS_SessionChannel *channel, uint32_t deviceId, uint32_t requestId,
+                              const uint8_t *data, size_t dataLen) {
+    CHIDMessageToRemote__DeviceSendFeatureReport send = CHIDMESSAGE_TO_REMOTE__DEVICE_SEND_FEATURE_REPORT__INIT;
+    PROTOBUF_C_SET_VALUE(send, device, deviceId);
+    send.has_data = true;
+    send.data.data = (uint8_t *) data;
+    send.data.len = dataLen;
+    CHIDMessageToRemote message = CHIDMESSAGE_TO_REMOTE__INIT;
+    PROTOBUF_C_SET_VALUE(message, request_id, requestId);
+    message.command_case = CHIDMESSAGE_TO_REMOTE__COMMAND_DEVICE_SEND_FEATURE_REPORT;
+    message.device_send_feature_report = &send;
+    IHS_SessionChannelControlOnHIDMsg(channel, &message);
+}
 
 static void SendRead(IHS_SessionChannel *channel, uint32_t deviceId, uint32_t requestId, uint32_t length) {
     CHIDMessageToRemote__DeviceRead read = CHIDMESSAGE_TO_REMOTE__DEVICE_READ__INIT;
@@ -464,6 +488,54 @@ int main(void) {
     AssertQueueEmpty(session);
     PumpPollTick(session);
     AssertQueueEmpty(session);
+
+    // ---------------------------------------------------------------- case 6: send_feature_report
+    //
+    // A device that refuses the report gets retried until it takes it, and the handler returns
+    // straight away rather than sleeping through the retries. No response is ever sent, success or
+    // failure, matching the reference.
+
+    static const uint8_t featureData[] = {0x0F, 0xAA, 0xBB, 0xCC};
+
+    // Taken on the first attempt: no retry, nothing queued.
+    featureReportFailuresLeft = 0;
+    featureReportAttempts = 0;
+    SendFeatureReport(control, deviceId, 41, featureData, sizeof(featureData));
+    assert(featureReportAttempts == 1);
+    assert(memcmp(featureReportSeen, featureData, sizeof(featureData)) == 0);
+    AssertQueueEmpty(session);
+
+    // Refused three times, then accepted. The handler returns after the first attempt; the rest
+    // happen on the timer, so the device sees four attempts in total and the payload survives the
+    // wait (the caller's buffer is long gone by then).
+    featureReportFailuresLeft = 3;
+    featureReportAttempts = 0;
+    memset(featureReportSeen, 0, sizeof(featureReportSeen));
+    SendFeatureReport(control, deviceId, 42, featureData, sizeof(featureData));
+    assert(featureReportAttempts == 1);
+    for (int i = 0; i < 8 && featureReportAttempts < 4; i++) {
+        PumpPollTick(session);
+    }
+    assert(featureReportAttempts == 4);
+    assert(memcmp(featureReportSeen, featureData, sizeof(featureData)) == 0);
+    AssertQueueEmpty(session);
+
+    // Refused forever: the retry gives up after 50 attempts and stops, rather than running for the
+    // life of the session.
+    featureReportFailuresLeft = 1000;
+    featureReportAttempts = 0;
+    SendFeatureReport(control, deviceId, 43, featureData, sizeof(featureData));
+    for (int i = 0; i < 200 && featureReportAttempts < 50; i++) {
+        PumpPollTick(session);
+    }
+    assert(featureReportAttempts == 50);
+    // Nothing more is attempted once the budget is spent.
+    for (int i = 0; i < 4; i++) {
+        PumpPollTick(session);
+    }
+    assert(featureReportAttempts == 50);
+    AssertQueueEmpty(session);
+    featureReportFailuresLeft = 0;
 
     IHS_HIDManagedDeviceClose(managed);
     IHS_HIDManagerRemoveProvider(session->hidManager, provider);

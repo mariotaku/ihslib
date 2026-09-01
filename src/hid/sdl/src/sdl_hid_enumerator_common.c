@@ -26,7 +26,23 @@
 #include "sdl_hid_enumerators.h"
 
 
+/**
+ * Everything this provider enumerates is an SDL_GameController — SDL's own mapping guarantees the
+ * face buttons, d-pad and both sticks — so it reports the same superset for every device, which is
+ * what ihslib announced unconditionally before providers could speak for themselves. The four bits
+ * above the gamepad basics are the ones the reference sets for HIDAPI-backed and PS4/PS5 pads
+ * (CHIDDeviceListSDL @ 0x1551bc); they are kept here because dropping them would change what the
+ * host is told about existing devices, which is a separate question from this plumbing.
+ */
+#define SDL_GAMEPAD_CAPS (IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK | \
+                          IHS_HID_CAP_MISC_1 | IHS_HID_CAP_XINPUT_OR_HIDAPI | IHS_HID_CAP_UNK_3 | \
+                          IHS_HID_CAP_UNK_4 | IHS_HID_CAPS_ALWAYS)
+
 bool IHS_HIDDeviceSDLEnumerationGetInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info) {
     const IHS_HIDDeviceSDLEnumerationClass *cls = (const IHS_HIDDeviceSDLEnumerationClass *) enumeration->cls;
-    return cls->getInfo(enumeration, info);
+    if (!cls->getInfo(enumeration, info)) {
+        return false;
+    }
+    info->caps = SDL_GAMEPAD_CAPS;
+    return true;
 }

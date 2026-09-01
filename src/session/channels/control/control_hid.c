@@ -35,7 +35,6 @@
 #include "ihs_enumeration.h"
 
 #include <stdlib.h>
-#include <unistd.h>
 
 /**
  * Ceiling on a host-requested read / feature-report length. The reference puts the buffer on the
@@ -383,20 +382,12 @@ static void HandleDeviceSendFeatureReport(IHS_SessionChannel *channel, IHS_HIDMa
                        message->request_id, cmd->device);
         return;
     }
-    // Mirrors Steam's case 6 in CStreamPlayer::OnRemoteHIDMessage (0x228a64):
-    // retry up to 50 times with 2 ms between attempts. Protects force-feedback /
-    // LED commands from transient HID write failures (busy device, USB hiccup).
-    int ret = -1;
-    for (int attempt = 0; attempt < 50; attempt++) {
-        ret = IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
-        if (ret >= 0) break;
-        usleep(2000);
-    }
-    if (ret < 0) {
-        IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID",
-                       "Message %u: SendFeatureReport(id=%u) failed after 50 attempts: %d",
-                       message->request_id, cmd->device, ret);
-    }
+    // Retried 50 times 2 ms apart, as case 6 of OnRemoteHIDMessage @ 0x228a64 does, to protect
+    // force-feedback and LED commands from a transient refusal by a busy device. The reference
+    // spends that ~100 ms asleep on the thread that receives every stream packet; this one hands
+    // the retry to the manager's timer instead, because ihslib's equivalent thread also drives the
+    // video, audio and HID poll timers.
+    IHS_HIDManagerSendFeatureReport(manager, cmd->device, cmd->data.data, cmd->data.len);
 }
 
 static void HandleDeviceGetFeatureReport(IHS_SessionChannel *channel, IHS_HIDManager *manager,
@@ -608,10 +599,8 @@ static void InfoFromHID(CHIDDeviceInfo *info, const IHS_HIDDeviceInfo *hid) {
     PROTOBUF_C_P_SET_VALUE(info, is_generic_gamepad, true);
     PROTOBUF_C_P_SET_VALUE(info, ostype, IHS_SteamOSTypeLinux);
 
-    // Expect 0x8043ff
-    IHS_HIDDeviceCaps capsBits = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_LSTICK | IHS_HID_CAP_RSTICK |
-                                 IHS_HID_CAP_STICKBTNS | IHS_HID_CAP_SHOULDERS | IHS_HID_CAP_TRIGGERS |
-                                 IHS_HID_CAP_BACK | IHS_HID_CAP_START | IHS_HID_CAP_GUIDE | IHS_HID_CAP_MISC_1 |
-                                 IHS_HID_CAP_XINPUT_OR_HIDAPI | IHS_HID_CAP_UNK_3 | IHS_HID_CAP_UNK_4;
-    PROTOBUF_C_P_SET_VALUE(info, caps_bits, capsBits);
+    // UpdateHIDDeviceInfo @ 0x21d58c takes whatever the enumerator reported and ORs in a fixed set
+    // (0x3f0 @ 0x21da94) — it never masks anything off. Reporting the device's own bits is the
+    // provider's job, so one that knows less than the SDL provider can say so.
+    PROTOBUF_C_P_SET_VALUE(info, caps_bits, hid->caps | IHS_HID_CAPS_ALWAYS);
 }

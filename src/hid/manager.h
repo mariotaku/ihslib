@@ -65,6 +65,19 @@ struct IHS_HIDManager {
      * IHS_HIDManagerDestroy.
      */
     IHS_TimerTask *pollTimer;
+    /**
+     * Feature reports the device refused, waiting to be retried. The reference retries a failing
+     * send_feature_report 50 times 2 ms apart (OnRemoteHIDMessage @ 0x228a64 case 6) — but it does
+     * so with a blocking sleep on its socket receive thread, and ihslib's equivalent thread also
+     * drives every timer, so sleeping there would stall the whole session for up to 100 ms.
+     * The retries are queued here and driven by `featureRetryTimer` instead.
+     *
+     * Only touched by the control message handler and by that timer, both of which run on the
+     * session's worker thread, so no lock of its own.
+     */
+    IHS_ArrayList featureReports;
+    /** Runs while `featureReports` is non-empty, then ends itself. */
+    IHS_TimerTask *featureRetryTimer;
 };
 
 struct IHS_HIDManagedDevice {
@@ -93,6 +106,17 @@ typedef int(*IHS_HIDDeviceComparator)(const void *value, const IHS_HIDDevice **d
  * Flag that a report is waiting to be flushed by the next poll tick.
  */
 void IHS_HIDManagerMarkReportsPending(IHS_HIDManager *manager);
+
+/**
+ * Send a feature report, retrying if the device refuses it. Mirrors the retry the reference wraps
+ * around this one call (50 attempts, 2 ms apart, until the device returns >= 0), except that the
+ * waiting happens on a timer rather than by sleeping in the caller.
+ *
+ * Returns as soon as the first attempt is made. Nothing is reported back to the host either way —
+ * the reference sends no response for this command, success or failure.
+ */
+void IHS_HIDManagerSendFeatureReport(IHS_HIDManager *manager, uint32_t deviceId, const uint8_t *data,
+                                     size_t dataLen);
 
 IHS_HIDManager *IHS_HIDManagerCreate();
 
