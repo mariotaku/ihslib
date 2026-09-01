@@ -305,11 +305,23 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
 
 static void AddPartialFrame(IHS_SessionChannelVideo *channel, uint16_t frameId, uint32_t timestamp,
                             const IHS_VideoFrameHeader *header, IHS_Buffer *data) {
-    // Find reset matching cur frame
+    // Find the first pending fragment this one must be placed before.
     IHS_VideoPartialFrame *cur = NULL;
-    IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
-        if (frameId == cur->frameId && header->subFrameEnd < cur->header.subFrameStart) {
-            break;
+    IHS_VideoPartialFrame *tail = channel->frame.partial.tail;
+    // Fast path for in-order arrival, which is the overwhelmingly common case and used to walk the
+    // whole list to conclude nothing matched. Insertions only ever place a node before the first
+    // same-frame node with a larger subFrameStart, so within a frame the list stays ascending and
+    // the tail holds that frame's largest subFrameStart. If the predicate fails against the tail it
+    // fails against every earlier node of the same frame too, so appending is provably identical to
+    // the scan. Only when the tail belongs to a different frame can an older frame's group still be
+    // pending further up, and then the full walk is still needed.
+    if (tail != NULL && frameId == tail->frameId && header->subFrameEnd >= tail->header.subFrameStart) {
+        cur = NULL;
+    } else {
+        IHS_VideoPartialFramesForEach (cur, &channel->frame.partial) {
+            if (frameId == cur->frameId && header->subFrameEnd < cur->header.subFrameStart) {
+                break;
+            }
         }
     }
     IHS_VideoPartialFrame *inserted;

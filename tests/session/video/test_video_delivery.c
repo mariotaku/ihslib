@@ -195,6 +195,55 @@ static void test_out_of_order_fragments(void) {
  * A gap in the sequence numbers means a lost frame: request a keyframe, and drop everything until
  * one arrives rather than feeding the decoder a hole.
  */
+/**
+ * Every arrival order of a four-fragment frame must assemble to the same bytes. AddPartialFrame
+ * takes a fast path when the new fragment belongs to the same frame as the list tail and sorts
+ * after it, skipping the list walk; this pins that the shortcut agrees with the walk for all 24
+ * permutations rather than just the in-order one.
+ */
+static void test_fragment_permutations_assemble_identically(void) {
+    static const uint8_t payloads[4][2] = {{0x11, 0x12},
+                                           {0x21, 0x22},
+                                           {0x31, 0x32},
+                                           {0x41, 0x42}};
+    uint8_t expected[8];
+    for (int i = 0; i < 4; i++) {
+        memcpy(&expected[i * 2], payloads[i], 2);
+    }
+
+    int order[4] = {0, 1, 2, 3};
+    for (int a = 0; a < 4; a++) {
+        for (int b = 0; b < 4; b++) {
+            if (b == a) continue;
+            for (int c = 0; c < 4; c++) {
+                if (c == a || c == b) continue;
+                int d = 6 - a - b - c;
+                order[0] = a;
+                order[1] = b;
+                order[2] = c;
+                order[3] = d;
+
+                Reset();
+                for (int i = 0; i < 4; i++) {
+                    int fragment = order[i];
+                    uint8_t flags = VideoFrameFlagSubFrameAdvance;
+                    // The first packet to arrive carries the keyframe flag, so the channel is not
+                    // sitting in waitingKeyFrame; the last fragment of the frame closes it.
+                    if (i == 0) flags |= VideoFrameFlagKeyFrame;
+                    if (fragment == 3) flags |= VideoFrameFlagFrameFinish;
+                    Feed(7, 1000, (uint16_t) i, flags, (uint16_t) (fragment * 10),
+                         (uint16_t) (fragment * 10 + 9), payloads[fragment], 2);
+                }
+
+                assert(submittedCount == 1);
+                assert(submitted[0].len == sizeof(expected));
+                assert(memcmp(submitted[0].data, expected, sizeof(expected)) == 0);
+                assert(TakeKeyframeRequests() == 0);
+            }
+        }
+    }
+}
+
 static void test_packet_loss_requests_keyframe(void) {
     Reset();
     const uint8_t payload[] = {0x55, 0x66};
@@ -320,6 +369,7 @@ int main(void) {
     SetUp();
     test_single_frame();
     test_out_of_order_fragments();
+    test_fragment_permutations_assemble_identically();
     test_packet_loss_requests_keyframe();
     test_jitter_stall_requests_keyframe();
     test_frame_finished_without_advance_does_not_stall_next();
