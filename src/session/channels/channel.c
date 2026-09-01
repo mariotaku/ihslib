@@ -208,8 +208,18 @@ void IHS_SessionChannelPacketAck(IHS_SessionChannel *channel, int32_t packetId, 
 
 static bool SessionChannelQueueFramePackets(IHS_SessionChannel *channel, IHS_SessionFrame *frame, size_t bodyLimit,
                                             bool enableRetransmit) {
-    int fragmentSize = (int) (frame->body.size / bodyLimit + 1);
-    assert(fragmentSize <= INT16_MAX);
+    /*
+     * The head packet advertises how many packets FOLLOW it, not how many there are in total.
+     * Steam's CStreamPacket::AddToOutgoingPacketWindow @ 0x25a068 sets it to
+     * ceil(payload / maxPayload) - 1 and numbers the followers from 0; both reassemblers — ours in
+     * IHS_SessionPacketsWindowPoll and Steam's PopHeadOfPacketWindow @ 0x25a344 — then consume
+     * fragmentId + 1 packets. The old expression (size / bodyLimit + 1) over-counted by two on a
+     * clean multiple and by one otherwise, leaving the peer waiting on fragments never sent.
+     */
+    size_t totalPackets = (frame->body.size + bodyLimit - 1) / bodyLimit;
+    assert(totalPackets >= 1);
+    assert(totalPackets - 1 <= INT16_MAX);
+    int fragmentSize = (int) (totalPackets - 1);
     int16_t fragmentId = -1;
     while (frame->body.size != 0) {
         size_t packetBodySize = frame->body.size > bodyLimit ? bodyLimit : frame->body.size;
@@ -220,6 +230,13 @@ static bool SessionChannelQueueFramePackets(IHS_SessionChannel *channel, IHS_Ses
         } else {
             packet.header.fragmentId = fragmentId;
             packet.header.type = FragmentedPacketType(packet.header.type);
+            /*
+             * Followers need their own consecutive ids. The receiving window is indexed by packetId
+             * (ours in IHS_SessionPacketsWindowAdd, Steam's in AccessPacket @ 0x25a344, which walks
+             * head + 1 ... head + fragmentCount), so reusing the head's id lands every fragment in
+             * the same slot and all but the first are discarded as duplicates.
+             */
+            packet.header.packetId = IHS_SessionChannelNextPacketId(channel);
         }
         IHS_SessionPacketBodyInitialize(&packet.body, packet.header.hasCrc);
         IHS_BufferAppendMem(&packet.body, IHS_BufferPointer(&frame->body), packetBodySize);

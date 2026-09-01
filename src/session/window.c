@@ -108,20 +108,46 @@ bool IHS_SessionPacketsWindowAdd(IHS_SessionPacketsWindow *window, IHS_SessionPa
 }
 
 bool IHS_SessionPacketsWindowPoll(IHS_SessionPacketsWindow *window, IHS_SessionFrame *frame) {
-    uint16_t size = IHS_SessionPacketsWindowSize(window);
-    if (size == 0) {
-        return false;
-    }
-    assert(window->head.pos >= 0);
-    IHS_SessionWindowItem *head = &window->data[window->head.pos % window->capacity];
+    uint16_t size;
+    IHS_SessionWindowItem *head;
+    int packetsCount;
+    /*
+     * Loops only to skip malformed heads. Every iteration either returns or consumes one slot, so
+     * it is bounded by the window size.
+     */
+    for (;;) {
+        size = IHS_SessionPacketsWindowSize(window);
+        if (size == 0) {
+            return false;
+        }
+        assert(window->head.pos >= 0);
+        head = &window->data[window->head.pos % window->capacity];
 
-    /* Must start from packet head */
-    if (!FrameItemIsHead(head)) {
-        return false;
+        /* Must start from packet head */
+        if (!FrameItemIsHead(head)) {
+            return false;
+        }
+
+        /*
+         * fragmentId is signed and comes straight off the wire with no validation, so a corrupt or
+         * hostile datagram can make this zero or negative. Both are fatal if trusted: a count of 0
+         * leaves head.pos where it is while still reporting a frame, which spins the data thread
+         * forever, and a negative count drives head.pos below zero into an out-of-bounds index.
+         * Drop the head and carry on; the channel notices the gap through its own sequence check
+         * and asks for a keyframe.
+         */
+        packetsCount = 1 + head->header.fragmentId;
+        if (packetsCount > 0) {
+            break;
+        }
+        FrameItemRecycle(head);
+        window->head.pos = window->head.pos + 1;
+        if (window->head.pos > window->capacity) {
+            window->head.pos = window->head.pos % window->capacity;
+        }
     }
 
     /* Must have size enough for all fragments */
-    int packetsCount = 1 + head->header.fragmentId;
     if (size < packetsCount) {
         return false;
     }
