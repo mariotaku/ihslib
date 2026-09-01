@@ -36,6 +36,16 @@ typedef struct IHS_SessionDataFrameHeader {
     uint32_t timestamp;
     uint16_t inputMark;
     uint32_t inputRecvTimestamp;
+    /*
+     * Not on the wire — filled in by ReceivedFrame for the frame statistics, which need the send
+     * and receive instants RecordFrameReceived @ 0x1faac4 records as events 12 and 13, plus the
+     * input mark ring entry it resolves through FinishInputMark @ 0x1fb364 (events 0 and 1).
+     */
+    uint32_t sendTimestamp;
+    uint32_t recvTimestamp;
+    bool hasInputMark;
+    uint32_t inputEventTimestamp;
+    uint32_t inputSendTimestamp;
 } IHS_SessionDataFrameHeader;
 
 typedef struct IHS_SessionChannelData {

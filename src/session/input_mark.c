@@ -60,7 +60,7 @@ uint16_t IHS_SessionInputMarkNext(IHS_SessionInputMarks *marks, uint32_t eventTi
 }
 
 bool IHS_SessionInputMarkFinish(IHS_SessionInputMarks *marks, uint16_t mark, uint32_t hostRecvTimestamp,
-                                uint32_t now) {
+                                uint32_t now, IHS_SessionInputMarkEntry *out) {
     if (mark == 0) {
         return false;
     }
@@ -77,6 +77,9 @@ bool IHS_SessionInputMarkFinish(IHS_SessionInputMarks *marks, uint16_t mark, uin
     marks->latest.roundTrip = now - entry->eventTimestamp;
     marks->latest.hostRecvTimestamp = hostRecvTimestamp;
     marks->hasLatest = true;
+    if (out != NULL) {
+        *out = *entry;
+    }
     IHS_MutexUnlock(marks->lock);
     return true;
 }

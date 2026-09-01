@@ -86,26 +86,32 @@ static void TestRing(void) {
     assert(IHS_SessionInputMarkNext(&marks, 200) == 2);
 
     // A frame carrying mark 0 reflects no input and must not resolve to anything.
-    assert(!IHS_SessionInputMarkFinish(&marks, 0, 0, 500));
+    IHS_SessionInputMarkEntry entry = {.mark = 0xFFFF};
+    assert(!IHS_SessionInputMarkFinish(&marks, 0, 0, 500, &entry));
+    // A rejected mark must leave the caller's entry untouched.
+    assert(entry.mark == 0xFFFF);
     assert(!IHS_SessionInputMarksGetLatest(&marks, &latency));
 
     // Mark 1 was created with event time 100. Round trip is measured from that, not from the send.
-    assert(IHS_SessionInputMarkFinish(&marks, 1, 7777, 900));
+    assert(IHS_SessionInputMarkFinish(&marks, 1, 7777, 900, &entry));
+    // The matched entry comes back for the frame statistics: events 0 and 1.
+    assert(entry.mark == 1);
+    assert(entry.eventTimestamp == 100);
     assert(IHS_SessionInputMarksGetLatest(&marks, &latency));
     assert(latency.inputMark == 1);
     assert(latency.roundTrip == 900 - 100);
     assert(latency.hostRecvTimestamp == 7777);
 
     // A mark that was never issued must not match a stale or zeroed slot.
-    assert(!IHS_SessionInputMarkFinish(&marks, 3, 0, 1000));
+    assert(!IHS_SessionInputMarkFinish(&marks, 3, 0, 1000, NULL));
 
     // Filling the ring evicts the oldest marks: the slot for mark 1 is reused by mark 1025.
     for (int i = 0; i < IHS_INPUT_MARK_RING_SIZE; i++) {
         IHS_SessionInputMarkNext(&marks, 0);
     }
-    assert(!IHS_SessionInputMarkFinish(&marks, 1, 0, 2000));
+    assert(!IHS_SessionInputMarkFinish(&marks, 1, 0, 2000, NULL));
     // ...and the mark that replaced it still resolves.
-    assert(IHS_SessionInputMarkFinish(&marks, 1 + IHS_INPUT_MARK_RING_SIZE, 0, 2000));
+    assert(IHS_SessionInputMarkFinish(&marks, 1 + IHS_INPUT_MARK_RING_SIZE, 0, 2000, NULL));
 
     IHS_SessionInputMarksDeinit(&marks);
 }

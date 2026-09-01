@@ -175,10 +175,15 @@ static void ReceivedFrame(IHS_SessionChannelData *channel, IHS_SessionFrame *fra
         hasHeader = true;
         size_t offset = IHS_SessionChannelDataFrameHeaderParse(&header, &frame->body);
         IHS_BufferOffsetBy(&frame->body, (int) offset);
+        header.sendTimestamp = frame->header.sendTimestamp;
+        header.recvTimestamp = IHS_SessionPacketTimestamp();
         // Close the loop on the input mark the host echoed back, as FinishInputMark @ 0x1fb364
         // does. A frame that reflects no input carries mark 0 and is ignored.
-        IHS_SessionInputMarkFinish(&channel->base.session->inputMarks, header.inputMark,
-                                   header.inputRecvTimestamp, IHS_SessionPacketTimestamp());
+        IHS_SessionInputMarkEntry inputMark;
+        header.hasInputMark = IHS_SessionInputMarkFinish(&channel->base.session->inputMarks, header.inputMark,
+                                                         header.inputRecvTimestamp, header.recvTimestamp, &inputMark);
+        header.inputEventTimestamp = header.hasInputMark ? inputMark.eventTimestamp : 0;
+        header.inputSendTimestamp = header.hasInputMark ? inputMark.sendTimestamp : 0;
     }
     const IHS_SessionChannelDataClass *cls = (const IHS_SessionChannelDataClass *) channel->base.cls;
     cls->dataFrame((IHS_SessionChannel *) channel, hasHeader ? &header : NULL, &frame->body);

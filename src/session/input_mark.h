@@ -80,9 +80,11 @@ uint16_t IHS_SessionInputMarkNext(IHS_SessionInputMarks *marks, uint32_t eventTi
  *
  * @param mark The inputMark from the frame header. 0 means the frame reflects no input.
  * @param hostRecvTimestamp The frame header's inputRecvTimestamp, in the *host's* clock.
+ * @param out Receives the matched ring entry, so a caller can record the input events the frame
+ *            statistics need. May be NULL. Untouched when the call returns false.
  * @return false if the mark is 0 or has already been evicted from the ring.
  */
 bool IHS_SessionInputMarkFinish(IHS_SessionInputMarks *marks, uint16_t mark, uint32_t hostRecvTimestamp,
-                                uint32_t now);
+                                uint32_t now, IHS_SessionInputMarkEntry *out);
 
 bool IHS_SessionInputMarksGetLatest(IHS_SessionInputMarks *marks, IHS_SessionInputLatency *out);

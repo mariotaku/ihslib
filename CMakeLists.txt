@@ -45,6 +45,12 @@ target_include_directories(ihslib PUBLIC include PRIVATE src ${CMAKE_CURRENT_BIN
 add_subdirectory(src/protobuf)
 target_link_libraries(ihslib PRIVATE ihs-protobuf)
 
+# Frame statistics take a square root for the standard deviation the host expects.
+find_library(IHSLIB_LIBM m)
+if (IHSLIB_LIBM)
+    target_link_libraries(ihslib PRIVATE ${IHSLIB_LIBM})
+endif ()
+
 add_subdirectory(src/platforms)
 target_include_directories(ihs-platforms PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(ihslib PRIVATE ihs-platforms)
