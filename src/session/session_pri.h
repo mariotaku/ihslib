@@ -94,6 +94,22 @@ struct IHS_Session {
      */
     IHS_SessionInputMarks inputMarks;
     /**
+     * Pending coalesced pointer motion, mirroring the per-source slot CStreamPlayer keeps at
+     * +0x920 and folds together in QueueMouseMotion @ 0x22d120. Absolute position overwrites,
+     * relative movement accumulates, and the whole thing goes out as one message on flush.
+     * The reference has two slots (mouse and touch); ihslib has no such split, so one is enough.
+     */
+    struct {
+        IHS_Mutex *lock;
+        bool pending;
+        /** True once an absolute position has been queued; x/y stay sticky across flushes. */
+        bool hasPosition;
+        float x;
+        float y;
+        int dx;
+        int dy;
+    } mouseMotion;
+    /**
      * Most recent activity reported by the host. Written from the control channel thread and read
      * by IHS_SessionGetActivity from any thread, both under the base lock. `valid` stays false
      * until the host reports one.

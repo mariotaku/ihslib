@@ -56,12 +56,60 @@ bool IHS_SessionSendMouseMotionRelative(IHS_Session *session, uint32_t timestamp
                                          (const ProtobufCMessage *) &message);
 }
 
+void IHS_SessionQueueMouseMotion(IHS_Session *session, float x, float y, int dx, int dy) {
+    IHS_MutexLock(session->mouseMotion.lock);
+    // QueueMouseMotion @ 0x22d120: the position overwrites, the movement adds up.
+    session->mouseMotion.pending = true;
+    session->mouseMotion.hasPosition = true;
+    session->mouseMotion.x = x;
+    session->mouseMotion.y = y;
+    session->mouseMotion.dx += dx;
+    session->mouseMotion.dy += dy;
+    IHS_MutexUnlock(session->mouseMotion.lock);
+}
+
+void IHS_SessionQueueMouseMotionRelative(IHS_Session *session, int dx, int dy) {
+    IHS_MutexLock(session->mouseMotion.lock);
+    session->mouseMotion.pending = true;
+    session->mouseMotion.dx += dx;
+    session->mouseMotion.dy += dy;
+    IHS_MutexUnlock(session->mouseMotion.lock);
+}
+
+bool IHS_SessionFlushMouseMotion(IHS_Session *session) {
+    IHS_MutexLock(session->mouseMotion.lock);
+    bool pending = session->mouseMotion.pending;
+    bool hasPosition = session->mouseMotion.hasPosition;
+    float x = session->mouseMotion.x, y = session->mouseMotion.y;
+    int dx = session->mouseMotion.dx, dy = session->mouseMotion.dy;
+    // ClearQueuedMouseMotion @ 0x22d09c clears the pending flag and the deltas, and leaves the
+    // position behind so the next relative-only queue still knows where the pointer is.
+    session->mouseMotion.pending = false;
+    session->mouseMotion.dx = 0;
+    session->mouseMotion.dy = 0;
+    IHS_MutexUnlock(session->mouseMotion.lock);
+
+    if (!pending) {
+        return false;
+    }
+    // The mark is stamped now, not when the motion was queued — the reference hands
+    // CreateInputMark the flush timestamp it took a few lines earlier (0x22d1c4).
+    uint32_t timestamp = IHS_SessionPacketTimestamp();
+    if (hasPosition) {
+        return IHS_SessionSendMouseMotion(session, timestamp, x, y, dx, dy);
+    }
+    return IHS_SessionSendMouseMotionRelative(session, timestamp, dx, dy);
+}
+
 bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *out) {
     return IHS_SessionInputMarksGetLatest(&session->inputMarks, out);
 }
 
 bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
+    // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
+    IHS_SessionFlushMouseMotion(session);
     CInputMouseDownMsg message = CINPUT_MOUSE_DOWN_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
                          IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
@@ -72,6 +120,9 @@ bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton b
 
 bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
+    // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
+    IHS_SessionFlushMouseMotion(session);
     CInputMouseUpMsg message = CINPUT_MOUSE_UP_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
                          IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
@@ -82,6 +133,9 @@ bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton but
 
 bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
+    // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
+    IHS_SessionFlushMouseMotion(session);
     CInputMouseWheelMsg message = CINPUT_MOUSE_WHEEL_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
                          IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));

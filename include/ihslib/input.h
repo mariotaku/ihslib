@@ -147,6 +147,42 @@ bool IHS_SessionSendMouseMotion(IHS_Session *session, uint32_t timestamp, float 
 bool IHS_SessionSendMouseMotionRelative(IHS_Session *session, uint32_t timestamp, int dx, int dy);
 
 /**
+ * Fold pointer motion into a pending slot instead of sending it, as Steam's
+ * CStreamPlayer::QueueMouseMotion @ 0x22d120 does. A high-DPI mouse or a trackpad can produce
+ * hundreds of motion events a second, and the reference never puts more than one message per event
+ * pump on the wire.
+ *
+ * Absolute position overwrites; relative movement accumulates. Nothing is sent until
+ * IHS_SessionFlushMouseMotion runs, so a caller that queues and never flushes sends nothing —
+ * except that the button and wheel senders flush for you, so a click can never overtake the motion
+ * that positioned the pointer.
+ *
+ * There is deliberately no timestamp parameter. The reference stamps the mark when it flushes, not
+ * when the event arrived, so the queued time cannot be recovered — IHS_SessionGetInputLatency's
+ * queuedToSent then measures from the flush. Callers that care about that measurement more than
+ * about wire traffic should keep using IHS_SessionSendMouseMotion, which is unchanged.
+ *
+ * @see IHS_SessionFlushMouseMotion
+ */
+void IHS_SessionQueueMouseMotion(IHS_Session *session, float x, float y, int dx, int dy);
+
+/**
+ * Queue motion as a delta only, leaving the absolute position as whatever was last queued.
+ * @see IHS_SessionQueueMouseMotion
+ */
+void IHS_SessionQueueMouseMotionRelative(IHS_Session *session, int dx, int dy);
+
+/**
+ * Send whatever motion has been queued as a single message, and clear the pending state. The
+ * reference does this at the tail of the same tick that drained the event queue
+ * (CStreamPlayer::UpdateInput @ 0x21e080, rate-limited to 4 ms), so the natural place to call this
+ * is once per iteration of the application's own event loop, after it has drained its input events.
+ *
+ * @return true if a message was sent; false when nothing was pending or input is not enabled.
+ */
+bool IHS_SessionFlushMouseMotion(IHS_Session *session);
+
+/**
  * Most recent input latency measurement, or false if no frame has yet echoed back a mark this
  * session issued. Safe to call from any thread.
  */
