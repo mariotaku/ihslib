@@ -35,32 +35,52 @@
 #include "endianness.h"
 
 inline static size_t IHS_BufferAppendUInt8(IHS_Buffer *buf, uint8_t value) {
-    *IHS_BufferPointerForAppend(buf, 1) = value;
+    uint8_t *dst = IHS_BufferPointerForAppend(buf, 1);
+    if (dst == NULL) {
+        return 0;
+    }
+    *dst = value;
     buf->size += 1;
     return 1;
 }
 
 inline static size_t IHS_BufferAppendSInt16LE(IHS_Buffer *buf, int16_t value) {
-    IHS_WriteSInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
+    uint8_t *dst = IHS_BufferPointerForAppend(buf, 2);
+    if (dst == NULL) {
+        return 0;
+    }
+    IHS_WriteSInt16LE(dst, value);
     buf->size += 2;
     return 2;
 }
 
 inline static size_t IHS_BufferAppendUInt16LE(IHS_Buffer *buf, uint16_t value) {
-    IHS_WriteUInt16LE(IHS_BufferPointerForAppend(buf, 2), value);
+    uint8_t *dst = IHS_BufferPointerForAppend(buf, 2);
+    if (dst == NULL) {
+        return 0;
+    }
+    IHS_WriteUInt16LE(dst, value);
     buf->size += 2;
     return 2;
 }
 
 inline static size_t IHS_BufferAppendUInt32LE(IHS_Buffer *buf, uint32_t value) {
-    IHS_WriteUInt32LE(IHS_BufferPointerForAppend(buf, 4), value);
+    uint8_t *dst = IHS_BufferPointerForAppend(buf, 4);
+    if (dst == NULL) {
+        return 0;
+    }
+    IHS_WriteUInt32LE(dst, value);
     buf->size += 4;
     return 4;
 }
 
 inline static size_t IHS_BufferAppendMessage(IHS_Buffer *buf, const ProtobufCMessage *message) {
     size_t size = protobuf_c_message_get_packed_size(message);
-    protobuf_c_message_pack(message, IHS_BufferPointerForAppend(buf, size));
+    uint8_t *dst = IHS_BufferPointerForAppend(buf, size);
+    if (dst == NULL) {
+        return 0;
+    }
+    protobuf_c_message_pack(message, dst);
     buf->size += size;
     return size;
 }

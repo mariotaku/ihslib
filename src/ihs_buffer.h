@@ -56,15 +56,24 @@ static inline bool IHS_BufferIsNull(const IHS_Buffer *buffer) {
 
 /*
  * Check functions
+ *
+ * Growth can fail: the allocator can refuse, and a buffer with a maxCapacity refuses a request
+ * beyond it. All four report that by returning false and leaving the buffer exactly as it was — the
+ * data pointer, capacity and size are untouched, so an unchecked caller degrades to writing nothing
+ * rather than to a null dereference. Anything that can drop the payload (a packet, a video frame)
+ * should check; on a host where the allocator is failing, killing the session is not an improvement.
  */
 
-void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity);
+/**
+ * @return false if the wanted capacity exceeds the buffer's maxCapacity, or the allocator refused.
+ */
+bool IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity);
 
-void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity);
+bool IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity);
 
-void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize);
+bool IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize);
 
-void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
+bool IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize);
 
 /*
  * write functions: Enough write space will be ensured
@@ -85,7 +94,10 @@ void IHS_BufferClear(IHS_Buffer *buffer, bool freeData);
  */
 void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset);
 
-void IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen);
+/**
+ * @return false if the buffer could not grow to hold the suffix; the suffix length is unchanged.
+ */
+bool IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen);
 
 /**
  * Move offset and suffix to the total length
@@ -93,9 +105,19 @@ void IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen);
  */
 void IHS_BufferExtendSize(IHS_Buffer *buffer);
 
+/**
+ * Pointer to write `appendSize` bytes at, growing the buffer as needed. The caller advances `size`
+ * itself.
+ * @return NULL if the buffer could not grow.
+ */
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize);
 
 uint8_t *IHS_BufferSuffixPointer(IHS_Buffer *buffer);
+
+/*
+ * Each of these returns the number of bytes written, and 0 without touching memory when the buffer
+ * could not grow to hold them.
+ */
 
 size_t IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data);
 

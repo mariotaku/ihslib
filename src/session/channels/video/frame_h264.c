@@ -30,19 +30,24 @@ const static uint8_t startSeq[] = {0x00, 0x00, 0x00, 0x01};
 
 static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen);
 
-void IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, size_t len,
+bool IHS_SessionVideoFrameAppendH264(IHS_Buffer *buffer, const uint8_t *data, size_t len,
                                      const IHS_VideoFrameHeader *header) {
     if (header->flags & VideoFrameFlagNeedEscape) {
         size_t escapedCap = (len * 3) / 2 + 1;
         if (header->flags & VideoFrameFlagNeedStartSequence) {
             assert(len >= 1);
-            IHS_BufferAppendMem(buffer, startSeq, sizeof(startSeq));
+            if (IHS_BufferAppendMem(buffer, startSeq, sizeof(startSeq)) == 0) {
+                return false;
+            }
         }
-        size_t escapedLen = EscapeNAL(IHS_BufferPointerForAppend(buffer, escapedCap), data, len);
-        buffer->size += escapedLen;
-    } else {
-        IHS_BufferAppendMem(buffer, data, len);
+        uint8_t *dst = IHS_BufferPointerForAppend(buffer, escapedCap);
+        if (dst == NULL) {
+            return false;
+        }
+        buffer->size += EscapeNAL(dst, data, len);
+        return true;
     }
+    return len == 0 || IHS_BufferAppendMem(buffer, data, len) == len;
 }
 
 static size_t EscapeNAL(uint8_t *out, const uint8_t *src, size_t inLen) {

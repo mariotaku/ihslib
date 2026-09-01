@@ -91,7 +91,11 @@ static size_t VideoFrameHeaderParse(IHS_VideoFrameHeader *header, const uint8_t 
  */
 static bool AssembleFrame(IHS_SessionChannel *channel);
 
-static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
+/**
+ * @return false if the frame buffer could not grow to hold the fragment, which caps out at its
+ *         2 MB maxCapacity or when the allocator refuses.
+ */
+static bool AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
                                 const IHS_VideoFrameHeader *header);
 
 static IHS_StreamVideoSubmitResult SubmitFrame(IHS_SessionChannel *channel, IHS_Buffer *data,
@@ -345,7 +349,17 @@ static bool AssembleFrame(IHS_SessionChannel *channel) {
             }
         }
         // append buffer
-        AppendToFrameBuffer(videoCh, &partial->data, &partial->header);
+        if (!AppendToFrameBuffer(videoCh, &partial->data, &partial->header)) {
+            // The assembled frame outgrew its buffer. Nothing partial is worth keeping, so throw the
+            // whole assembly away and resynchronise the way every other unrecoverable path here does.
+            IHS_SessionLog(channel->session, IHS_LogLevelError, "Video",
+                           "Frame buffer could not grow for frame %u, request keyframe", partial->frameId);
+            DiscardPending(videoCh);
+            videoCh->states.frameFinished = false;
+            IHS_SessionChannelDataLost(channel);
+            videoCh->states.waitingKeyFrame = IHS_TimerNow();
+            return false;
+        }
         if (partial->header.flags & VideoFrameFlagFrameFinish) {
             videoCh->states.frameFinished = true;
             videoCh->frame.id = partial->frameId;
@@ -442,14 +456,17 @@ static void ReportSkippedFrames(IHS_SessionChannelVideo *channel, uint16_t frame
                                      IHS_SessionPacketTimestamp());
 }
 
-static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
+static bool AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buffer *data,
                                 const IHS_VideoFrameHeader *header) {
+    bool appended;
     switch (channel->config.codec) {
         case IHS_StreamVideoCodecH264:
-            IHS_SessionVideoFrameAppendH264(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+            appended = IHS_SessionVideoFrameAppendH264(&channel->frame.buffer, IHS_BufferPointer(data), data->size,
+                                                       header);
             break;
         case IHS_StreamVideoCodecHEVC:
-            IHS_SessionVideoFrameAppendHEVC(&channel->frame.buffer, IHS_BufferPointer(data), data->size, header);
+            appended = IHS_SessionVideoFrameAppendHEVC(&channel->frame.buffer, IHS_BufferPointer(data), data->size,
+                                                       header);
             break;
         default: {
             IHS_SessionLog(((IHS_SessionChannel *) channel)->session, IHS_LogLevelFatal, "Video",
@@ -457,9 +474,13 @@ static void AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buff
             abort();
         }
     }
+    if (!appended) {
+        return false;
+    }
     if (header->flags & VideoFrameFlagKeyFrame) {
         channel->frame.flags |= IHS_StreamVideoFrameKeyFrame;
     }
+    return true;
 }
 
 static IHS_StreamVideoSubmitResult SubmitFrame(IHS_SessionChannel *channel, IHS_Buffer *data,

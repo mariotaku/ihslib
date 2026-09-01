@@ -19,6 +19,7 @@ add_subdirectory(common)
 ihs_add_test(arraylist test_arraylist.c)
 ihs_add_test(enumeration test_enumeration.c)
 ihs_add_test(crypto test_crypto.c)
+ihs_add_test(buffer test_buffer.c)
 ihs_add_test(queue test_queue.c)
 ihs_add_test(udp_socket test_udp_socket.c)
 

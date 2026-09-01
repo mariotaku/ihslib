@@ -29,5 +29,5 @@
 #include "session/channels/channel.h"
 #include "ch_data_video.h"
 
-void IHS_SessionVideoFrameAppendHEVC(IHS_Buffer *buffer, const uint8_t *data, size_t len,
+bool IHS_SessionVideoFrameAppendHEVC(IHS_Buffer *buffer, const uint8_t *data, size_t len,
                                      const IHS_VideoFrameHeader *header);

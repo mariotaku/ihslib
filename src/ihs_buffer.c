@@ -26,6 +26,7 @@
 #include "ihs_buffer.h"
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <string.h>
 
@@ -62,21 +63,28 @@ void IHS_BufferReadMem(const IHS_Buffer *buffer, size_t position, uint8_t *dest,
  * Check functions
  */
 
-void IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity) {
-    if (buffer->maxCapacity > 0) {
-        assert(wantedCapacity <= buffer->maxCapacity);
+bool IHS_BufferEnsureCapacityExact(IHS_Buffer *buffer, size_t wantedCapacity) {
+    if (buffer->maxCapacity > 0 && wantedCapacity > buffer->maxCapacity) {
+        // Not an assert: the ceiling exists to bound what a remote peer can make this side
+        // allocate, so hitting it is a thing the wire can cause, not a programming error.
+        return false;
     }
     if (wantedCapacity <= buffer->capacity) {
-        return;
+        return true;
     }
     void *allocated = realloc(buffer->data, wantedCapacity);
-    assert(allocated != NULL);
+    if (allocated == NULL) {
+        // realloc left the old block alone, so the buffer is still whole and still usable at its
+        // current capacity. Not an assert: running out of memory is not a programming error, and
+        // aborting the process is a worse outcome than dropping whatever wanted the space.
+        return false;
+    }
     buffer->data = allocated;
     buffer->capacity = wantedCapacity;
-    assert(buffer->data != NULL);
+    return true;
 }
 
-void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
+bool IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
     size_t newCapacity = buffer->capacity;
     if (newCapacity == 0) {
         newCapacity = buffer->initialCapacity;
@@ -86,17 +94,28 @@ void IHS_BufferEnsureCapacity(IHS_Buffer *buffer, size_t wantedCapacity) {
     }
     assert (newCapacity > 0);
     while (newCapacity < wantedCapacity) {
+        if (newCapacity > SIZE_MAX / 2) {
+            // Doubling would wrap to 0 and spin forever. Ask for exactly what was wanted and let
+            // the allocator be the one to refuse it.
+            newCapacity = wantedCapacity;
+            break;
+        }
         newCapacity *= 2;
     }
-    IHS_BufferEnsureCapacityExact(buffer, newCapacity);
+    // Doubling can overshoot a maxCapacity that is not a power of two multiple of the start size.
+    // The exact request is what the caller actually needs, so fall back to it rather than refusing.
+    if (buffer->maxCapacity > 0 && newCapacity > buffer->maxCapacity) {
+        newCapacity = wantedCapacity > buffer->maxCapacity ? wantedCapacity : buffer->maxCapacity;
+    }
+    return IHS_BufferEnsureCapacityExact(buffer, newCapacity);
 }
 
-void IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize) {
-    IHS_BufferEnsureCapacityExact(buffer, buffer->offset + maxSize + buffer->suffix);
+bool IHS_BufferEnsureMaxSizeExact(IHS_Buffer *buffer, size_t maxSize) {
+    return IHS_BufferEnsureCapacityExact(buffer, buffer->offset + maxSize + buffer->suffix);
 }
 
-void IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
-    IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize + buffer->suffix);
+bool IHS_BufferEnsureMaxSize(IHS_Buffer *buffer, size_t maxSize) {
+    return IHS_BufferEnsureCapacity(buffer, buffer->offset + maxSize + buffer->suffix);
 }
 
 /*
@@ -125,9 +144,12 @@ void IHS_BufferOffsetBy(IHS_Buffer *buffer, int offset) {
     buffer->size -= offset;
 }
 
-void IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen) {
-    IHS_BufferEnsureCapacity(buffer, buffer->offset + buffer->size + suffixLen);
+bool IHS_BufferSetSuffixLength(IHS_Buffer *buffer, size_t suffixLen) {
+    if (!IHS_BufferEnsureCapacity(buffer, buffer->offset + buffer->size + suffixLen)) {
+        return false;
+    }
     buffer->suffix = suffixLen;
+    return true;
 }
 
 void IHS_BufferExtendSize(IHS_Buffer *buffer) {
@@ -138,7 +160,9 @@ void IHS_BufferExtendSize(IHS_Buffer *buffer) {
 
 uint8_t *IHS_BufferPointerForAppend(IHS_Buffer *buffer, size_t appendSize) {
     size_t newSize = buffer->size + appendSize;
-    IHS_BufferEnsureMaxSize(buffer, newSize);
+    if (!IHS_BufferEnsureMaxSize(buffer, newSize)) {
+        return NULL;
+    }
     return IHS_BufferPointerAt(buffer, buffer->size);
 }
 
@@ -154,6 +178,9 @@ size_t IHS_BufferAppend(IHS_Buffer *buffer, const IHS_Buffer *data) {
 
 size_t IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataLen) {
     uint8_t *dst = IHS_BufferPointerForAppend(buffer, dataLen);
+    if (dst == NULL) {
+        return 0;
+    }
     memcpy(dst, data, dataLen);
     buffer->size += dataLen;
     return dataLen;
@@ -161,7 +188,9 @@ size_t IHS_BufferAppendMem(IHS_Buffer *buffer, const uint8_t *data, size_t dataL
 
 size_t IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *src, size_t srcLen) {
     size_t writeEnd = position + srcLen;
-    IHS_BufferEnsureMaxSize(buffer, writeEnd);
+    if (!IHS_BufferEnsureMaxSize(buffer, writeEnd)) {
+        return 0;
+    }
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
     memcpy(dst, src, srcLen);
     if (buffer->size < writeEnd) {
@@ -172,7 +201,9 @@ size_t IHS_BufferWriteMem(IHS_Buffer *buffer, size_t position, const uint8_t *sr
 
 size_t IHS_BufferFillMem(IHS_Buffer *buffer, size_t position, uint8_t fill, size_t fillLen) {
     size_t fillEnd = position + fillLen;
-    IHS_BufferEnsureMaxSize(buffer, fillEnd);
+    if (!IHS_BufferEnsureMaxSize(buffer, fillEnd)) {
+        return 0;
+    }
     uint8_t *dst = IHS_BufferPointerAt(buffer, position);
     memset(dst, fill, fillLen);
     if (buffer->size < fillEnd) {
