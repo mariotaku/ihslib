@@ -105,40 +105,45 @@ bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *o
     return IHS_SessionInputMarksGetLatest(&session->inputMarks, out);
 }
 
-bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button) {
+bool IHS_SessionSendMouseDown(IHS_Session *session, uint32_t timestamp, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // SendMouseDown @ 0x1f9654 refuses k_EStreamMouseButtonUnknown rather than sending it.
+    if (button == IHS_MOUSE_BUTTON_UNKNOWN) return false;
     // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
     // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
     IHS_SessionFlushMouseMotion(session);
     CInputMouseDownMsg message = CINPUT_MOUSE_DOWN_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseDown,
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button) {
+bool IHS_SessionSendMouseUp(IHS_Session *session, uint32_t timestamp, IHS_StreamInputMouseButton button) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // SendMouseUp @ 0x1f9810 refuses k_EStreamMouseButtonUnknown rather than sending it.
+    if (button == IHS_MOUSE_BUTTON_UNKNOWN) return false;
     // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
     // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
     IHS_SessionFlushMouseMotion(session);
     CInputMouseUpMsg message = CINPUT_MOUSE_UP_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     message.button = (EStreamMouseButton) button;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputMouseUp,
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction) {
+bool IHS_SessionSendMouseWheel(IHS_Session *session, uint32_t timestamp,
+                               IHS_StreamInputMouseWheelDirection direction) {
     if (!IHS_SessionInputEnabled(session)) return false;
     // Any queued motion goes first, so a click never lands ahead of the motion that positioned the
     // pointer — BHandleEvent flushes immediately before each of these (0x21a5a8, 0x21a6a0, 0x21a768).
     IHS_SessionFlushMouseMotion(session);
     CInputMouseWheelMsg message = CINPUT_MOUSE_WHEEL_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     switch (direction) {
         case IHS_MOUSE_WHEEL_UP:
             message.direction = k_EStreamMouseWheelUp;

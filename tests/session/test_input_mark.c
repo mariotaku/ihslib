@@ -140,6 +140,13 @@ static void TestWireShape(void) {
     IHS_Session *session = IHS_TestSessionCreate();
     session->state.streamingInput = true;
 
+    // Input is gated on the session being live as well as on the server having enabled input —
+    // IsStreaming @ 0x1f4aa4 plus BStreamingInput @ 0x1f4a74 — so nothing goes out pre-connect,
+    // even though streamingInput defaults to true.
+    assert(!IHS_SessionSendMouseMotionRelative(session, 4241, 1, 1));
+    assert(IHS_QueueIsEmpty(session->sendQueue));
+    session->state.connectionState = IHS_SessionConnectionStateConnected;
+
     // The absolute form carries all four fields, as CStreamClient::SendMouseMotion @ 0x1f910c does.
     assert(IHS_SessionSendMouseMotion(session, 4242, 0.25f, 0.75f, -3, 7));
     CInputMouseMotionMsg *message = TakeMouseMotion(session);
@@ -162,7 +169,9 @@ static void TestWireShape(void) {
     cinput_mouse_motion_msg__free_unpacked(message, NULL);
 
     // Every input sender draws from the same counter, so a keystroke advances it too.
-    assert(IHS_SessionSendKeyDown(session, 0x1a));
+    assert(IHS_SessionSendKeyDown(session, 4243, 0x1a));
+    // 0 is not a key: the reference drops it before it reaches the wire.
+    assert(!IHS_SessionSendKeyDown(session, 4243, 0));
     IHS_QueueItem *item = IHS_QueuePoll(session->sendQueue);
     assert(item != NULL);
     IHS_SessionPacketClear(&((QueuedPacket *) item)->packet, true);

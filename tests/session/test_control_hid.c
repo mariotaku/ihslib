@@ -310,8 +310,10 @@ static CHIDMessageFromRemote__DeviceInputReports *TakeReports(IHS_Session *sessi
 int main(void) {
     IHS_Init();
     IHS_Session *session = IHS_TestSessionCreate();
-    // SendHIDMsg mirrors Steam's BStreamingInput gate and drops everything while this is false.
+    // SendHIDMsg mirrors Steam's IsStreaming + BStreamingInput gate and drops everything unless the
+    // session is live and the server has enabled input.
     session->state.streamingInput = true;
+    session->state.connectionState = IHS_SessionConnectionStateConnected;
     IHS_SessionChannel *control = session->channels[IHS_SessionChannelIdControl];
     assert(control != NULL);
 

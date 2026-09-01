@@ -27,27 +27,31 @@
 #include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
-bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode) {
+bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t timestamp, uint32_t scancode) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // The reference's SendKeyDown has `&& scancode != 0` in its send condition: 0 is not a key.
+    if (scancode == 0) return false;
     CInputKeyDownMsg message = CINPUT_KEY_DOWN_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     message.scancode = scancode;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputKeyDown,
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode) {
+bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t timestamp, uint32_t scancode) {
     if (!IHS_SessionInputEnabled(session)) return false;
+    // The reference's SendKeyUp has `&& scancode != 0` in its send condition: 0 is not a key.
+    if (scancode == 0) return false;
     CInputKeyUpMsg message = CINPUT_KEY_UP_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     message.scancode = scancode;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputKeyUp,
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendText(IHS_Session *session, const char *utf8) {
+bool IHS_SessionSendText(IHS_Session *session, uint32_t timestamp, const char *utf8) {
     // Mirrors CStreamClient::SendText (0x1f9d4c): drop empty input, build CInputTextMsg
     // with text_utf8 set, ship on the control channel. No length cap on the wire side
     // (subagent RE confirmed; only practical limit is the control-channel MTU).
@@ -57,7 +61,7 @@ bool IHS_SessionSendText(IHS_Session *session, const char *utf8) {
     }
     CInputTextMsg message = CINPUT_TEXT_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     message.text_utf8 = (char *) utf8;
     return IHS_SessionSendControlMessage(session, k_EStreamControlInputText,
                                          (const ProtobufCMessage *) &message);

@@ -41,7 +41,14 @@ typedef struct IHS_StreamInputCursorImage {
     size_t imageLen;
 } IHS_StreamInputCursorImage;
 
+/**
+ * Wire values, not SDL button numbers. SDL numbers its buttons 1..5 in the order
+ * left/middle/right/x1/x2 and the reference translates them (ConvertSDLButtonToStreamButton @
+ * 0x216a28); passing a raw SDL button number here would swap middle and right.
+ */
 typedef enum IHS_StreamInputMouseButton {
+    /** The reference refuses to send this, and so does ihslib. */
+    IHS_MOUSE_BUTTON_UNKNOWN = 4096,
     IHS_MOUSE_BUTTON_LEFT = 1,
     IHS_MOUSE_BUTTON_RIGHT = 2,
     IHS_MOUSE_BUTTON_MIDDLE = 16,
@@ -188,15 +195,34 @@ bool IHS_SessionFlushMouseMotion(IHS_Session *session);
  */
 bool IHS_SessionGetInputLatency(IHS_Session *session, IHS_SessionInputLatency *out);
 
-bool IHS_SessionSendMouseDown(IHS_Session *session, IHS_StreamInputMouseButton button);
+/**
+ * @param timestamp When the input occurred, in IHS_InputTimestampNow() units. Pass
+ *                  IHS_InputTimestampNow() if the caller has no event time of its own; passing the
+ *                  time the event was actually dequeued is what makes
+ *                  IHS_SessionInputLatency.queuedToSent meaningful.
+ */
+bool IHS_SessionSendMouseDown(IHS_Session *session, uint32_t timestamp, IHS_StreamInputMouseButton button);
 
-bool IHS_SessionSendMouseUp(IHS_Session *session, IHS_StreamInputMouseButton button);
+bool IHS_SessionSendMouseUp(IHS_Session *session, uint32_t timestamp, IHS_StreamInputMouseButton button);
 
-bool IHS_SessionSendMouseWheel(IHS_Session *session, IHS_StreamInputMouseWheelDirection direction);
+bool IHS_SessionSendMouseWheel(IHS_Session *session, uint32_t timestamp,
+                               IHS_StreamInputMouseWheelDirection direction);
 
-bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t scancode);
+/**
+ * Press a key.
+ *
+ * @param timestamp When the input occurred, in IHS_InputTimestampNow() units.
+ * @param scancode An SDL2 SDL_Scancode, which is a USB HID usage page 7 code — a physical key
+ *                 position, not a character and not a keycode. The reference passes SDL's value
+ *                 through untouched (ConvertSDLScancodeToStreamScancode @ 0x216abc is the identity
+ *                 function), so no translation table is needed on either side. 0 is not a key and
+ *                 is not sent. Characters that a layout produces rather than a key position belong
+ *                 in IHS_SessionSendText.
+ */
+bool IHS_SessionSendKeyDown(IHS_Session *session, uint32_t timestamp, uint32_t scancode);
 
-bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode);
+/** @see IHS_SessionSendKeyDown for the scancode space. */
+bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t timestamp, uint32_t scancode);
 
 /**
  * Send a UTF-8 text string to the host as a CInputTextMsg. Used for IME-composed text,
@@ -211,10 +237,10 @@ bool IHS_SessionSendKeyUp(IHS_Session *session, uint32_t scancode);
  * @param utf8 NUL-terminated UTF-8 string. NULL or empty strings are dropped silently.
  * @return true if sent
  */
-bool IHS_SessionSendText(IHS_Session *session, const char *utf8);
+bool IHS_SessionSendText(IHS_Session *session, uint32_t timestamp, const char *utf8);
 
-bool IHS_SessionSendTouchDown(IHS_Session *session, uint64_t fingerId, float x, float y);
+bool IHS_SessionSendTouchDown(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y);
 
-bool IHS_SessionSendTouchUp(IHS_Session *session, uint64_t fingerId, float x, float y);
+bool IHS_SessionSendTouchUp(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y);
 
-bool IHS_SessionSendTouchMotion(IHS_Session *session, uint64_t fingerId, float x, float y);
+bool IHS_SessionSendTouchMotion(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y);

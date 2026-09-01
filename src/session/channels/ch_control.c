@@ -432,7 +432,11 @@ static void OnSetClientConfig(IHS_SessionChannel *channel, const CSetStreamingCl
 }
 
 bool IHS_SessionInputEnabled(IHS_Session *session) {
-    return session->state.streamingInput;
+    // Every reference sender gates on both IsStreaming @ 0x1f4aa4 (session state == 6) and
+    // BStreamingInput @ 0x1f4a74. Checking only the second would let input onto the wire before the
+    // session is live, because streamingInput defaults to true until the host's config arrives.
+    return session->state.connectionState == IHS_SessionConnectionStateConnected &&
+           session->state.streamingInput;
 }
 
 static void OnSetSpectatorMode(IHS_SessionChannel *channel, const CSetSpectatorModeMsg *message) {

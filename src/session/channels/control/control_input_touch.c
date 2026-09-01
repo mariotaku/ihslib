@@ -27,11 +27,11 @@
 #include "session/session_pri.h"
 #include "protobuf/pb_utils.h"
 
-bool IHS_SessionSendTouchDown(IHS_Session *session, uint64_t fingerId, float x, float y) {
+bool IHS_SessionSendTouchDown(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputTouchFingerDownMsg message = CINPUT_TOUCH_FINGER_DOWN_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     PROTOBUF_C_SET_VALUE(message, fingerid, fingerId);
     PROTOBUF_C_SET_VALUE(message, x_normalized, x);
     PROTOBUF_C_SET_VALUE(message, y_normalized, y);
@@ -39,11 +39,11 @@ bool IHS_SessionSendTouchDown(IHS_Session *session, uint64_t fingerId, float x, 
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendTouchUp(IHS_Session *session, uint64_t fingerId, float x, float y) {
+bool IHS_SessionSendTouchUp(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputTouchFingerUpMsg message = CINPUT_TOUCH_FINGER_UP_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     PROTOBUF_C_SET_VALUE(message, fingerid, fingerId);
     PROTOBUF_C_SET_VALUE(message, x_normalized, x);
     PROTOBUF_C_SET_VALUE(message, y_normalized, y);
@@ -51,11 +51,11 @@ bool IHS_SessionSendTouchUp(IHS_Session *session, uint64_t fingerId, float x, fl
                                          (const ProtobufCMessage *) &message);
 }
 
-bool IHS_SessionSendTouchMotion(IHS_Session *session, uint64_t fingerId, float x, float y) {
+bool IHS_SessionSendTouchMotion(IHS_Session *session, uint32_t timestamp, uint64_t fingerId, float x, float y) {
     if (!IHS_SessionInputEnabled(session)) return false;
     CInputTouchFingerMotionMsg message = CINPUT_TOUCH_FINGER_MOTION_MSG__INIT;
     PROTOBUF_C_SET_VALUE(message, input_mark,
-                         IHS_SessionInputMarkNext(&session->inputMarks, IHS_SessionPacketTimestamp()));
+                         IHS_SessionInputMarkNext(&session->inputMarks, timestamp));
     PROTOBUF_C_SET_VALUE(message, fingerid, fingerId);
     PROTOBUF_C_SET_VALUE(message, x_normalized, x);
     PROTOBUF_C_SET_VALUE(message, y_normalized, y);

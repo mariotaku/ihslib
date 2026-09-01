@@ -137,7 +137,7 @@ static void TestClickFlushesFirst(IHS_Session *session) {
     IHS_SessionQueueMouseMotion(session, 0.75f, 0.75f, 8, 9);
     // BHandleEvent flushes immediately before the button send (0x21a5a8), so the motion has to come
     // off the queue first.
-    assert(IHS_SessionSendMouseDown(session, IHS_MOUSE_BUTTON_LEFT));
+    assert(IHS_SessionSendMouseDown(session, IHS_InputTimestampNow(), IHS_MOUSE_BUTTON_LEFT));
 
     CInputMouseMotionMsg *motion = TakeMotion(session);
     assert(motion->dx == 8 && motion->dy == 9);
@@ -150,14 +150,14 @@ static void TestClickFlushesFirst(IHS_Session *session) {
 
     // The wheel and button-up senders flush too.
     IHS_SessionQueueMouseMotionRelative(session, 1, 0);
-    assert(IHS_SessionSendMouseWheel(session, IHS_MOUSE_WHEEL_UP));
+    assert(IHS_SessionSendMouseWheel(session, IHS_InputTimestampNow(), IHS_MOUSE_WHEEL_UP));
     cinput_mouse_motion_msg__free_unpacked(TakeMotion(session), NULL);
     plain = (IHS_Buffer) IHS_BUFFER_INIT(1024, 8192);
     assert(TakeControlMessage(session, &plain) == k_EStreamControlInputMouseWheel);
     IHS_BufferClear(&plain, true);
 
     IHS_SessionQueueMouseMotionRelative(session, 0, 1);
-    assert(IHS_SessionSendMouseUp(session, IHS_MOUSE_BUTTON_LEFT));
+    assert(IHS_SessionSendMouseUp(session, IHS_InputTimestampNow(), IHS_MOUSE_BUTTON_LEFT));
     cinput_mouse_motion_msg__free_unpacked(TakeMotion(session), NULL);
     plain = (IHS_Buffer) IHS_BUFFER_INIT(1024, 8192);
     assert(TakeControlMessage(session, &plain) == k_EStreamControlInputMouseUp);
@@ -170,6 +170,8 @@ int main() {
     IHS_Session *session = IHS_TestSessionCreate();
     assert(session != NULL);
     assert(session->channels[IHS_SessionChannelIdControl] != NULL);
+    // Input only leaves a live session.
+    session->state.connectionState = IHS_SessionConnectionStateConnected;
 
     TestRelativeOnlyOmitsPosition(session);
     TestQueuedMotionCollapsesIntoOne(session);
