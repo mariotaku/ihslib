@@ -148,5 +148,6 @@ static bool EnumerationGetInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *
     }
     info->path = gce->temp.path;
     info->product_string = gce->temp.product_string;
+    info->caps = IHS_HIDDeviceSDLCaps(controller);
     return true;
 }

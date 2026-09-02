@@ -177,9 +177,25 @@ static IHS_HIDDevice *ProviderOpenDevice(IHS_HIDProvider *provider, const char *
     return IHS_HIDDeviceCreate(&DeviceClass);
 }
 
+/** One device, so the update_device_list path has something to describe. */
+static int enumeratedDevice = 0;
+
+/** What the fake provider claims its device can do. */
+static uint32_t providerCaps = 0;
+
 static IHS_Enumeration *ProviderEnumerate(IHS_HIDProvider *provider) {
     (void) provider;
-    return IHS_EnumerationArrayCreate(NULL, 0, 0, NULL);
+    return IHS_EnumerationArrayCreate(&enumeratedDevice, sizeof(int), 1, NULL);
+}
+
+static void ProviderDeviceInfo(IHS_HIDProvider *provider, IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *info) {
+    (void) provider;
+    (void) enumeration;
+    info->path = "test://0";
+    info->product_string = "Test Device";
+    info->vendor_id = 0x1234;
+    info->product_id = 0x5678;
+    info->caps = providerCaps;
 }
 
 static const IHS_HIDProviderClass ProviderClass = {
@@ -188,6 +204,7 @@ static const IHS_HIDProviderClass ProviderClass = {
         .supportsDevice = ProviderSupportsDevice,
         .openDevice = ProviderOpenDevice,
         .enumerateDevices = ProviderEnumerate,
+        .deviceInfo = ProviderDeviceInfo,
 };
 
 /* ------------------------------------------------------------------ wire decoding */
@@ -488,6 +505,34 @@ int main(void) {
     AssertQueueEmpty(session);
     PumpPollTick(session);
     AssertQueueEmpty(session);
+
+    // ---------------------------------------------------------------- device list capabilities
+    //
+    // UpdateHIDDeviceInfo @ 0x21d58c ORs a fixed set into whatever the enumerator reported and never
+    // masks anything off, so what the provider says is what the host hears, plus those bits.
+
+    // A provider that knows nothing still gets the always-set bits, which is what the reference
+    // sends for a device SDL does not recognise as a game controller.
+    providerCaps = 0;
+    assert(IHS_SessionHIDNotifyDeviceChange(session));
+    CHIDMessageFromRemote *listOwner;
+    CHIDMessageFromRemote *fromRemote = TakeFromRemote(session);
+    assert(fromRemote->command_case == CHIDMESSAGE_FROM_REMOTE__COMMAND_UPDATE_DEVICE_LIST);
+    assert(fromRemote->update_device_list->n_devices == 1);
+    assert(fromRemote->update_device_list->devices[0]->has_caps_bits);
+    assert(fromRemote->update_device_list->devices[0]->caps_bits == IHS_HID_CAPS_ALWAYS);
+    chidmessage_from_remote__free_unpacked(fromRemote, NULL);
+    AssertQueueEmpty(session);
+
+    // A narrower provider is reported as narrow, not widened to a superset.
+    providerCaps = IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_GYRO;
+    assert(IHS_SessionHIDNotifyDeviceChange(session));
+    listOwner = TakeFromRemote(session);
+    assert(listOwner->update_device_list->devices[0]->caps_bits ==
+           (IHS_HID_CAP_ABXY | IHS_HID_CAP_DPAD | IHS_HID_CAP_GYRO | IHS_HID_CAPS_ALWAYS));
+    chidmessage_from_remote__free_unpacked(listOwner, NULL);
+    AssertQueueEmpty(session);
+    providerCaps = 0;
 
     // ---------------------------------------------------------------- case 6: send_feature_report
     //

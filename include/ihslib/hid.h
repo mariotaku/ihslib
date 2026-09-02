@@ -42,6 +42,19 @@ typedef struct IHS_HIDDeviceInfo IHS_HIDDeviceInfo;
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+/**
+ * What a gamepad can do, as the host is told it.
+ *
+ * The 2022 streaming_client derives most of these from the SDL mapping string, and the rest from
+ * the controller's type or GUID — which makes several of them proxies rather than real answers. The
+ * newer streaming_client_920 replaces those proxies with SDL3 capability queries whose property
+ * names (`SDL.joystick.cap.rumble`, `.mono_led`, `.rgb_led`) are what actually named the bits below;
+ * before that they were known only by which controllers happened to set them.
+ *
+ * Three are still unnamed. They are set from the controller merely *being* a PS4/PS5 pad and are
+ * consumed nowhere in either build, so there is nothing to read a meaning off; guesses that fit
+ * (touchpad, speaker, glyph set) fit all of them equally, so none is claimed.
+ */
 typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_ABXY = 0x00000001,
     IHS_HID_CAP_DPAD = 0x00000002,
@@ -53,18 +66,32 @@ typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_BACK = 0x00000080,
     IHS_HID_CAP_START = 0x00000100,
     IHS_HID_CAP_GUIDE = 0x00000200,
-    IHS_HID_CAP_PADDLE_1 = 0x00000400 /*Paddle 1*/,
-    IHS_HID_CAP_UNK_1 = 0x00000800 /*Gamepad uses this: PS4, PS5*/,
-    IHS_HID_CAP_UNK_2 = 0x00001000 /*Gamepad uses this: PS4, PS5*/,
-    IHS_HID_CAP_XINPUT_OR_HIDAPI = 0x00004000 /*XInput and HIDAPI*/,
-    IHS_HID_CAP_UNK_3 = 0x00010000 /*Gamepad uses this: PS4, PS5, Xbox Elite*/,
-    IHS_HID_CAP_UNK_4 = 0x00020000 /*Gamepad uses this: PS4, PS5, Xbox Elite*/,
-    IHS_HID_CAP_UNK_5 = 0x00040000 /*Gamepad uses this: PS4, PS5*/,
-    IHS_HID_CAP_NOT_XINPUT_HIDAPI = 0x00100000 /*Not XInput and not HIDAPI?*/,
-    IHS_HID_CAP_PADDLE_3 = 0x00400000 /*Paddle 3*/,
+    /** Any paddle at all — set for any of `,paddle1:` .. `,paddle4:`, not paddle 1 specifically. */
+    IHS_HID_CAP_PADDLES = 0x00000400,
+    /** Motion sensing. Fires with IHS_HID_CAP_GYRO; what separates the two is not established. */
+    IHS_HID_CAP_MOTION = 0x00000800,
+    /** Unnamed. Set for PS4 / PS5 pads, read by nothing. */
+    IHS_HID_CAP_UNK_2 = 0x00001000,
+    /** `SDL.joystick.cap.rumble`. The old build used "is XInput or HIDAPI" as a stand-in for it. */
+    IHS_HID_CAP_RUMBLE = 0x00004000,
+    /** `SDL.joystick.cap.mono_led`. */
+    IHS_HID_CAP_LED = 0x00010000,
+    /** `SDL.joystick.cap.rgb_led`. Never set without IHS_HID_CAP_LED. */
+    IHS_HID_CAP_LED_RGB = 0x00020000,
+    /** `SDL_GamepadHasSensor(GYRO)`. */
+    IHS_HID_CAP_GYRO = 0x00040000,
+    /**
+     * Unnamed. The old build set it for a device that was neither XInput nor HIDAPI; the newer one
+     * sets it unconditionally, which leaves the old reading meaningless.
+     */
+    IHS_HID_CAP_UNK_8 = 0x00100000,
+    /** All four paddles, not paddle 3 specifically. */
+    IHS_HID_CAP_PADDLES_4 = 0x00400000,
     IHS_HID_CAP_MISC_1 = 0x00800000 /*Misc 1*/,
+    /** Unnamed. Never set by the old build; the newer one sets it only for two HORI pads. */
     IHS_HID_CAP_UNK_6 = 0x01000000,
-    IHS_HID_CAP_UNK_7 = 0x02000000 /*Gamepad uses this: PS4, PS5*/,
+    /** Unnamed. Set for PS4 / PS5 pads, read by nothing. */
+    IHS_HID_CAP_UNK_7 = 0x02000000,
 } IHS_HIDDeviceCaps;
 #pragma clang diagnostic pop
 

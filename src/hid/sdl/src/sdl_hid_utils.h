@@ -32,3 +32,13 @@
 
 bool IHS_HIDDeviceSDLGetJoystickGUIDInfo(const SDL_JoystickGUID *guid, Uint16 *vendor, Uint16 *product, Uint16 *version,
                                          Uint16 *crc16);
+/**
+ * Capability bits for a controller, mirroring what CHIDDeviceListSDL derives from the SDL mapping
+ * string — but asked of SDL directly where the SDL being built against can answer, rather than
+ * assumed. IHS_HID_CAPS_ALWAYS is added later, by the code that announces the device.
+ *
+ * @param controller May be NULL, for a device that is enumerated but not open. Nothing can be
+ *                   queried then, so a plain gamepad superset is reported, which is what ihslib
+ *                   reported for every device before this existed.
+ */
+uint32_t IHS_HIDDeviceSDLCaps(SDL_GameController *controller);

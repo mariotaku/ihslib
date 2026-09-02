@@ -133,6 +133,10 @@ static bool EnumerationGetInfo(IHS_Enumeration *enumeration, IHS_HIDDeviceInfo *
     info->product_version = SDL_JoystickGetDeviceProductVersion(index);
     info->path = gce->temp.path;
     info->product_string = gce->temp.product_string;
+    // Enumeration only has an index; SDL can answer capability questions for an open controller
+    // only. Opening one here to ask would be a side effect of enumerating, so a device that is not
+    // open reports the plain gamepad set instead.
+    info->caps = IHS_HIDDeviceSDLCaps(SDL_GameControllerFromInstanceID(instanceId));
     return true;
 }
 
