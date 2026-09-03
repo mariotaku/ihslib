@@ -72,11 +72,12 @@ typedef enum IHS_HIDDeviceCaps {
     /** Motion sensing. Fires with IHS_HID_CAP_GYRO; what separates the two is not established. */
     IHS_HID_CAP_MOTION = 0x00000800,
     /**
-     * Unnamed. Set for PS4 / PS5 pads, read by nothing. Always set together with
-     * IHS_HID_CAP_UNK_7 — one statement, one predicate, in both builds — and the two are the only
-     * survivors of the six the 2022 build hardcoded for those pads; the rest became SDL capability
-     * queries. So they are real hardware features SDL does not model (touchpad, speaker, headphone
-     * jack, microphone and adaptive triggers all fit), but nothing distinguishes between them.
+     * Unnamed. Set for PS4 / PS5 pads, read by nothing. Three independent capability builders —
+     * streaming_client, streaming_client_920 and streaming_client.pi — each set it in one
+     * statement, under one predicate, as part of the same inseparable composite `0x02071800`, and
+     * no build ever splits that set. The other four bits of it became SDL capability queries, so
+     * this and IHS_HID_CAP_UNK_7 are real hardware features SDL does not model (touchpad, speaker,
+     * headphone jack, microphone and adaptive triggers all fit), with nothing to tell them apart.
      */
     IHS_HID_CAP_UNK_2 = 0x00001000,
     /** `SDL.joystick.cap.rumble`. The old build used "is XInput or HIDAPI" as a stand-in for it. */
@@ -88,8 +89,10 @@ typedef enum IHS_HIDDeviceCaps {
     /** `SDL_GamepadHasSensor(GYRO)`. */
     IHS_HID_CAP_GYRO = 0x00040000,
     /**
-     * Unnamed. The old build set it for a device that was neither XInput nor HIDAPI; the newer one
-     * sets it unconditionally, which leaves the old reading meaningless.
+     * Probably the absence of rumble, though not proved. streaming_client.pi sets it when a pad has
+     * neither rumble nor trigger rumble, and the 2022 build's "neither XInput nor HIDAPI" is the
+     * same stand-in it used, inverted, for IHS_HID_CAP_RUMBLE. Against that: streaming_client_920
+     * sets it unconditionally, which no reading of it survives. Not renamed on that conflict.
      */
     IHS_HID_CAP_UNK_8 = 0x00100000,
     /** All four paddles, not paddle 3 specifically. */
