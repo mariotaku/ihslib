@@ -51,9 +51,10 @@ typedef struct IHS_HIDDeviceInfo IHS_HIDDeviceInfo;
  * names (`SDL.joystick.cap.rumble`, `.mono_led`, `.rgb_led`) are what actually named the bits below;
  * before that they were known only by which controllers happened to set them.
  *
- * Three are still unnamed. They are set from the controller merely *being* a PS4/PS5 pad and are
- * consumed nowhere in either build, so there is nothing to read a meaning off; guesses that fit
- * (touchpad, speaker, glyph set) fit all of them equally, so none is claimed.
+ * Three are still unnamed, and are likely to stay that way. The client only ever writes them; no
+ * consumer exists in any binary available here, the protobuf carries caps_bits as a bare uint32
+ * with no descriptor-level enum, and no public naming exists. What each one is gated on is recorded
+ * below, which is the most that can honestly be said.
  */
 typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_ABXY = 0x00000001,
@@ -70,7 +71,13 @@ typedef enum IHS_HIDDeviceCaps {
     IHS_HID_CAP_PADDLES = 0x00000400,
     /** Motion sensing. Fires with IHS_HID_CAP_GYRO; what separates the two is not established. */
     IHS_HID_CAP_MOTION = 0x00000800,
-    /** Unnamed. Set for PS4 / PS5 pads, read by nothing. */
+    /**
+     * Unnamed. Set for PS4 / PS5 pads, read by nothing. Always set together with
+     * IHS_HID_CAP_UNK_7 — one statement, one predicate, in both builds — and the two are the only
+     * survivors of the six the 2022 build hardcoded for those pads; the rest became SDL capability
+     * queries. So they are real hardware features SDL does not model (touchpad, speaker, headphone
+     * jack, microphone and adaptive triggers all fit), but nothing distinguishes between them.
+     */
     IHS_HID_CAP_UNK_2 = 0x00001000,
     /** `SDL.joystick.cap.rumble`. The old build used "is XInput or HIDAPI" as a stand-in for it. */
     IHS_HID_CAP_RUMBLE = 0x00004000,
@@ -88,9 +95,13 @@ typedef enum IHS_HIDDeviceCaps {
     /** All four paddles, not paddle 3 specifically. */
     IHS_HID_CAP_PADDLES_4 = 0x00400000,
     IHS_HID_CAP_MISC_1 = 0x00800000 /*Misc 1*/,
-    /** Unnamed. Never set by the old build; the newer one sets it only for two HORI pads. */
+    /**
+     * Unnamed. Never set by the old build; the newer one sets it only for the HORI Wireless
+     * HORIPAD For Steam (0f0d:0196 / 0f0d:01ab, SDL's k_eControllerType_HoriSteamController) with
+     * all four paddles present.
+     */
     IHS_HID_CAP_UNK_6 = 0x01000000,
-    /** Unnamed. Set for PS4 / PS5 pads, read by nothing. */
+    /** Unnamed. Set for PS4 / PS5 pads, read by nothing. @see IHS_HID_CAP_UNK_2. */
     IHS_HID_CAP_UNK_7 = 0x02000000,
 } IHS_HIDDeviceCaps;
 #pragma clang diagnostic pop
