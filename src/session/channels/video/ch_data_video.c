@@ -133,6 +133,13 @@ static void DiscardPending(IHS_SessionChannelVideo *channel);
  */
 static void ReportSkippedFrames(IHS_SessionChannelVideo *channel, uint16_t frameId);
 
+/**
+ * Drop the assembly state and wait for a keyframe after the decoder rejected a frame, mirroring
+ * CStreamDecoderVideo::StopDecoding @ 0x205574. Must be called with stateMutex held.
+ * @param channel Channel instance
+ */
+static void ApplyDecoderReset(IHS_SessionChannel *channel);
+
 static const IHS_SessionChannelDataClass ChannelClass = {
         {
                 .init = ChannelVideoInit,
@@ -291,6 +298,10 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         // ihslib hands the frame to the application and never hears about presentation, so an
         // accepted frame is the closest thing this layer has to IStreamPlayer's Displayed
         // (0x1856d4), and a decoder reporting it lost is FinalDecode's failure path (0x203824).
+        // DroppedDecodeCorrupt is that path's initial result, which survives only when no accelerator
+        // is configured; a real hardware failure has CMarvellAccel::BDecodeFrame @ 0x408adc overwrite
+        // it with DroppedReset first. ihslib has no accelerator concept — the application's decoder is
+        // the whole decode path — so the un-overwritten value is the honest one to report.
         IHS_VideoFrameStatsComplete(&videoCh->frameStats, videoCh->frame.id,
                                     result == IHS_StreamVideoSubmitOK ? k_EStreamFrameResultDisplayed
                                                                       : k_EStreamFrameResultDroppedDecodeCorrupt,
@@ -303,6 +314,10 @@ static void DataReceived(IHS_SessionChannel *channel, const IHS_SessionDataFrame
         // a stale counter and stall the next frame until a keyframe arrives.
         videoCh->frame.expectedSubFrameStart = 0;
         videoCh->states.frameCounter++;
+        if (result == IHS_StreamVideoSubmitReportLost) {
+            // After the buffer cleanup, so the reset sees the same state a fresh frame would.
+            ApplyDecoderReset(channel);
+        }
     }
     CheckPartialOverflow(channel);
     unlock:
@@ -427,6 +442,22 @@ static void CheckPartialOverflow(IHS_SessionChannel *channel) {
     videoCh->states.waitingKeyFrame = IHS_TimerNow();
 }
 
+static void ApplyDecoderReset(IHS_SessionChannel *channel) {
+    IHS_SessionChannelVideo *videoCh = (IHS_SessionChannelVideo *) channel;
+    // A reset lands on CStreamDecoderVideo::StopDecoding @ 0x205574, which flushes every queued
+    // fragment and the half-assembled frame (FlushPendingData @ 0x206134), clears frameFinished
+    // and waits for a keyframe. expectedSequence and previousFrameId are deliberately untouched —
+    // the reference does not reset either across a decoder reset.
+    IHS_SessionLog(channel->session, IHS_LogLevelWarn, "Video", "Decoder reset, request keyframe");
+    DiscardPending(videoCh);
+    videoCh->states.frameFinished = false;
+    videoCh->states.waitingKeyFrame = IHS_TimerNow();
+    // Second request of the pair. HandlePendingResets sends one once the reset completes, on top of
+    // the one FinalDecode @ 0x203844 already sent from the decoder thread; this is the one that
+    // arms the retry window above, so it is the one that must come after waitingKeyFrame is set.
+    IHS_SessionChannelDataLost(channel);
+}
+
 static void DiscardPending(IHS_SessionChannelVideo *channel) {
     IHS_BufferClear(&channel->frame.buffer, 0);
     size_t clearedCount = IHS_VideoPartialFramesClear(&channel->frame.partial);
@@ -494,6 +525,8 @@ static IHS_StreamVideoSubmitResult SubmitFrame(IHS_SessionChannel *channel, IHS_
     IHS_StreamVideoSubmitResult result = callbacks->submit(session, data, flags, context);
     if (result == IHS_StreamVideoSubmitReportLost) {
         IHS_SessionLog(session, IHS_LogLevelInfo, "Video", "Decoder reported frame lost.");
+        // The immediate request of the pair, as FinalDecode sends one at 0x203844 before the reset
+        // it asked for has run. The caller applies the reset, which sends the second.
         IHS_SessionChannelDataLost(channel);
     } else if (result == IHS_StreamVideoSubmitError) {
         IHS_SessionLog(session, IHS_LogLevelError, "Video", "Decoder reported unrecoverable error.");

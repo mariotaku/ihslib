@@ -61,6 +61,9 @@ static struct {
 
 static size_t submittedCount = 0;
 
+/** Result the next submit returns, then it falls back to OK. Lets a test fail one decode. */
+static IHS_StreamVideoSubmitResult nextSubmitResult = IHS_StreamVideoSubmitOK;
+
 static IHS_StreamVideoSubmitResult OnSubmit(IHS_Session *session, IHS_Buffer *data, IHS_StreamVideoFrameFlag flags,
                                             void *context) {
     (void) session;
@@ -71,7 +74,9 @@ static IHS_StreamVideoSubmitResult OnSubmit(IHS_Session *session, IHS_Buffer *da
     submitted[submittedCount].len = data->size;
     submitted[submittedCount].flags = flags;
     submittedCount++;
-    return IHS_StreamVideoSubmitOK;
+    IHS_StreamVideoSubmitResult result = nextSubmitResult;
+    nextSubmitResult = IHS_StreamVideoSubmitOK;
+    return result;
 }
 
 static const IHS_StreamVideoCallbacks videoCallbacks = {
@@ -124,6 +129,7 @@ static size_t TakeKeyframeRequests(void) {
 
 static void Reset(void) {
     submittedCount = 0;
+    nextSubmitResult = IHS_StreamVideoSubmitOK;
     TakeKeyframeRequests();
 }
 
@@ -365,6 +371,45 @@ static void test_undecryptable_frame_requests_keyframe(void) {
     assert(TakeKeyframeRequests() == 1);
 }
 
+/**
+ * A decoder that reports a frame lost must put the channel into keyframe wait, exactly as a
+ * sequence gap does — otherwise the following inter-frames, which depend on the frame the decoder
+ * just failed on, keep being handed to it.
+ *
+ * The reference reaches this through a deferred reset: CMarvellAccel::BDecodeFrame @ 0x408adc asks
+ * for ResetVideoDecoder @ 0x1fbe78, and HandlePendingResets @ 0x1fbed4 lands it on
+ * CStreamDecoderVideo::StopDecoding @ 0x205574, which flushes pending data and sets the wait.
+ */
+static void test_decoder_reported_loss_requests_keyframe(void) {
+    Reset();
+    const uint8_t payload[] = {0x55, 0x66};
+    const uint8_t after[] = {0x77, 0x88};
+
+    Feed(1, 1000, 0, VideoFrameFlagKeyFrame | VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+         0, 3, payload, sizeof(payload));
+    assert(submittedCount == 1);
+    assert(TakeKeyframeRequests() == 0);
+
+    // Sequence is intact — the only thing wrong is that the decoder could not decode this frame.
+    nextSubmitResult = IHS_StreamVideoSubmitReportLost;
+    Feed(2, 2000, 1, VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish, 0, 3, after, sizeof(after));
+    assert(submittedCount == 2 && "the failing frame itself still reaches the decoder");
+    // Two requests: the immediate one from SubmitFrame, mirroring FinalDecode @ 0x203844, and the
+    // one HandlePendingResets sends once the reset has been applied.
+    assert(TakeKeyframeRequests() == 2);
+
+    // The wait is now armed, so the next in-sequence frame must be dropped rather than decoded.
+    Feed(3, 3000, 2, VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish, 0, 3, after, sizeof(after));
+    assert(submittedCount == 2 && "frame after a decoder-reported loss must be dropped");
+
+    // A keyframe clears the wait and streaming resumes.
+    const uint8_t recovered[] = {0x99};
+    Feed(4, 4000, 3, VideoFrameFlagKeyFrame | VideoFrameFlagSubFrameAdvance | VideoFrameFlagFrameFinish,
+         0, 3, recovered, sizeof(recovered));
+    assert(submittedCount == 3);
+    assert(submitted[2].data[0] == 0x99);
+}
+
 int main(void) {
     SetUp();
     test_single_frame();
@@ -375,6 +420,7 @@ int main(void) {
     test_frame_finished_without_advance_does_not_stall_next();
     test_encrypted_frame();
     test_undecryptable_frame_requests_keyframe();
+    test_decoder_reported_loss_requests_keyframe();
     TearDown();
     printf("video delivery tests OK\n");
     return 0;
