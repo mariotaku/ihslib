@@ -60,6 +60,29 @@ bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, co
     return true;
 }
 
+bool IHS_ClientStreamingCancel(IHS_Client *client) {
+    IHS_TimerTask *task = client->taskHandles.streaming;
+    if (task == NULL) {
+        return false;
+    }
+    IHS_StreamingState *state = IHS_TimerTaskGetContext(task);
+
+    CMsgRemoteDeviceStreamingCancelRequest request = CMSG_REMOTE_DEVICE_STREAMING_CANCEL_REQUEST__INIT;
+    request.request_id = state->requestId;
+    IHS_SocketAddress address = state->host.address;
+
+    IHS_ClientLog(client, IHS_LogLevelInfo, "Client", "Cancel streaming request to host %s", state->host.hostname);
+
+    // Stop before sending, exactly as IHS_ClientAuthorizationCancel does: the retry timer would
+    // otherwise fire another request between here and the host acting on the cancel. Everything
+    // needed for the send is copied out of `state` above, because IHS_TimerTaskStop only marks
+    // the task — the timer thread may run StreamingRequestCleanup and free `state` at any point
+    // after this line.
+    IHS_TimerTaskStop(task);
+
+    return IHS_ClientSend(client, address, k_ERemoteDeviceStreamingCancelRequest, (ProtobufCMessage *) &request);
+}
+
 void IHS_ClientStreamingCallback(IHS_Client *client, const IHS_SocketAddress *address,
                                  CMsgRemoteClientBroadcastHeader *header, ProtobufCMessage *message) {
     IHS_UNUSED(address);
