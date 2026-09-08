@@ -145,6 +145,19 @@ bool IHS_ClientStartDiscovery(IHS_Client *client, uint32_t interval);
 
 bool IHS_ClientStopDiscovery(IHS_Client *client);
 
+/**
+ * Send a single discovery probe directly to one host address, on Steam's discovery port.
+ *
+ * Independent of IHS_ClientStartDiscovery - use it when the periodic broadcast never reaches the
+ * host, such as on an access point with client isolation, or with the host on a different VLAN.
+ * Replies arrive through the discovery callbacks like any broadcast reply.
+ *
+ * @param client Client instance
+ * @param ip Address of the host to probe
+ * @return true if the probe was sent
+ */
+bool IHS_ClientDiscoverAt(IHS_Client *client, const IHS_IPAddress *ip);
+
 /* ----------------------------------------------------
  * - Authorization functions
  * ---------------------------------------------------- */
@@ -165,3 +178,14 @@ bool IHS_ClientAuthorizationCancel(IHS_Client *client);
  * ---------------------------------------------------- */
 
 bool IHS_ClientStreamingRequest(IHS_Client *client, const IHS_HostInfo *host, const IHS_StreamingRequest *request);
+
+/**
+ * Cancel a streaming request started by IHS_ClientStreamingRequest.
+ *
+ * Stops the retry timer and tells the host to drop the request. No streaming callback is invoked -
+ * the caller already knows the request is gone.
+ *
+ * @param client Client instance
+ * @return true if a request was in progress and the cancellation was sent
+ */
+bool IHS_ClientStreamingCancel(IHS_Client *client);

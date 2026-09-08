@@ -34,6 +34,14 @@ static void DiscoveryTimerEnd(IHS_Client *client);
 
 static bool DiscoveryBroadcast(IHS_Client *client);
 
+static bool DiscoverySendTo(IHS_Client *client, const IHS_SocketAddress *address);
+
+/**
+ * Steam's discovery port. Both the broadcast and the unicast probe go here; see
+ * IHS_ClientBroadcast's address literal in client.c.
+ */
+static const uint16_t DiscoveryPort = 27036;
+
 bool IHS_ClientStartDiscovery(IHS_Client *client, uint32_t interval) {
     IHS_BaseLock(&client->base);
     if (client->discoveryTimer != NULL) {
@@ -57,6 +65,15 @@ bool IHS_ClientStopDiscovery(IHS_Client *client) {
     client->discoveryTimer = NULL;
     IHS_BaseUnlock(&client->base);
     return true;
+}
+
+bool IHS_ClientDiscoverAt(IHS_Client *client, const IHS_IPAddress *ip) {
+    if (ip == NULL) {
+        return false;
+    }
+    IHS_SocketAddress address = {.ip = *ip, .port = DiscoveryPort};
+    IHS_ClientLog(client, IHS_LogLevelVerbose, "Discovery", "Send unicast probe");
+    return DiscoverySendTo(client, &address);
 }
 
 
@@ -95,8 +112,27 @@ static void DiscoveryTimerEnd(IHS_Client *client) {
 }
 
 static bool DiscoveryBroadcast(IHS_Client *client) {
-    CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
-    PROTOBUF_C_SET_VALUE(discovery, seq_num, client->discoverySeq++);
+    return DiscoverySendTo(client, NULL);
+}
 
-    return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+/**
+ * Send one discovery probe. A NULL address broadcasts, which is what the periodic timer does;
+ * IHS_ClientDiscoverAt passes a host address instead, for networks where the broadcast never
+ * arrives (AP isolation, or the host on a different VLAN).
+ *
+ * The sequence number is bumped under the base lock because the caller may be the application
+ * thread while the discovery timer is running on the timer thread.
+ */
+static bool DiscoverySendTo(IHS_Client *client, const IHS_SocketAddress *address) {
+    IHS_BaseLock(&client->base);
+    uint32_t seqNum = client->discoverySeq++;
+    IHS_BaseUnlock(&client->base);
+
+    CMsgRemoteClientBroadcastDiscovery discovery = CMSG_REMOTE_CLIENT_BROADCAST_DISCOVERY__INIT;
+    PROTOBUF_C_SET_VALUE(discovery, seq_num, seqNum);
+
+    if (address == NULL) {
+        return IHS_ClientBroadcast(client, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
+    }
+    return IHS_ClientSend(client, *address, k_ERemoteClientBroadcastMsgDiscovery, (ProtobufCMessage *) &discovery);
 }
