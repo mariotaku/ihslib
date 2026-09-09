@@ -32,10 +32,31 @@
 
 typedef struct IHS_Session IHS_Session;
 
+/**
+ * Identity of a packet whose retransmission was cancelled, kept just long enough for a twin still
+ * in the send queue to be recognised on arrival.
+ */
+typedef struct IHS_RetransmissionCancelled {
+    IHS_SessionChannelId channelId;
+    uint16_t packetId;
+    uint16_t fragmentId;
+    /** IHS_TimerNow() at the time of the cancel, for ageing the entry out. */
+    uint64_t cancelledAt;
+    bool valid;
+} IHS_RetransmissionCancelled;
+
 typedef struct IHS_SessionRetransmission {
     IHS_Session *session;
     IHS_Mutex *lock;
     IHS_Queue *queue;
+    /**
+     * Identities cancelled while nothing was queued under them. The next retransmission of a packet
+     * is created asynchronously — the timer hands it to the send queue and only the send worker
+     * calls IHS_RetransmissionQueue — so an ACK arriving in that window cancels nothing and the
+     * twin, born afterwards, retransmits to the attempt limit. Ring, oldest overwritten.
+     */
+    IHS_RetransmissionCancelled cancelled[64];
+    size_t cancelledHead;
 } IHS_SessionRetransmission;
 
 void IHS_RetransmissionInit(IHS_SessionRetransmission *retransmission, IHS_Session *session);

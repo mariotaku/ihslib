@@ -23,3 +23,5 @@ ihs_add_test(control_hid test_control_hid.c)
 target_link_libraries(ihstest_control_hid PRIVATE ihs-test-session)
 
 add_subdirectory(video)
+ihs_add_test(retransmission_twin retransmission_twin.c)
+target_link_libraries("${IHSTEST_TARGET}" PRIVATE ihs-test-session)

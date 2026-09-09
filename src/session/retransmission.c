@@ -26,8 +26,20 @@
 #include "retransmission.h"
 #include "session_pri.h"
 
+#include <string.h>
+
 #define RETRANSMISSION_INTERVAL 10
 #define RETRANSMISSION_ATTEMPTS 20
+
+#define CANCELLED_RING_SIZE (sizeof(((IHS_SessionRetransmission *) 0)->cancelled) / \
+                             sizeof(((IHS_SessionRetransmission *) 0)->cancelled[0]))
+/**
+ * How long a cancelled identity stays eligible to suppress a twin. A twin is already in the send
+ * queue when its identity is recorded, so the real window is sub-millisecond; the full retransmit
+ * lifetime is a generous bound that still keeps a stale entry from suppressing a legitimate
+ * retransmission of a wrapped-around packetId.
+ */
+#define CANCELLED_MAX_AGE (RETRANSMISSION_INTERVAL * RETRANSMISSION_ATTEMPTS)
 
 typedef struct IHS_QueueItem {
     IHS_SessionPacket packet;
@@ -51,10 +63,17 @@ static bool RetransmissionIdenticalPredicate(PendingRetransmission *item, void *
 
 static bool RetransmissionPacketPredicate(PendingRetransmission *item, void *context);
 
+static void CancelledRecord(IHS_SessionRetransmission *retransmission, IHS_SessionChannelId channelId,
+                            uint16_t packetId, uint16_t fragmentId);
+
+static bool CancelledTake(IHS_SessionRetransmission *retransmission, const IHS_SessionPacketHeader *header);
+
 void IHS_RetransmissionInit(IHS_SessionRetransmission *retransmission, IHS_Session *session) {
     retransmission->session = session;
     retransmission->lock = IHS_MutexCreate();
     retransmission->queue = IHS_QueueCreate(sizeof(PendingRetransmission));
+    memset(retransmission->cancelled, 0, sizeof(retransmission->cancelled));
+    retransmission->cancelledHead = 0;
 }
 
 void IHS_RetransmissionDeinit(IHS_SessionRetransmission *retransmission) {
@@ -68,6 +87,16 @@ bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_Sess
     assert(packet->body.data != NULL);
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
     if (packet->header.retransmitCount >= RETRANSMISSION_ATTEMPTS) {
+        return false;
+    }
+    // A retransmission only becomes visible to Cancel here, on the send worker, long after the
+    // timer decided to send it. If its ACK landed in between, this is a twin of a packet the host
+    // already has. Only a retransmission can be one: a first send carries retransmitCount 0 and
+    // its identity has had no chance to be cancelled.
+    if (packet->header.retransmitCount > 0 && CancelledTake(retransmission, &packet->header)) {
+        IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
+                       "Dropping cancelled Packet(channelId=%u, packetId=%u, fragmentId=%u)",
+                       packet->header.channelId, packet->header.packetId, packet->header.fragmentId);
         return false;
     }
     PendingRetransmission *pending = IHS_QueueItemObtain(retransmission->queue);
@@ -98,6 +127,11 @@ bool IHS_RetransmissionCancel(IHS_SessionRetransmission *retransmission, IHS_Ses
     PendingRetransmission *match = IHS_QueuePollBy(retransmission->queue, RetransmissionPacketPredicate, &query);
     IHS_MutexUnlock(retransmission->lock);
     if (match == NULL) {
+        // Nothing queued under this identity. Either the packet was never retransmittable, or a
+        // retransmission of it is mid-handoff between the timer and the send worker — indis-
+        // tinguishable from here, so record it and let IHS_RetransmissionQueue decide. Recording
+        // only on a miss keeps the ring from churning through every ordinary ACK.
+        CancelledRecord(retransmission, channelId, packetId, fragmentId);
         return false;
     } else if (match->task != NULL) {
         IHS_SessionLog(retransmission->session, IHS_LogLevelVerbose, "Retransmission",
@@ -152,4 +186,42 @@ static bool RetransmissionPacketPredicate(PendingRetransmission *item, void *con
     return item->packet.header.channelId == query->channelId &&
            item->packet.header.packetId == query->packetId &&
            item->packet.header.fragmentId == query->fragmentId;
+}
+
+static void CancelledRecord(IHS_SessionRetransmission *retransmission, IHS_SessionChannelId channelId,
+                            uint16_t packetId, uint16_t fragmentId) {
+    IHS_MutexLock(retransmission->lock);
+    IHS_RetransmissionCancelled *slot = &retransmission->cancelled[retransmission->cancelledHead];
+    slot->channelId = channelId;
+    slot->packetId = packetId;
+    slot->fragmentId = fragmentId;
+    slot->cancelledAt = IHS_TimerNow();
+    slot->valid = true;
+    retransmission->cancelledHead = (retransmission->cancelledHead + 1) % CANCELLED_RING_SIZE;
+    IHS_MutexUnlock(retransmission->lock);
+}
+
+/** Consume a matching entry, so one cancel suppresses exactly one twin. */
+static bool CancelledTake(IHS_SessionRetransmission *retransmission, const IHS_SessionPacketHeader *header) {
+    uint64_t now = IHS_TimerNow();
+    bool taken = false;
+    IHS_MutexLock(retransmission->lock);
+    for (size_t i = 0; i < CANCELLED_RING_SIZE; i++) {
+        IHS_RetransmissionCancelled *slot = &retransmission->cancelled[i];
+        if (!slot->valid) {
+            continue;
+        }
+        if (now - slot->cancelledAt > CANCELLED_MAX_AGE) {
+            slot->valid = false;
+            continue;
+        }
+        if (slot->channelId == header->channelId && slot->packetId == header->packetId &&
+            slot->fragmentId == header->fragmentId) {
+            slot->valid = false;
+            taken = true;
+            break;
+        }
+    }
+    IHS_MutexUnlock(retransmission->lock);
+    return taken;
 }
