@@ -55,9 +55,15 @@ typedef struct IHS_HIDReportHolder {
      */
     IHS_ArrayList reportItems;
     /**
-     * List of (CHIDDeviceInputReport*).
+     * List of (CHIDDeviceInputReport*). Rebound by GetMessage: reportItems reallocates as it
+     * grows, so a pointer taken at Add time goes stale.
      */
     IHS_ArrayList reportPointers;
+    /**
+     * Per-item offset (size_t) into dataBuffer. dataBuffer reallocates too, so the report data
+     * pointers are bound to it only at GetMessage time.
+     */
+    IHS_ArrayList reportOffsets;
     /**
      * Data length for single report item. Will be used for delta calculation, etc.
      */
