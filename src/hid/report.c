@@ -73,16 +73,9 @@ void IHS_HIDReportHolderDeinit(IHS_HIDReportHolder *holder) {
     free(holder->pendingCurrent);
 }
 
-// Capture `current` as the pending state for the next send and decide whether to skip
-// because the bytes are byte-identical to what was last flushed. Allocates the two scratch
-// buffers lazily and grows them on demand. Returns true if the caller should drop.
-static bool DedupAndStash(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
-    // A pending full-report request outranks the dedup: the host explicitly asked for the current
-    // state, so silence is not an acceptable answer even when nothing changed since the last send.
-    if (!holder->fullReportPending && holder->lastSent != NULL && holder->lastSentLen == len &&
-        memcmp(holder->lastSent, current, len) == 0) {
-        return true;
-    }
+// Capture `current` as the pending state for the next send. Allocates the two scratch
+// buffers lazily and grows them on demand.
+static void Stash(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
     if (len > holder->bufferCapacity) {
         holder->lastSent = realloc(holder->lastSent, len);
         holder->pendingCurrent = realloc(holder->pendingCurrent, len);
@@ -90,7 +83,13 @@ static bool DedupAndStash(IHS_HIDReportHolder *holder, const uint8_t *current, s
     }
     memcpy(holder->pendingCurrent, current, len);
     holder->pendingCurrentLen = len;
-    return false;
+}
+
+// True when `current` is byte-identical to what was last flushed, so a full report carrying it
+// would tell the host nothing it does not already know.
+static bool SameAsLastSent(const IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
+    return holder->lastSent != NULL && holder->lastSentLen == len &&
+           memcmp(holder->lastSent, current, len) == 0;
 }
 
 void IHS_HIDReportHolderSetReportLength(IHS_HIDReportHolder *holder, size_t reportLen) {
@@ -103,9 +102,14 @@ void IHS_HIDReportHolderRequestFullReport(IHS_HIDReportHolder *holder) {
 
 void IHS_HIDReportHolderAddFull(IHS_HIDReportHolder *holder, const uint8_t *current, size_t len) {
     assert(holder->reportLength >= len);
-    if (DedupAndStash(holder, current, len)) {
+    // A full report is self-contained, so one that repeats the last flushed state is pure noise and
+    // dropping it breaks no chain — this is the memcmp(buf, lastBuffer) drop in SendBuffer @
+    // 0x2454ec. A pending full-report request outranks it: the host explicitly asked for the current
+    // state, so silence is not an acceptable answer even when nothing changed.
+    if (!holder->fullReportPending && SameAsLastSent(holder, current, len)) {
         return;
     }
+    Stash(holder, current, len);
     AppendFull(holder, current, len);
 }
 
@@ -131,9 +135,16 @@ static void AppendFull(IHS_HIDReportHolder *holder, const uint8_t *current, size
 
 void IHS_HIDReportHolderAddDelta(IHS_HIDReportHolder *holder, const uint8_t *previous, const uint8_t *current,
                                  size_t len) {
-    if (DedupAndStash(holder, current, len)) {
-        return;
-    }
+    // Never drop a delta, not even one landing back on the last flushed state. Deltas are a chain:
+    // the host applies each to the state the previous one left it in. A press and release inside one
+    // poll tick ends on the flushed state, so the old dedup swallowed the release and left the host
+    // holding the button — and because every caller advances its own `previous` whether or not we
+    // sent (sdl_hid_event.c:87, :123, :141, :164), every later delta was then anchored to a state
+    // the host was never in. Steam's dedup is safe only because its delta is anchored to lastBuffer
+    // rather than to a caller-held previous.
+    // Nothing is lost by not deduping here: those same call sites only add a delta when the bytes
+    // actually changed.
+    Stash(holder, current, len);
     // A latched full-report request cannot be answered with a delta. Steam keeps the flag set until
     // a full report actually goes out rather than treating one delta as having served it.
     // A length change also rules out a delta: the bitmask is indexed by byte position, so it only
