@@ -277,7 +277,16 @@ static void SessionSendWorker(void *context) {
         }
         IHS_MutexUnlock(session->sendQueueMutex);
 
-        IHS_SessionSendPacket(session, &queued->packet);
+        if (!IHS_SessionSendPacket(session, &queued->packet)) {
+            // A packet the socket refuses looks exactly like one the peer ignores: both retransmit
+            // to the attempt limit and vanish. No errno here — IHS_BaseSend returns false without
+            // any syscall when the socket is already closed, and takes a lock either way, so the
+            // value would be stale as often as not.
+            IHS_SessionLog(session, IHS_LogLevelWarn, "Session",
+                           "Failed to send Packet(channelId=%u, packetId=%u, fragmentId=%u)",
+                           queued->packet.header.channelId, queued->packet.header.packetId,
+                           queued->packet.header.fragmentId);
+        }
 
         if (queued->retransmit) {
             IHS_RetransmissionQueue(&session->retransmission, &queued->packet);

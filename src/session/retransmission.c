@@ -27,6 +27,7 @@
 #include "session_pri.h"
 
 #include <string.h>
+#include <assert.h>
 
 #define RETRANSMISSION_INTERVAL 10
 #define RETRANSMISSION_ATTEMPTS 20
@@ -78,6 +79,12 @@ void IHS_RetransmissionInit(IHS_SessionRetransmission *retransmission, IHS_Sessi
 
 void IHS_RetransmissionDeinit(IHS_SessionRetransmission *retransmission) {
     IHS_MutexLock(retransmission->lock);
+    // The timers must already be gone: IHS_TimerDestroy runs every task's end function, and
+    // RetransmissionTimerEnd both unqueues and frees its item, so the queue is empty by now.
+    // If it were not, RetransmissionQueueItemDestroy would stop the task, RetransmissionTimerEnd
+    // would free the node, and IHS_QueueDestroy would free it a second time. Keep
+    // IHS_TimerDestroy ahead of this call in IHS_SessionDestroy.
+    assert(IHS_QueueIsEmpty(retransmission->queue));
     IHS_QueueDestroy(retransmission->queue, RetransmissionQueueItemDestroy, retransmission);
     IHS_MutexUnlock(retransmission->lock);
     IHS_MutexDestroy(retransmission->lock);
@@ -87,6 +94,13 @@ bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_Sess
     assert(packet->body.data != NULL);
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
     if (packet->header.retransmitCount >= RETRANSMISSION_ATTEMPTS) {
+        // Twenty unacknowledged copies of one packet is not a lossy link, it is a packet the peer
+        // never accepts. Say so rather than falling silent — this is the only trace left of a
+        // control message that never landed.
+        IHS_SessionLog(retransmission->session, IHS_LogLevelWarn, "Retransmission",
+                       "Giving up on Packet(channelId=%u, packetId=%u, fragmentId=%u) after %u attempts",
+                       packet->header.channelId, packet->header.packetId, packet->header.fragmentId,
+                       RETRANSMISSION_ATTEMPTS);
         return false;
     }
     // A retransmission only becomes visible to Cancel here, on the send worker, long after the
