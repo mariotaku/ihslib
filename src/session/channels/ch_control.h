@@ -31,11 +31,20 @@
 #include "session/window.h"
 #include "ihs_timer.h"
 
+#include "ihs_thread.h"
+
 #include "protobuf/remoteplay.pb-c.h"
 #include "protobuf/hiddevices.pb-c.h"
 
 typedef struct IHS_SessionChannelControl {
     IHS_SessionChannel base;
+    /**
+     * Serialises IHS_SessionChannelControlSend. Each send allocates a packet id and an encryption
+     * sequence, and the host expects the two to advance together. Control messages come from the
+     * receive loop (packet handlers, keepalive and HID poll timers), the video data channel's
+     * worker thread, and the application thread.
+     */
+    IHS_Mutex *sendLock;
     uint64_t sendEncryptSequence;
     uint64_t recvEncryptSequence;
     IHS_SessionPacketsWindow *framePacketWindow;

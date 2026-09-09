@@ -90,6 +90,11 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
             logLevel = IHS_LogLevelDebug;
             break;
     }
+    // The packet id and the encryption sequence must advance together, and the wire order has to
+    // match the sequence order — so the lock covers allocation, encryption and queueing, not just
+    // the two counters. Interleaving hands one message a sequence the host cannot place; it drops
+    // that message as a decrypt failure without acknowledging it, and we retransmit into the void.
+    IHS_MutexLock(control->sendLock);
     IHS_SessionFrame frame;
     IHS_SessionChannelInitializeFrame(channel, &frame, IHS_SessionPacketTypeReliable, true, packetId);
     IHS_SessionLog(channel->session, logLevel, "Control", "Send control message: %s, id=%u", value->name,
@@ -105,6 +110,9 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
             free(serialized);
             IHS_SessionFrameClear(&frame, true);
             IHS_SessionLog(channel->session, IHS_LogLevelError, "Control", "Failed to encrypt payload\n");
+            // Unlock first: disconnect runs channel teardown, and nothing holding this lock should
+            // be on the stack when it does.
+            IHS_MutexUnlock(control->sendLock);
             IHS_SessionDisconnect(channel->session);
             return false;
         }
@@ -115,6 +123,7 @@ bool IHS_SessionChannelControlSend(IHS_SessionChannel *channel, EStreamControlMe
     }
     ret = IHS_SessionChannelQueueFrame(channel, &frame, true);
     IHS_SessionFrameClear(&frame, true);
+    IHS_MutexUnlock(control->sendLock);
     return ret;
 }
 
@@ -138,12 +147,14 @@ void IHS_SessionChannelControlHandshake(IHS_SessionChannel *channel, bool networ
 static void OnControlInit(IHS_SessionChannel *channel, const void *data) {
     IHS_UNUSED(data);
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
+    control->sendLock = IHS_MutexCreate();
     control->framePacketWindow = IHS_SessionPacketsWindowCreate(128);
 }
 
 static void OnControlDeinit(IHS_SessionChannel *channel) {
     IHS_SessionChannelControl *control = (IHS_SessionChannelControl *) channel;
     IHS_SessionPacketsWindowDestroy(control->framePacketWindow);
+    IHS_MutexDestroy(control->sendLock);
 }
 
 static void OnControlReceived(IHS_SessionChannel *channel, IHS_SessionPacket *packet) {

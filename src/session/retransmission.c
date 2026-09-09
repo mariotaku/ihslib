@@ -93,14 +93,9 @@ void IHS_RetransmissionDeinit(IHS_SessionRetransmission *retransmission) {
 bool IHS_RetransmissionQueue(IHS_SessionRetransmission *retransmission, IHS_SessionPacket *packet) {
     assert(packet->body.data != NULL);
     assert(packet->body.offset == IHS_PACKET_HEADER_SIZE);
+    // RetransmissionTimerRun already declines to re-queue at the limit, so this is a backstop for
+    // a caller that queues an exhausted packet directly. It warns where the decision is made.
     if (packet->header.retransmitCount >= RETRANSMISSION_ATTEMPTS) {
-        // Twenty unacknowledged copies of one packet is not a lossy link, it is a packet the peer
-        // never accepts. Say so rather than falling silent — this is the only trace left of a
-        // control message that never landed.
-        IHS_SessionLog(retransmission->session, IHS_LogLevelWarn, "Retransmission",
-                       "Giving up on Packet(channelId=%u, packetId=%u, fragmentId=%u) after %u attempts",
-                       packet->header.channelId, packet->header.packetId, packet->header.fragmentId,
-                       RETRANSMISSION_ATTEMPTS);
         return false;
     }
     // A retransmission only becomes visible to Cancel here, on the send worker, long after the
@@ -172,7 +167,18 @@ static uint64_t RetransmissionTimerRun(int runCount, void *context) {
     PendingRetransmission *pending = context;
     IHS_SessionRetransmission *retransmission = pending->retransmission;
     IHS_SessionPacket *packet = &pending->packet;
-    IHS_SessionQueuePacket(retransmission->session, packet, packet->header.retransmitCount < RETRANSMISSION_ATTEMPTS);
+    bool retransmit = packet->header.retransmitCount < RETRANSMISSION_ATTEMPTS;
+    if (!retransmit) {
+        // Twenty unacknowledged copies of one packet is not a lossy link, it is a packet the peer
+        // never accepts. This is the last trace of a control message that never landed, and the
+        // decision is made here — IHS_RetransmissionQueue is not even called once we stop asking
+        // for a retransmit, so warning there would say nothing.
+        IHS_SessionLog(retransmission->session, IHS_LogLevelWarn, "Retransmission",
+                       "Giving up on Packet(channelId=%u, packetId=%u, fragmentId=%u) after %u attempts",
+                       packet->header.channelId, packet->header.packetId, packet->header.fragmentId,
+                       RETRANSMISSION_ATTEMPTS);
+    }
+    IHS_SessionQueuePacket(retransmission->session, packet, retransmit);
     assert(packet->body.data == NULL);
     return 0;
 }
