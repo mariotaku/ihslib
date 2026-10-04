@@ -26,7 +26,8 @@ if (NOT SDL2_FOUND)
 endif ()
 
 if (NOT PROTOBUF_C_FOUND)
-    pkg_check_modules(PROTOBUF_C libprotobuf-c REQUIRED)
+    # The generated sources in src/protobuf need libprotobuf-c 1.3.0 or newer.
+    pkg_check_modules(PROTOBUF_C libprotobuf-c>=1.3.0 REQUIRED)
 endif ()
 
 if (NOT MBEDTLS_FOUND)

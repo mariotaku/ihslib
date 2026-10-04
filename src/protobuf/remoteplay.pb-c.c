@@ -997,6 +997,96 @@ void   cstop_video_data_msg__free_unpacked
   assert(message->base.descriptor == &cstop_video_data_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cstart_neptune_data_msg__init
+                     (CStartNeptuneDataMsg         *message)
+{
+  static const CStartNeptuneDataMsg init_value = CSTART_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cstart_neptune_data_msg__get_packed_size
+                     (const CStartNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cstart_neptune_data_msg__pack
+                     (const CStartNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cstart_neptune_data_msg__pack_to_buffer
+                     (const CStartNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CStartNeptuneDataMsg *
+       cstart_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CStartNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cstart_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cstart_neptune_data_msg__free_unpacked
+                     (CStartNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cstart_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cstop_neptune_data_msg__init
+                     (CStopNeptuneDataMsg         *message)
+{
+  static const CStopNeptuneDataMsg init_value = CSTOP_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cstop_neptune_data_msg__get_packed_size
+                     (const CStopNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cstop_neptune_data_msg__pack
+                     (const CStopNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cstop_neptune_data_msg__pack_to_buffer
+                     (const CStopNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CStopNeptuneDataMsg *
+       cstop_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CStopNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cstop_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cstop_neptune_data_msg__free_unpacked
+                     (CStopNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cstop_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   crecorded_input__init
                      (CRecordedInput         *message)
 {
@@ -2255,6 +2345,186 @@ void   cdisable_high_res_capture_msg__free_unpacked
   if(!message)
     return;
   assert(message->base.descriptor == &cdisable_high_res_capture_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cenable_neptune_data_msg__init
+                     (CEnableNeptuneDataMsg         *message)
+{
+  static const CEnableNeptuneDataMsg init_value = CENABLE_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cenable_neptune_data_msg__get_packed_size
+                     (const CEnableNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cenable_neptune_data_msg__pack
+                     (const CEnableNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cenable_neptune_data_msg__pack_to_buffer
+                     (const CEnableNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CEnableNeptuneDataMsg *
+       cenable_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CEnableNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cenable_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cenable_neptune_data_msg__free_unpacked
+                     (CEnableNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cenable_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cdisable_neptune_data_msg__init
+                     (CDisableNeptuneDataMsg         *message)
+{
+  static const CDisableNeptuneDataMsg init_value = CDISABLE_NEPTUNE_DATA_MSG__INIT;
+  *message = init_value;
+}
+size_t cdisable_neptune_data_msg__get_packed_size
+                     (const CDisableNeptuneDataMsg *message)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cdisable_neptune_data_msg__pack
+                     (const CDisableNeptuneDataMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cdisable_neptune_data_msg__pack_to_buffer
+                     (const CDisableNeptuneDataMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CDisableNeptuneDataMsg *
+       cdisable_neptune_data_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CDisableNeptuneDataMsg *)
+     protobuf_c_message_unpack (&cdisable_neptune_data_msg__descriptor,
+                                allocator, len, data);
+}
+void   cdisable_neptune_data_msg__free_unpacked
+                     (CDisableNeptuneDataMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cdisable_neptune_data_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cpause_controller_input_msg__init
+                     (CPauseControllerInputMsg         *message)
+{
+  static const CPauseControllerInputMsg init_value = CPAUSE_CONTROLLER_INPUT_MSG__INIT;
+  *message = init_value;
+}
+size_t cpause_controller_input_msg__get_packed_size
+                     (const CPauseControllerInputMsg *message)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cpause_controller_input_msg__pack
+                     (const CPauseControllerInputMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cpause_controller_input_msg__pack_to_buffer
+                     (const CPauseControllerInputMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CPauseControllerInputMsg *
+       cpause_controller_input_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CPauseControllerInputMsg *)
+     protobuf_c_message_unpack (&cpause_controller_input_msg__descriptor,
+                                allocator, len, data);
+}
+void   cpause_controller_input_msg__free_unpacked
+                     (CPauseControllerInputMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cpause_controller_input_msg__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   cresume_controller_input_msg__init
+                     (CResumeControllerInputMsg         *message)
+{
+  static const CResumeControllerInputMsg init_value = CRESUME_CONTROLLER_INPUT_MSG__INIT;
+  *message = init_value;
+}
+size_t cresume_controller_input_msg__get_packed_size
+                     (const CResumeControllerInputMsg *message)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cresume_controller_input_msg__pack
+                     (const CResumeControllerInputMsg *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cresume_controller_input_msg__pack_to_buffer
+                     (const CResumeControllerInputMsg *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CResumeControllerInputMsg *
+       cresume_controller_input_msg__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CResumeControllerInputMsg *)
+     protobuf_c_message_unpack (&cresume_controller_input_msg__descriptor,
+                                allocator, len, data);
+}
+void   cresume_controller_input_msg__free_unpacked
+                     (CResumeControllerInputMsg *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cresume_controller_input_msg__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 void   ctoggle_magnification_msg__init
@@ -6234,6 +6504,62 @@ const ProtobufCMessageDescriptor cstop_video_data_msg__descriptor =
   (ProtobufCMessageInit) cstop_video_data_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
+static const ProtobufCFieldDescriptor cstart_neptune_data_msg__field_descriptors[1] =
+{
+  {
+    "channel",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(CStartNeptuneDataMsg, channel),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned cstart_neptune_data_msg__field_indices_by_name[] = {
+  0,   /* field[0] = channel */
+};
+static const ProtobufCIntRange cstart_neptune_data_msg__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor cstart_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CStartNeptuneDataMsg",
+  "CStartNeptuneDataMsg",
+  "CStartNeptuneDataMsg",
+  "",
+  sizeof(CStartNeptuneDataMsg),
+  1,
+  cstart_neptune_data_msg__field_descriptors,
+  cstart_neptune_data_msg__field_indices_by_name,
+  1,  cstart_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cstart_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cstop_neptune_data_msg__field_descriptors NULL
+#define cstop_neptune_data_msg__field_indices_by_name NULL
+#define cstop_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cstop_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CStopNeptuneDataMsg",
+  "CStopNeptuneDataMsg",
+  "CStopNeptuneDataMsg",
+  "",
+  sizeof(CStopNeptuneDataMsg),
+  0,
+  cstop_neptune_data_msg__field_descriptors,
+  cstop_neptune_data_msg__field_indices_by_name,
+  0,  cstop_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cstop_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const EStreamControlMessage crecorded_input__type__default_value = k_EStreamControlAuthenticationRequest;
 static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
 {
@@ -6270,7 +6596,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, finger_down),
     &cinput_touch_finger_down_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6282,7 +6608,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, finger_motion),
     &cinput_touch_finger_motion_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6294,7 +6620,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, finger_up),
     &cinput_touch_finger_up_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6306,7 +6632,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, mouse_motion),
     &cinput_mouse_motion_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6318,7 +6644,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, mouse_wheel),
     &cinput_mouse_wheel_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6330,7 +6656,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, mouse_down),
     &cinput_mouse_down_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6342,7 +6668,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, mouse_up),
     &cinput_mouse_up_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6354,7 +6680,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, key_down),
     &cinput_key_down_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6366,7 +6692,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, key_up),
     &cinput_key_up_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6378,7 +6704,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, text),
     &cinput_text_msg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -6390,7 +6716,7 @@ static const ProtobufCFieldDescriptor crecorded_input__field_descriptors[13] =
     offsetof(CRecordedInput, hid),
     &cremote_hidmsg__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
@@ -7772,6 +8098,78 @@ const ProtobufCMessageDescriptor cdisable_high_res_capture_msg__descriptor =
   cdisable_high_res_capture_msg__field_indices_by_name,
   0,  cdisable_high_res_capture_msg__number_ranges,
   (ProtobufCMessageInit) cdisable_high_res_capture_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cenable_neptune_data_msg__field_descriptors NULL
+#define cenable_neptune_data_msg__field_indices_by_name NULL
+#define cenable_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cenable_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CEnableNeptuneDataMsg",
+  "CEnableNeptuneDataMsg",
+  "CEnableNeptuneDataMsg",
+  "",
+  sizeof(CEnableNeptuneDataMsg),
+  0,
+  cenable_neptune_data_msg__field_descriptors,
+  cenable_neptune_data_msg__field_indices_by_name,
+  0,  cenable_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cenable_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cdisable_neptune_data_msg__field_descriptors NULL
+#define cdisable_neptune_data_msg__field_indices_by_name NULL
+#define cdisable_neptune_data_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cdisable_neptune_data_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CDisableNeptuneDataMsg",
+  "CDisableNeptuneDataMsg",
+  "CDisableNeptuneDataMsg",
+  "",
+  sizeof(CDisableNeptuneDataMsg),
+  0,
+  cdisable_neptune_data_msg__field_descriptors,
+  cdisable_neptune_data_msg__field_indices_by_name,
+  0,  cdisable_neptune_data_msg__number_ranges,
+  (ProtobufCMessageInit) cdisable_neptune_data_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cpause_controller_input_msg__field_descriptors NULL
+#define cpause_controller_input_msg__field_indices_by_name NULL
+#define cpause_controller_input_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cpause_controller_input_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CPauseControllerInputMsg",
+  "CPauseControllerInputMsg",
+  "CPauseControllerInputMsg",
+  "",
+  sizeof(CPauseControllerInputMsg),
+  0,
+  cpause_controller_input_msg__field_descriptors,
+  cpause_controller_input_msg__field_indices_by_name,
+  0,  cpause_controller_input_msg__number_ranges,
+  (ProtobufCMessageInit) cpause_controller_input_msg__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define cresume_controller_input_msg__field_descriptors NULL
+#define cresume_controller_input_msg__field_indices_by_name NULL
+#define cresume_controller_input_msg__number_ranges NULL
+const ProtobufCMessageDescriptor cresume_controller_input_msg__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CResumeControllerInputMsg",
+  "CResumeControllerInputMsg",
+  "CResumeControllerInputMsg",
+  "",
+  sizeof(CResumeControllerInputMsg),
+  0,
+  cresume_controller_input_msg__field_descriptors,
+  cresume_controller_input_msg__field_indices_by_name,
+  0,  cresume_controller_input_msg__number_ranges,
+  (ProtobufCMessageInit) cresume_controller_input_msg__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 #define ctoggle_magnification_msg__field_descriptors NULL
@@ -10441,7 +10839,7 @@ static const ProtobufCFieldDescriptor ctransport_signal_msg__web_rtcmessage__fie
     offsetof(CTransportSignalMsg__WebRTCMessage, greeting),
     NULL,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -10453,7 +10851,7 @@ static const ProtobufCFieldDescriptor ctransport_signal_msg__web_rtcmessage__fie
     offsetof(CTransportSignalMsg__WebRTCMessage, offer),
     NULL,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -10465,7 +10863,7 @@ static const ProtobufCFieldDescriptor ctransport_signal_msg__web_rtcmessage__fie
     offsetof(CTransportSignalMsg__WebRTCMessage, answer),
     NULL,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -10477,7 +10875,7 @@ static const ProtobufCFieldDescriptor ctransport_signal_msg__web_rtcmessage__fie
     offsetof(CTransportSignalMsg__WebRTCMessage, candidate),
     &ctransport_signal_msg__web_rtcmessage__candidate__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
@@ -11020,7 +11418,7 @@ const ProtobufCEnumDescriptor estream_discovery_message__descriptor =
   estream_discovery_message__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estream_control_message__enum_values_by_number[91] =
+static const ProtobufCEnumValue estream_control_message__enum_values_by_number[97] =
 {
   { "k_EStreamControlAuthenticationRequest", "k_EStreamControlAuthenticationRequest", 1 },
   { "k_EStreamControlAuthenticationResponse", "k_EStreamControlAuthenticationResponse", 2 },
@@ -11113,11 +11511,17 @@ static const ProtobufCEnumValue estream_control_message__enum_values_by_number[9
   { "k_EStreamControlShowOnScreenKeyboard", "k_EStreamControlShowOnScreenKeyboard", 136 },
   { "k_EStreamControlControllerConfigMsg", "k_EStreamControlControllerConfigMsg", 137 },
   { "k_EStreamControlControllerPersonalizationUpdate", "k_EStreamControlControllerPersonalizationUpdate", 138 },
+  { "k_EStreamControlEnableNeptuneData", "k_EStreamControlEnableNeptuneData", 139 },
+  { "k_EStreamControlDisableNeptuneData", "k_EStreamControlDisableNeptuneData", 140 },
+  { "k_EStreamControlStartNeptuneData", "k_EStreamControlStartNeptuneData", 141 },
+  { "k_EStreamControlStopNeptuneData", "k_EStreamControlStopNeptuneData", 142 },
+  { "k_EStreamControlPauseControllerInput", "k_EStreamControlPauseControllerInput", 143 },
+  { "k_EStreamControlResumeControllerInput", "k_EStreamControlResumeControllerInput", 144 },
 };
 static const ProtobufCIntRange estream_control_message__value_ranges[] = {
-{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 91}
+{1, 0},{15, 9},{50, 10},{74, 32},{80, 37},{87, 41},{93, 45},{0, 97}
 };
-static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[91] =
+static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_name[97] =
 {
   { "k_EStreamControlAuthenticationRequest", 0 },
   { "k_EStreamControlAuthenticationResponse", 1 },
@@ -11126,7 +11530,9 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlControllerPersonalizationUpdate", 90 },
   { "k_EStreamControlDeleteCursor", 28 },
   { "k_EStreamControlDisableHighResCapture", 77 },
+  { "k_EStreamControlDisableNeptuneData", 92 },
   { "k_EStreamControlEnableHighResCapture", 76 },
+  { "k_EStreamControlEnableNeptuneData", 91 },
   { "k_EStreamControlGamepadRumble_OBSOLETE", 31 },
   { "k_EStreamControlGetCursorImage", 26 },
   { "k_EStreamControlGetTouchConfigData", 63 },
@@ -11157,10 +11563,12 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlNegotiationSetConfig", 3 },
   { "k_EStreamControlOverlayEnabled", 32 },
   { "k_EStreamControlPause", 74 },
+  { "k_EStreamControlPauseControllerInput", 95 },
   { "k_EStreamControlQuitRequest", 40 },
   { "k_EStreamControlRemoteHID", 58 },
   { "k_EStreamControlRemotePlayTogetherGroupUpdate", 84 },
   { "k_EStreamControlResume", 75 },
+  { "k_EStreamControlResumeControllerInput", 96 },
   { "k_EStreamControlSaveTouchConfigLayout", 65 },
   { "k_EStreamControlServerHandshake", 6 },
   { "k_EStreamControlSetActivity", 50 },
@@ -11190,10 +11598,12 @@ static const ProtobufCEnumValueIndex estream_control_message__enum_values_by_nam
   { "k_EStreamControlShowOnScreenKeyboard", 88 },
   { "k_EStreamControlStartAudioData", 10 },
   { "k_EStreamControlStartMicrophoneData", 59 },
+  { "k_EStreamControlStartNeptuneData", 93 },
   { "k_EStreamControlStartNetworkTest", 7 },
   { "k_EStreamControlStartVideoData", 12 },
   { "k_EStreamControlStopAudioData", 11 },
   { "k_EStreamControlStopMicrophoneData", 60 },
+  { "k_EStreamControlStopNeptuneData", 94 },
   { "k_EStreamControlStopRequest", 81 },
   { "k_EStreamControlStopVideoData", 13 },
   { "k_EStreamControlSystemSuspend", 52 },
@@ -11218,9 +11628,9 @@ const ProtobufCEnumDescriptor estream_control_message__descriptor =
   "EStreamControlMessage",
   "EStreamControlMessage",
   "",
-  91,
+  97,
   estream_control_message__enum_values_by_number,
-  91,
+  97,
   estream_control_message__enum_values_by_name,
   7,
   estream_control_message__value_ranges,
@@ -11486,19 +11896,21 @@ const ProtobufCEnumDescriptor estream_host_play_audio_preference__descriptor =
   estream_host_play_audio_preference__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCEnumValue estreaming_data_type__enum_values_by_number[3] =
+static const ProtobufCEnumValue estreaming_data_type__enum_values_by_number[4] =
 {
   { "k_EStreamingAudioData", "k_EStreamingAudioData", 0 },
   { "k_EStreamingVideoData", "k_EStreamingVideoData", 1 },
   { "k_EStreamingMicrophoneData", "k_EStreamingMicrophoneData", 2 },
+  { "k_EStreamingNeptuneData", "k_EStreamingNeptuneData", 3 },
 };
 static const ProtobufCIntRange estreaming_data_type__value_ranges[] = {
-{0, 0},{0, 3}
+{0, 0},{0, 4}
 };
-static const ProtobufCEnumValueIndex estreaming_data_type__enum_values_by_name[3] =
+static const ProtobufCEnumValueIndex estreaming_data_type__enum_values_by_name[4] =
 {
   { "k_EStreamingAudioData", 0 },
   { "k_EStreamingMicrophoneData", 2 },
+  { "k_EStreamingNeptuneData", 3 },
   { "k_EStreamingVideoData", 1 },
 };
 const ProtobufCEnumDescriptor estreaming_data_type__descriptor =
@@ -11508,9 +11920,9 @@ const ProtobufCEnumDescriptor estreaming_data_type__descriptor =
   "EStreamingDataType",
   "EStreamingDataType",
   "",
-  3,
+  4,
   estreaming_data_type__enum_values_by_number,
-  3,
+  4,
   estreaming_data_type__enum_values_by_name,
   1,
   estreaming_data_type__value_ranges,
