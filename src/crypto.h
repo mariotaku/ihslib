@@ -47,3 +47,23 @@ int IHS_CryptoRSAEncrypt(const uint8_t *in, size_t inLen, const uint8_t *key, si
                          size_t *outLen);
 
 uint32_t IHS_CryptoRandomUInt32();
+
+#define IHS_CRYPTO_SHA256_SIZE 32
+#define IHS_CRYPTO_X25519_KEY_SIZE 32
+
+int IHS_CryptoRandomBytes(uint8_t *out, size_t len);
+
+int IHS_CryptoSHA256(const uint8_t *in, size_t inLen, uint8_t out[IHS_CRYPTO_SHA256_SIZE]);
+
+/**
+ * Derive the X25519 (RFC 7748) public key of a private key made of 32 random bytes.
+ */
+int IHS_CryptoX25519PublicKey(const uint8_t privateKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                              uint8_t publicKey[IHS_CRYPTO_X25519_KEY_SIZE]);
+
+/**
+ * Steam's CCrypto::PerformKeyExchange: SHA-256 of the X25519 shared secret.
+ */
+int IHS_CryptoKeyExchange(const uint8_t privateKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                          const uint8_t peerPublicKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                          uint8_t secret[IHS_CRYPTO_SHA256_SIZE]);

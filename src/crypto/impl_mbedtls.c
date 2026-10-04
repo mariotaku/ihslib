@@ -33,6 +33,9 @@
 #include <mbedtls/pk.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+#include <mbedtls/ecp.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/platform_util.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -245,5 +248,113 @@ uint32_t IHS_CryptoRandomUInt32() {
 
     uint32_t ret;
     IHS_ReadUInt32LE(out, &ret);
+    return ret;
+}
+
+int IHS_CryptoRandomBytes(uint8_t *out, size_t len) {
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_entropy_context entropy;
+    mbedtls_entropy_init(&entropy);
+    int ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                    (const unsigned char *) "@IHSlib@", 8);
+    if (ret == 0) {
+        ret = mbedtls_ctr_drbg_random(&ctr_drbg, out, len);
+    }
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    return ret;
+}
+
+int IHS_CryptoSHA256(const uint8_t *in, size_t inLen, uint8_t out[IHS_CRYPTO_SHA256_SIZE]) {
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+    return mbedtls_sha256(in, inLen, out, 0);
+#else
+    return mbedtls_sha256_ret(in, inLen, out, 0);
+#endif
+}
+
+/**
+ * X25519 through mbedTLS' ECP module, which uses little endian X-only coordinates for Montgomery curves just like
+ * RFC 7748. peerPublicKey == NULL multiplies the base point, i.e. derives the public key.
+ */
+static int CryptoX25519(const uint8_t privateKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                        const uint8_t peerPublicKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                        uint8_t out[IHS_CRYPTO_X25519_KEY_SIZE]) {
+    mbedtls_ecp_group grp;
+    mbedtls_mpi d;
+    mbedtls_ecp_point peer, result;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_context entropy;
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_mpi_init(&d);
+    mbedtls_ecp_point_init(&peer);
+    mbedtls_ecp_point_init(&result);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_entropy_init(&entropy);
+
+    uint8_t scalar[IHS_CRYPTO_X25519_KEY_SIZE];
+    memcpy(scalar, privateKey, sizeof(scalar));
+    scalar[0] &= 248;
+    scalar[31] &= 127;
+    scalar[31] |= 64;
+
+    int ret;
+    size_t len = 0;
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                     (const unsigned char *) "@IHSlib@", 8)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_CURVE25519)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_mpi_read_binary_le(&d, scalar, sizeof(scalar))) != 0) {
+        goto exit;
+    }
+    if (peerPublicKey != NULL &&
+        (ret = mbedtls_ecp_point_read_binary(&grp, &peer, peerPublicKey, IHS_CRYPTO_X25519_KEY_SIZE)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_ecp_mul(&grp, &result, &d, peerPublicKey != NULL ? &peer : &grp.G,
+                               mbedtls_ctr_drbg_random, &ctr_drbg)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_ecp_point_write_binary(&grp, &result, MBEDTLS_ECP_PF_UNCOMPRESSED, &len, out,
+                                              IHS_CRYPTO_X25519_KEY_SIZE)) != 0) {
+        goto exit;
+    }
+    // A low order peer key yields all zeros, reject it like RFC 7748 suggests.
+    uint8_t acc = 0;
+    for (size_t i = 0; i < IHS_CRYPTO_X25519_KEY_SIZE; i++) {
+        acc |= out[i];
+    }
+    if (len != IHS_CRYPTO_X25519_KEY_SIZE || acc == 0) {
+        ret = MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+    exit:
+    mbedtls_platform_zeroize(scalar, sizeof(scalar));
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    mbedtls_ecp_point_free(&result);
+    mbedtls_ecp_point_free(&peer);
+    mbedtls_mpi_free(&d);
+    mbedtls_ecp_group_free(&grp);
+    return ret;
+}
+
+int IHS_CryptoX25519PublicKey(const uint8_t privateKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                              uint8_t publicKey[IHS_CRYPTO_X25519_KEY_SIZE]) {
+    return CryptoX25519(privateKey, NULL, publicKey);
+}
+
+int IHS_CryptoKeyExchange(const uint8_t privateKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                          const uint8_t peerPublicKey[IHS_CRYPTO_X25519_KEY_SIZE],
+                          uint8_t secret[IHS_CRYPTO_SHA256_SIZE]) {
+    uint8_t shared[IHS_CRYPTO_X25519_KEY_SIZE];
+    int ret = CryptoX25519(privateKey, peerPublicKey, shared);
+    if (ret == 0) {
+        ret = IHS_CryptoSHA256(shared, sizeof(shared), secret);
+    }
+    mbedtls_platform_zeroize(shared, sizeof(shared));
     return ret;
 }
