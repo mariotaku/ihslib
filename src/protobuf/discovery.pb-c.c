@@ -1427,7 +1427,7 @@ const ProtobufCEnumDescriptor cmsg_remote_device_authorization_request__ekey_esc
   cmsg_remote_device_authorization_request__ekey_escrow_usage__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
-static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__field_descriptors[4] =
+static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__field_descriptors[5] =
 {
   {
     "device_token",
@@ -1477,17 +1477,30 @@ static const ProtobufCFieldDescriptor cmsg_remote_device_authorization_request__
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "request_id",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(CMsgRemoteDeviceAuthorizationRequest, has_request_id),
+    offsetof(CMsgRemoteDeviceAuthorizationRequest, request_id),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmsg_remote_device_authorization_request__field_indices_by_name[] = {
   3,   /* field[3] = auth_key */
   1,   /* field[1] = device_name */
   0,   /* field[0] = device_token */
   2,   /* field[2] = encrypted_request */
+  4,   /* field[4] = request_id */
 };
 static const ProtobufCIntRange cmsg_remote_device_authorization_request__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor cmsg_remote_device_authorization_request__descriptor =
 {
@@ -1497,7 +1510,7 @@ const ProtobufCMessageDescriptor cmsg_remote_device_authorization_request__descr
   "CMsgRemoteDeviceAuthorizationRequest",
   "",
   sizeof(CMsgRemoteDeviceAuthorizationRequest),
-  4,
+  5,
   cmsg_remote_device_authorization_request__field_descriptors,
   cmsg_remote_device_authorization_request__field_indices_by_name,
   1,  cmsg_remote_device_authorization_request__number_ranges,

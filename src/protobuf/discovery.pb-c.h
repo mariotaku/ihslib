@@ -267,10 +267,12 @@ struct  CMsgRemoteDeviceAuthorizationRequest
   ProtobufCBinaryData encrypted_request;
   protobuf_c_boolean has_auth_key;
   ProtobufCBinaryData auth_key;
+  protobuf_c_boolean has_request_id;
+  uint32_t request_id;
 };
 #define CMSG_REMOTE_DEVICE_AUTHORIZATION_REQUEST__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&cmsg_remote_device_authorization_request__descriptor) \
-    , {0,NULL}, NULL, {0,NULL}, 0, {0,NULL} }
+    , {0,NULL}, NULL, {0,NULL}, 0, {0,NULL}, 0, 0 }
 
 
 struct  CMsgRemoteDeviceAuthorizationCancelRequest
