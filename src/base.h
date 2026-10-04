@@ -78,6 +78,13 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
 
 void IHS_BaseSetLogFunction(IHS_Base *base, IHS_LogFunction *logFunction);
 
+/**
+ * Replace the 32 byte secret key, and the device token derived from it.
+ */
+void IHS_BaseSetSecretKey(IHS_Base *base, const uint8_t *secretKey);
+
+void IHS_BaseGetSecretKey(IHS_Base *base, uint8_t *secretKey);
+
 void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context);
 
 void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag,
