@@ -300,7 +300,8 @@ static const int32_t chiddevice_info__interface_number__default_value = -1;
 static const int32_t chiddevice_info__ostype__default_value = -1;
 static const uint32_t chiddevice_info__e_controller_type__obsolete__default_value = 0u;
 static const protobuf_c_boolean chiddevice_info__is_xinput_device__obsolete__default_value = 0;
-static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
+static const protobuf_c_boolean chiddevice_info__is_steamvr_device__default_value = 0;
+static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[20] =
 {
   {
     "location",
@@ -530,6 +531,18 @@ static const ProtobufCFieldDescriptor chiddevice_info__field_descriptors[19] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "is_steamvr_device",
+    20,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(CHIDDeviceInfo, has_is_steamvr_device),
+    offsetof(CHIDDeviceInfo, is_steamvr_device),
+    NULL,
+    &chiddevice_info__is_steamvr_device__default_value,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned chiddevice_info__field_indices_by_name[] = {
   14,   /* field[14] = caps_bits */
@@ -537,6 +550,7 @@ static const unsigned chiddevice_info__field_indices_by_name[] = {
   10,   /* field[10] = interface_number */
   12,   /* field[12] = is_generic_gamepad */
   13,   /* field[13] = is_generic_joystick */
+  19,   /* field[19] = is_steamvr_device */
   17,   /* field[17] = is_xinput_device_OBSOLETE */
   0,   /* field[0] = location */
   6,   /* field[6] = manufacturer_string */
@@ -555,7 +569,7 @@ static const unsigned chiddevice_info__field_indices_by_name[] = {
 static const ProtobufCIntRange chiddevice_info__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 19 }
+  { 0, 20 }
 };
 const ProtobufCMessageDescriptor chiddevice_info__descriptor =
 {
@@ -565,7 +579,7 @@ const ProtobufCMessageDescriptor chiddevice_info__descriptor =
   "CHIDDeviceInfo",
   "",
   sizeof(CHIDDeviceInfo),
-  19,
+  20,
   chiddevice_info__field_descriptors,
   chiddevice_info__field_indices_by_name,
   1,  chiddevice_info__number_ranges,
@@ -1246,7 +1260,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_open),
     &chidmessage_to_remote__device_open__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1258,7 +1272,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_close),
     &chidmessage_to_remote__device_close__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1270,7 +1284,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_write),
     &chidmessage_to_remote__device_write__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1282,7 +1296,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_read),
     &chidmessage_to_remote__device_read__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1294,7 +1308,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_send_feature_report),
     &chidmessage_to_remote__device_send_feature_report__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1306,7 +1320,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_get_feature_report),
     &chidmessage_to_remote__device_get_feature_report__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1318,7 +1332,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_get_vendor_string),
     &chidmessage_to_remote__device_get_vendor_string__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1330,7 +1344,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_get_product_string),
     &chidmessage_to_remote__device_get_product_string__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1342,7 +1356,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_get_serial_number_string),
     &chidmessage_to_remote__device_get_serial_number_string__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1354,7 +1368,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_start_input_reports),
     &chidmessage_to_remote__device_start_input_reports__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1366,7 +1380,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_request_full_report),
     &chidmessage_to_remote__device_request_full_report__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1378,7 +1392,7 @@ static const ProtobufCFieldDescriptor chidmessage_to_remote__field_descriptors[1
     offsetof(CHIDMessageToRemote, device_disconnect),
     &chidmessage_to_remote__device_disconnect__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
@@ -1675,7 +1689,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     offsetof(CHIDMessageFromRemote, update_device_list),
     &chidmessage_from_remote__update_device_list__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1687,7 +1701,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     offsetof(CHIDMessageFromRemote, response),
     &chidmessage_from_remote__request_response__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1699,7 +1713,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     offsetof(CHIDMessageFromRemote, reports),
     &chidmessage_from_remote__device_input_reports__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1711,7 +1725,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     offsetof(CHIDMessageFromRemote, close_device),
     &chidmessage_from_remote__close_device__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
@@ -1723,7 +1737,7 @@ static const ProtobufCFieldDescriptor chidmessage_from_remote__field_descriptors
     offsetof(CHIDMessageFromRemote, close_all_devices),
     &chidmessage_from_remote__close_all_devices__descriptor,
     NULL,
-    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };

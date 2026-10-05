@@ -23,6 +23,7 @@
  *
  */
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "session/channels/ch_data.h"
