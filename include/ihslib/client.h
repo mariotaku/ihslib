@@ -97,6 +97,10 @@ typedef struct IHS_ClientDiscoveryCallbacks {
 typedef struct IHS_ClientAuthorizationCallbacks {
     void (*progress)(IHS_Client *client, const IHS_HostInfo *host, void *context);
 
+    /**
+     * The host accepted the PIN. The client's secret key is now the one negotiated with this host, see
+     * IHS_ClientGetSecretKey.
+     */
     void (*success)(IHS_Client *client, const IHS_HostInfo *host, uint64_t steamId, void *context);
 
     void (*failed)(IHS_Client *client, const IHS_HostInfo *host, IHS_AuthorizationResult result, void *context);
@@ -115,6 +119,20 @@ typedef struct IHS_ClientStreamingCallbacks {
 IHS_Client *IHS_ClientCreate(const IHS_ClientConfig *config);
 
 void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction);
+
+/**
+ * Get the current 32 byte secret key.
+ *
+ * Steam pairs devices with a key exchange, so the secret key is specific to each host. After a successful
+ * authorization the client switches to the key negotiated with that host: store it, and set it again (here or with
+ * IHS_ClientConfig.secretKey) before requesting streaming from the same host.
+ */
+void IHS_ClientGetSecretKey(IHS_Client *client, uint8_t *secretKey);
+
+/**
+ * Switch to another 32 byte secret key, e.g. the one stored for the host you're about to stream from.
+ */
+void IHS_ClientSetSecretKey(IHS_Client *client, const uint8_t *secretKey);
 
 void IHS_ClientStop(IHS_Client *client);
 

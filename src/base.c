@@ -36,6 +36,8 @@
 
 static void BaseWorker(IHS_Base *base);
 
+static void BaseUpdateSecretKey(IHS_Base *base, const uint8_t *secretKey);
+
 static bool initialized;
 
 void IHS_Init() {
@@ -57,10 +59,30 @@ void IHS_BaseInit(IHS_Base *base, const IHS_ClientConfig *config, IHS_BaseReceiv
     base->callbacks.received = recvCb;
 
     base->deviceId = config->deviceId;
-    memcpy(base->secretKey, config->secretKey, 32);
     strncpy(base->deviceName, config->deviceName ? config->deviceName : "IHSLib", sizeof(base->deviceName) - 1);
     base->deviceName[sizeof(base->deviceName) - 1] = '\0';
+    BaseUpdateSecretKey(base, config->secretKey);
+}
 
+void IHS_BaseSetSecretKey(IHS_Base *base, const uint8_t *secretKey) {
+    assert(base != NULL);
+    IHS_BaseLock(base);
+    BaseUpdateSecretKey(base, secretKey);
+    IHS_BaseUnlock(base);
+}
+
+void IHS_BaseGetSecretKey(IHS_Base *base, uint8_t *secretKey) {
+    assert(base != NULL);
+    IHS_BaseLock(base);
+    memcpy(secretKey, base->secretKey, sizeof(base->secretKey));
+    IHS_BaseUnlock(base);
+}
+
+/**
+ * The device token, SymmetricEncrypt(u64le device ID), is derived from the secret key.
+ */
+static void BaseUpdateSecretKey(IHS_Base *base, const uint8_t *secretKey) {
+    memcpy(base->secretKey, secretKey, sizeof(base->secretKey));
     uint8_t in[8];
     size_t deviceTokenLen = sizeof(base->deviceToken);
     IHS_WriteUInt64LE(in, base->deviceId);

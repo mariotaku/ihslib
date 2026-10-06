@@ -23,6 +23,7 @@
  *
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include "common.h"
 #include "ihslib/client.h"
@@ -71,7 +72,15 @@ void OnAuthorizationInProgress(IHS_Client *client, const IHS_HostInfo *info, voi
 }
 
 void OnAuthorizationSuccess(IHS_Client *client, const IHS_HostInfo *info, uint64_t steamId, void *context) {
-    printf("OnStreamingSuccess(steamId=%llu)\n", steamId);
+    printf("OnAuthorizationSuccess(steamId=%" PRIu64 ")\n", steamId);
+    // The secret key is now the one negotiated with this host, it's needed to stream from it.
+    uint8_t key[32];
+    IHS_ClientGetSecretKey(client, key);
+    printf("Secret key for host %s: ", info->hostname);
+    for (size_t i = 0; i < sizeof(key); i++) {
+        printf("%02x", key[i]);
+    }
+    printf("\n");
     IHS_ClientStop(client);
 
 }

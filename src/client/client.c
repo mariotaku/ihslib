@@ -84,6 +84,14 @@ void IHS_ClientSetLogFunction(IHS_Client *client, IHS_LogFunction *logFunction) 
     IHS_BaseSetLogFunction(&client->base, logFunction);
 }
 
+void IHS_ClientGetSecretKey(IHS_Client *client, uint8_t *secretKey) {
+    IHS_BaseGetSecretKey(&client->base, secretKey);
+}
+
+void IHS_ClientSetSecretKey(IHS_Client *client, const uint8_t *secretKey) {
+    IHS_BaseSetSecretKey(&client->base, secretKey);
+}
+
 void IHS_ClientStop(IHS_Client *client) {
     IHS_BaseInterruptWorker(&client->base);
 }

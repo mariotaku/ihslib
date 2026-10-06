@@ -26,6 +26,7 @@
 #include "client_pri.h"
 #include "pubkeys.h"
 #include "crypto.h"
+#include "authorization_kx.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -35,6 +36,8 @@ typedef struct IHS_AuthorizationState {
     IHS_HostInfo host;
     char deviceName[64];
     char pin[16];
+    uint32_t requestId;
+    IHS_AuthorizationKeyExchange keyExchange;
 } IHS_AuthorizationState;
 
 static uint64_t AuthorizationRequestTimer(int runCount, void *data);
@@ -44,15 +47,24 @@ static void AuthorizationRequestCleanup(void *data);
 static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationState *state,
                                          CMsgRemoteDeviceAuthorizationRequest__CKeyEscrowTicket *ticket);
 
+static void AuthorizationKeyExchange(IHS_Client *client, IHS_AuthorizationState *state,
+                                     const CMsgRemoteDeviceAuthorizationResponse *resp);
+
 bool IHS_ClientAuthorizationRequest(IHS_Client *client, const IHS_HostInfo *host, const char *pin) {
     if (client->taskHandles.authorization) {
         return false;
     }
-    IHS_AuthorizationState *state = malloc(sizeof(IHS_AuthorizationState));
+    IHS_AuthorizationState *state = calloc(1, sizeof(IHS_AuthorizationState));
     state->client = client;
     state->host = *host;
     strncpy(state->deviceName, client->base.deviceName, sizeof(state->deviceName) - 1);
     strncpy(state->pin, pin, sizeof(state->pin) - 1);
+    state->requestId = IHS_CryptoRandomUInt32();
+    if (!IHS_AuthorizationKeyExchangeInit(&state->keyExchange, state->pin)) {
+        IHS_AuthorizationKeyExchangeClear(&state->keyExchange);
+        free(state);
+        return false;
+    }
     IHS_BaseLock(&client->base);
     client->taskHandles.authorization = IHS_TimerTaskStart(client->timers, AuthorizationRequestTimer,
                                                            AuthorizationRequestCleanup, 0, state);
@@ -86,6 +98,14 @@ void IHS_ClientAuthorizationCallback(IHS_Client *client, const IHS_SocketAddress
     }
     IHS_AuthorizationState *state = IHS_TimerTaskGetContext(task);
     CMsgRemoteDeviceAuthorizationResponse *resp = (CMsgRemoteDeviceAuthorizationResponse *) message;
+    if (resp == NULL) return;
+    if (resp->has_auth_key) {
+        // Like the official client, a response carrying the host's half of the key exchange is handled as such,
+        // whatever its result says.
+        AuthorizationKeyExchange(client, state, resp);
+        IHS_TimerTaskStop(task);
+        return;
+    }
     switch (resp->result) {
         case k_ERemoteDeviceAuthorizationInProgress:
             if (client->callbacks.authorization && client->callbacks.authorization->progress) {
@@ -156,10 +176,18 @@ static uint64_t AuthorizationRequestTimer(int runCount, void *data) {
     IHS_CryptoRSAEncrypt(serTicket, serTicketLen, pubKey, pubKeyLen, encryptedRequest.data,
                          &encryptedRequest.len);
 
+    uint8_t authKey[IHS_CRYPTO_X25519_KEY_SIZE];
+    IHS_AuthorizationKeyExchangeMaskedKey(&state->keyExchange, authKey);
+
     CMsgRemoteDeviceAuthorizationRequest request = CMSG_REMOTE_DEVICE_AUTHORIZATION_REQUEST__INIT;
     request.device_name = state->deviceName;
     request.device_token = deviceToken;
     request.encrypted_request = encryptedRequest;
+    request.has_auth_key = true;
+    request.auth_key.data = authKey;
+    request.auth_key.len = sizeof(authKey);
+    request.has_request_id = true;
+    request.request_id = state->requestId;
 
     IHS_SocketAddress address = state->host.address;
     IHS_ClientSend(client, address, k_ERemoteDeviceAuthorizationRequest, (ProtobufCMessage *) &request);
@@ -185,11 +213,43 @@ static void AuthorizationConfigureTicket(IHS_Client *client, IHS_AuthorizationSt
     ticket->device_name = client->base.deviceName;
 }
 
+static void AuthorizationKeyExchange(IHS_Client *client, IHS_AuthorizationState *state,
+                                     const CMsgRemoteDeviceAuthorizationResponse *resp) {
+    uint8_t secretKey[IHS_CRYPTO_SHA256_SIZE];
+    bool ok = resp->has_device_token &&
+              IHS_AuthorizationKeyExchangeComplete(&state->keyExchange, resp->auth_key.data, resp->auth_key.len,
+                                                   resp->device_token.data, resp->device_token.len,
+                                                   client->base.deviceId, secretKey);
+
+    CMsgRemoteDeviceAuthorizationConfirmed confirmed = CMSG_REMOTE_DEVICE_AUTHORIZATION_CONFIRMED__INIT;
+    confirmed.result = ok ? k_ERemoteDeviceAuthorizationSuccess : k_ERemoteDeviceAuthorizationDenied;
+    IHS_ClientSend(client, state->host.address, k_ERemoteDeviceAuthorizationConfirmed,
+                   (ProtobufCMessage *) &confirmed);
+
+    if (!ok) {
+        IHS_ClientLog(client, IHS_LogLevelWarn, "Client", "Key exchange with host %s failed (wrong PIN?)",
+                      state->host.hostname);
+        if (client->callbacks.authorization && client->callbacks.authorization->failed) {
+            client->callbacks.authorization->failed(client, &state->host, IHS_AuthorizationDenied,
+                                                    client->callbackContexts.authorization);
+        }
+        return;
+    }
+
+    IHS_BaseSetSecretKey(&client->base, secretKey);
+    memset(secretKey, 0, sizeof(secretKey));
+    if (client->callbacks.authorization && client->callbacks.authorization->success) {
+        client->callbacks.authorization->success(client, &state->host, resp->steamid,
+                                                 client->callbackContexts.authorization);
+    }
+}
+
 static void AuthorizationRequestCleanup(void *data) {
     IHS_AuthorizationState *state = data;
     IHS_Client *client = state->client;
     IHS_BaseLock(&client->base);
     client->taskHandles.authorization = NULL;
     IHS_BaseUnlock(&client->base);
+    IHS_AuthorizationKeyExchangeClear(&state->keyExchange);
     free(data);
 }
